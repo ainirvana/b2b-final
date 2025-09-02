@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { ItineraryList } from "@/components/itinerary-list"
 import { ItineraryBuilder } from "@/components/itinerary-builder"
 import { TopHeader } from "@/components/top-header"
@@ -8,7 +8,7 @@ import { Sidebar } from "@/components/sidebar"
 import { ItinerarySetupModal } from "@/components/itinerary-setup-modal"
 import { useRouter, useSearchParams } from "next/navigation"
 
-export default function ItineraryPage() {
+function ItineraryPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const itineraryId = searchParams.get('id')
@@ -62,10 +62,18 @@ export default function ItineraryPage() {
           {renderContent()}
         </main>
       </div>
-      <ItinerarySetupModal 
-        isOpen={showSetupModal} 
-        onClose={handleSetupModalClose} 
+      <ItinerarySetupModal
+        isOpen={showSetupModal}
+        onClose={handleSetupModalClose}
       />
     </div>
+  )
+}
+
+export default function ItineraryPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
+      <ItineraryPageContent />
+    </Suspense>
   )
 }
