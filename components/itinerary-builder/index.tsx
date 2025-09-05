@@ -44,10 +44,7 @@ import { useItineraries } from "@/hooks/use-itineraries"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 
-// Add a list of countries (for demo, a few; in production, use a full list or a country picker library)
-const COUNTRY_OPTIONS = [
-  "India", "Thailand", "France", "USA", "Australia", "Japan", "Italy", "Spain", "UK", "Germany"
-]
+// Country options removed
 
 interface ItineraryBuilderProps {
   itineraryId?: string
@@ -818,30 +815,7 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
                   />
                 </div>
               </div>
-              {/* Country Checkbox List */}
-              <div className="flex flex-col gap-1 mt-4">
-                <label className="text-xs text-gray-500 font-medium">Country(s): <span className="text-red-500">*</span></label>
-                <div className="flex flex-wrap gap-3 max-w-full max-h-24 overflow-y-auto border border-gray-200 rounded p-2">
-                  {COUNTRY_OPTIONS.map((country) => (
-                    <label key={country} className="flex items-center gap-1 text-xs cursor-pointer whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={countries.includes(country)}
-                        onChange={e => {
-                          if (e.target.checked) {
-                            setCountries([...countries, country])
-                          } else {
-                            setCountries(countries.filter(c => c !== country))
-                          }
-                        }}
-                        className="accent-blue-600"
-                      />
-                      {country}
-                    </label>
-                  ))}
-                </div>
-                {countryError && <span className="text-xs text-red-500 mt-1">{countryError}</span>}
-              </div>
+              {/* Country Checkbox List removed */}
             </div>
             {/* Detailed View Toggle */}
             <div className="flex items-center gap-2 mt-4">
