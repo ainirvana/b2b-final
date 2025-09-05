@@ -204,12 +204,12 @@ const ItineraryDaySchema = new mongoose.Schema({
 
 const ItinerarySchema = new mongoose.Schema(
   {
-    productId: { type: String, required: true },
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    destination: { type: String, required: true },
-    countries: { type: [String], required: true }, // NEW: required array of country codes/names
-    duration: { type: String, required: true },
+    productId: { type: String },
+    title: { type: String },
+    description: { type: String },
+    destination: { type: String },
+    countries: { type: [String] }, // Removed required constraint
+    duration: { type: String },
     totalPrice: { type: Number, default: 0 },
     currency: { type: String, default: "USD" },
     status: {
@@ -217,7 +217,7 @@ const ItinerarySchema = new mongoose.Schema(
       enum: ["draft", "published", "archived"],
       default: "draft",
     },
-    createdBy: { type: String, required: true },
+    createdBy: { type: String },
     days: [ItineraryDaySchema],
     highlights: [String],
     images: [String],

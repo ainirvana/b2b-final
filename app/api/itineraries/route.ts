@@ -138,23 +138,7 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] API received itinerary data:", JSON.stringify(data, null, 2))
 
-    const requiredFields = ["productId", "title", "description", "destination", "duration", "createdBy"]
-    const missingFields = validateRequiredFields(data, requiredFields)
-
-    if (missingFields.length > 0) {
-      return createErrorResponse(
-        "Validation Failed",
-        `Missing required fields: ${missingFields.join(", ")}`,
-        "MISSING_REQUIRED_FIELDS",
-        400,
-        {
-          missingFields,
-          receivedFields: Object.keys(data),
-          requiredFields,
-        },
-        requestId,
-      )
-    }
+    // Removed required field validations
 
     const validationErrors: string[] = []
 

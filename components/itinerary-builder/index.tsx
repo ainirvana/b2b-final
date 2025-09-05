@@ -207,28 +207,62 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
   const [gallery, setGallery] = useState<IGalleryItem[]>([])
   const [collapsedDays, setCollapsedDays] = useState<Set<number>>(new Set())
 
-  // Initialize with setup data from URL parameters
+  // Load existing itinerary data when editing
   useEffect(() => {
-    if (!itineraryId && isNewMode) {
-      const numDays = parseInt(searchParams.get('days') || '1')
-      const itineraryName = searchParams.get('name') || 'New Itinerary'
-      const newProductId = searchParams.get('productId') || productId
+    const loadItineraryData = async () => {
+      if (itineraryId) {
+        try {
+          const response = await fetch(`/api/itineraries/${itineraryId}`)
+          if (response.ok) {
+            const itineraryData = await response.json()
 
-      const initialDays = Array.from({ length: numDays }, (_, index) => ({
-        ...EMPTY_DAY,
-        day: index + 1,
-        title: `Day ${index + 1}`,
-        date: new Date(new Date().setDate(new Date().getDate() + index)).toISOString().split("T")[0],
-        events: [],
-      }))
+            // Populate all state with loaded data
+            setTitle(itineraryData.title || "")
+            setDescription(itineraryData.description || "")
+            setProductId(itineraryData.productId || "")
+            setDays(itineraryData.days || [{ ...EMPTY_DAY, events: [] }])
+            setCountries(itineraryData.countries || [])
+            setGallery(itineraryData.gallery || [])
+            setBranding(itineraryData.branding || {
+              headerLogo: "",
+              headerText: "",
+              footerLogo: "",
+              footerText: "",
+              primaryColor: "#3B82F6",
+              secondaryColor: "#10B981",
+            })
 
-      setDays(initialDays)
-      setTitle(itineraryName)
-      setProductId(newProductId)
+            console.log("[v0] Loaded itinerary data for editing:", itineraryData)
+          } else {
+            console.error("[v0] Failed to load itinerary data:", response.statusText)
+          }
+        } catch (error) {
+          console.error("[v0] Error loading itinerary data:", error)
+        }
+      } else if (isNewMode) {
+        // Initialize with setup data from URL parameters for new itineraries
+        const numDays = parseInt(searchParams.get('days') || '1')
+        const itineraryName = searchParams.get('name') || 'New Itinerary'
+        const newProductId = searchParams.get('productId') || productId
 
-      // Remove the query parameters
-      router.replace('/itinerary/builder')
+        const initialDays = Array.from({ length: numDays }, (_, index) => ({
+          ...EMPTY_DAY,
+          day: index + 1,
+          title: `Day ${index + 1}`,
+          date: new Date(new Date().setDate(new Date().getDate() + index)).toISOString().split("T")[0],
+          events: [],
+        }))
+
+        setDays(initialDays)
+        setTitle(itineraryName)
+        setProductId(newProductId)
+
+        // Remove the query parameters
+        router.replace('/itinerary/builder')
+      }
     }
+
+    loadItineraryData()
   }, [itineraryId, isNewMode, router, productId])
 
   const [isSaving, setIsSaving] = useState(false)
@@ -567,21 +601,9 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
     setIsSaving(true)
     setCountryError("")
     try {
-      if (countries.length === 0) {
-        setCountryError("Please select at least one country.")
-        setIsSaving(false)
-        return
-      }
-
-      if (!title.trim()) {
-        throw new Error("Title is required")
-      }
-
-      if (!description.trim()) {
-        throw new Error("Description is required")
-      }
-
-      // Removed clientDetails.clientName, clientEmail, startDate, endDate, and groupSize as required fields
+      // Removed countries validation
+      // Removed title validation
+      // Removed description validation
 
       const totalPrice = days.reduce(
         (sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0),
