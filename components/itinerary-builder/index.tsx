@@ -179,7 +179,7 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
   const isNewMode = searchParams.get('mode') === 'new'
 
   // All state declarations in one place
-  const [days, setDays] = useState<IItineraryDay[]>([EMPTY_DAY])
+  const [days, setDays] = useState<IItineraryDay[]>([{ ...EMPTY_DAY, events: [] }])
   const [title, setTitle] = useState("New Itinerary")
   const [description, setDescription] = useState("")
   const [isDetailedView, setIsDetailedView] = useState(true)
@@ -221,7 +221,8 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
         ...EMPTY_DAY,
         day: index + 1,
         title: `Day ${index + 1}`,
-        date: new Date(new Date().setDate(new Date().getDate() + index)).toISOString().split("T")[0]
+        date: new Date(new Date().setDate(new Date().getDate() + index)).toISOString().split("T")[0],
+        events: [],
       }))
 
       setDays(initialDays)
