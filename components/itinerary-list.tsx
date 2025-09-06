@@ -47,8 +47,29 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary }:
 
   const filteredItineraries = itineraries.filter(itinerary => 
     itinerary.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    itinerary.destination.toLowerCase().includes(searchQuery.toLowerCase())
+    itinerary.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (itinerary.itineraryType && getItineraryTypeName(itinerary.itineraryType).toLowerCase().includes(searchQuery.toLowerCase()))
   )
+
+  const getItineraryTypeName = (type: string) => {
+    switch (type) {
+      case "fixed-group": return "Fixed Group Tour"
+      case "customized": return "Customized Package"
+      case "cart-combo": return "Cart/Combo"
+      case "html-editor": return "HTML Editor"
+      default: return "Customized Package"
+    }
+  }
+
+  const getItineraryTypeColor = (type: string) => {
+    switch (type) {
+      case "fixed-group": return "bg-blue-100 text-blue-800"
+      case "customized": return "bg-green-100 text-green-800"
+      case "cart-combo": return "bg-purple-100 text-purple-800"
+      case "html-editor": return "bg-orange-100 text-orange-800"
+      default: return "bg-gray-100 text-gray-800"
+    }
+  }
 
   if (loading) {
     return (
@@ -104,7 +125,12 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary }:
               className="hover:shadow-md transition-shadow"
             >
               <CardHeader>
-                <CardTitle>{itinerary.title}</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>{itinerary.title}</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${getItineraryTypeColor(itinerary.itineraryType || 'customized')}`}>
+                    {getItineraryTypeName(itinerary.itineraryType || 'customized')}
+                  </span>
+                </CardTitle>
                 <CardDescription className="flex items-center text-sm text-gray-500">
                   <MapPin className="mr-1 h-4 w-4" />
                   {itinerary.destination}
