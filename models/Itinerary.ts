@@ -11,7 +11,9 @@ export interface IItinerary {
   totalPrice: number
   currency: string
   status: "draft" | "published" | "archived"
+  type: "fixed-group-tour" | "customized-package" | "cart-combo" | "html-editor" // NEW: Itinerary types
   createdBy: string
+  lastUpdatedBy?: string // NEW: Track who last updated
   createdAt: Date
   updatedAt: Date
   days: IItineraryDay[]
@@ -26,6 +28,19 @@ export interface IItinerary {
     primaryColor?: string
     secondaryColor?: string
   }
+  // NEW: Fixed Group Tour specific fields
+  fixedDates?: {
+    startDate: string
+    endDate: string
+    availableDates: string[]
+    maxParticipants?: number
+    currentBookings?: number
+  }
+  // NEW: Cart/Combo specific fields
+  cartItems?: ICartItem[]
+  // NEW: HTML Editor content
+  htmlContent?: string
+  htmlBlocks?: IHtmlBlock[]
 }
 
 export interface IGalleryItem {
@@ -36,6 +51,33 @@ export interface IGalleryItem {
   altText?: string
   fileName: string
   uploadedAt: Date
+}
+
+// NEW: Cart/Combo item interface
+export interface ICartItem {
+  id: string
+  productId: string
+  name: string
+  description: string
+  category: "activity" | "hotel" | "flight" | "transfer" | "meal" | "other"
+  price: number
+  nights?: number // Not applicable for combo items except hotels
+  quantity: number
+  addedAt: Date
+}
+
+// NEW: HTML Block interface for HTML editor
+export interface IHtmlBlock {
+  id: string
+  type: "heading" | "paragraph" | "list" | "image" | "divider" | "quote" | "table"
+  content: string
+  level?: number // For headings (h1, h2, h3, etc.)
+  listType?: "ordered" | "unordered" // For lists
+  items?: string[] // For list items
+  imageUrl?: string
+  imageCaption?: string
+  order: number
+  createdAt: Date
 }
 
 export interface IItineraryDay {
@@ -217,7 +259,13 @@ const ItinerarySchema = new mongoose.Schema(
       enum: ["draft", "published", "archived"],
       default: "draft",
     },
+    type: {
+      type: String,
+      enum: ["fixed-group-tour", "customized-package", "cart-combo", "html-editor"],
+      default: "customized-package",
+    },
     createdBy: { type: String },
+    lastUpdatedBy: { type: String },
     days: [ItineraryDaySchema],
     highlights: [String],
     images: [String],
@@ -240,6 +288,52 @@ const ItinerarySchema = new mongoose.Schema(
       primaryColor: String,
       secondaryColor: String,
     },
+    // Fixed Group Tour fields
+    fixedDates: {
+      startDate: String,
+      endDate: String,
+      availableDates: [String],
+      maxParticipants: Number,
+      currentBookings: { type: Number, default: 0 },
+    },
+    // Cart/Combo fields
+    cartItems: [
+      {
+        id: { type: String, required: true },
+        productId: { type: String, required: true },
+        name: { type: String, required: true },
+        description: String,
+        category: {
+          type: String,
+          enum: ["activity", "hotel", "flight", "transfer", "meal", "other"],
+          required: true,
+        },
+        price: { type: Number, required: true },
+        nights: Number,
+        quantity: { type: Number, default: 1 },
+        addedAt: { type: Date, default: Date.now },
+      },
+    ],
+    // HTML Editor fields
+    htmlContent: String,
+    htmlBlocks: [
+      {
+        id: { type: String, required: true },
+        type: {
+          type: String,
+          enum: ["heading", "paragraph", "list", "image", "divider", "quote", "table"],
+          required: true,
+        },
+        content: String,
+        level: Number,
+        listType: { type: String, enum: ["ordered", "unordered"] },
+        items: [String],
+        imageUrl: String,
+        imageCaption: String,
+        order: { type: Number, required: true },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

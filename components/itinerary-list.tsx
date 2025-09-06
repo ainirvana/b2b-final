@@ -4,13 +4,37 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Calendar, MapPin, Clock, Edit } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Calendar, MapPin, Clock, Edit, Package, ShoppingCart, FileText, Users, DollarSign } from "lucide-react"
 import { IItinerary } from "@/models/Itinerary"
 
 interface ItineraryListProps {
   onCreateNew: () => void
   onViewItinerary: (id: string) => void
   onEditItinerary: (id: string) => void
+}
+
+const TYPE_CONFIG = {
+  "fixed-group-tour": {
+    label: "Fixed Group Tour",
+    icon: Calendar,
+    color: "bg-blue-50 border-blue-200 text-blue-800",
+  },
+  "customized-package": {
+    label: "Customized Package", 
+    icon: Package,
+    color: "bg-green-50 border-green-200 text-green-800",
+  },
+  "cart-combo": {
+    label: "Cart/Combo",
+    icon: ShoppingCart,
+    color: "bg-purple-50 border-purple-200 text-purple-800",
+  },
+  "html-editor": {
+    label: "HTML Editor",
+    icon: FileText,
+    color: "bg-orange-50 border-orange-200 text-orange-800",
+  },
 }
 
 export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary }: ItineraryListProps) {
@@ -98,36 +122,112 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary }:
             </Button>
           </div>
         ) : (
-          filteredItineraries.map((itinerary) => (
-            <Card 
-              key={itinerary._id}
-              className="hover:shadow-md transition-shadow"
-            >
-              <CardHeader>
-                <CardTitle>{itinerary.title}</CardTitle>
-                <CardDescription className="flex items-center text-sm text-gray-500">
-                  <MapPin className="mr-1 h-4 w-4" />
-                  {itinerary.destination}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center text-sm text-gray-500 mb-2">
-                  <Clock className="mr-1 h-4 w-4" />
-                  {itinerary.duration}
-                </div>
-                <p className="text-sm text-gray-600 line-clamp-2">{itinerary.description}</p>
-                <div className="flex justify-end space-x-2 mt-4">
-                  <Button variant="outline" size="sm" onClick={() => onViewItinerary(itinerary._id!)}>
-                    View
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => onEditItinerary(itinerary._id!)}>
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+          filteredItineraries.map((itinerary) => {
+            const itineraryType = itinerary.type || "customized-package"
+            const typeConfig = TYPE_CONFIG[itineraryType as keyof typeof TYPE_CONFIG] || TYPE_CONFIG["customized-package"]
+            const TypeIcon = typeConfig.icon
+
+            return (
+              <Card 
+                key={itinerary._id}
+                className="hover:shadow-md transition-shadow"
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="flex items-center gap-2">
+                        {itinerary.title}
+                        <Badge className={`text-xs ${typeConfig.color}`}>
+                          <TypeIcon className="h-3 w-3 mr-1" />
+                          {typeConfig.label}
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription className="flex items-center text-sm text-gray-500 mt-1">
+                        <MapPin className="mr-1 h-4 w-4" />
+                        {itinerary.destination}
+                      </CardDescription>
+                    </div>
+                    <Badge 
+                      variant={itinerary.status === "published" ? "default" : "secondary"}
+                      className="text-xs"
+                    >
+                      {itinerary.status}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {/* Duration and Price */}
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center text-gray-500">
+                        <Clock className="mr-1 h-4 w-4" />
+                        {itinerary.duration}
+                      </div>
+                      {itinerary.totalPrice > 0 && (
+                        <div className="flex items-center text-gray-700 font-medium">
+                          <DollarSign className="mr-1 h-4 w-4" />
+                          {itinerary.totalPrice}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Type-specific information */}
+                    {itinerary.type === "fixed-group-tour" && itinerary.fixedDates && (
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>
+                          Start: {new Date(itinerary.fixedDates.startDate).toLocaleDateString()}
+                        </span>
+                        {itinerary.fixedDates.maxParticipants && (
+                          <div className="flex items-center">
+                            <Users className="h-3 w-3 mr-1" />
+                            {itinerary.fixedDates.currentBookings || 0}/{itinerary.fixedDates.maxParticipants}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {itinerary.type === "cart-combo" && itinerary.cartItems && (
+                      <div className="text-xs text-gray-500">
+                        {itinerary.cartItems.length} item{itinerary.cartItems.length !== 1 ? 's' : ''} in cart
+                      </div>
+                    )}
+
+                    {itinerary.type === "html-editor" && itinerary.htmlBlocks && (
+                      <div className="text-xs text-gray-500">
+                        {itinerary.htmlBlocks.length} content block{itinerary.htmlBlocks.length !== 1 ? 's' : ''}
+                      </div>
+                    )}
+
+                    <p className="text-sm text-gray-600 line-clamp-2">{itinerary.description}</p>
+                    
+                    {/* Creator and Updated info */}
+                    <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t">
+                      <span>
+                        Created by {itinerary.createdBy || 'Unknown'}
+                      </span>
+                      <span>
+                        {new Date(itinerary.updatedAt).toLocaleDateString('en-US', {
+                          day: '2-digit',
+                          month: 'short', 
+                          year: '2-digit'
+                        })}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 mt-4">
+                      <Button variant="outline" size="sm" onClick={() => onViewItinerary(itinerary._id!)}>
+                        View
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => onEditItinerary(itinerary._id!)}>
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })
         )}
       </div>
     </div>

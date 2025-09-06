@@ -23,13 +23,34 @@ function ItineraryPageContent() {
   }
 
   const handleViewItinerary = (id: string) => {
-    setCurrentView('viewer')
-    router.push(`/itinerary?id=${id}&mode=view`)
+    // Fetch the itinerary to get its type for proper routing
+    fetch(`/api/itineraries/${id}`)
+      .then(res => res.json())
+      .then(itinerary => {
+        const type = itinerary.type || 'customized-package'
+        router.push(`/itinerary/builder?id=${id}&mode=view&type=${type}`)
+      })
+      .catch(err => {
+        console.error('Failed to fetch itinerary type:', err)
+        // Fallback to default type
+        router.push(`/itinerary/builder?id=${id}&mode=view&type=customized-package`)
+      })
   }
 
   const handleEditItinerary = (id: string) => {
     setCurrentView('builder')
-    router.push(`/itinerary?id=${id}&mode=edit`)
+    // Fetch the itinerary to get its type for proper routing
+    fetch(`/api/itineraries/${id}`)
+      .then(res => res.json())
+      .then(itinerary => {
+        const type = itinerary.type || 'customized-package'
+        router.push(`/itinerary/builder?id=${id}&mode=edit&type=${type}`)
+      })
+      .catch(err => {
+        console.error('Failed to fetch itinerary type:', err)
+        // Fallback to default type
+        router.push(`/itinerary/builder?id=${id}&mode=edit&type=customized-package`)
+      })
   }
 
   const handleBack = () => {
