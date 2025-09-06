@@ -26,6 +26,22 @@ export interface IItinerary {
     primaryColor?: string
     secondaryColor?: string
   }
+  // NEW: Itinerary type categorization
+  itineraryType: "fixed-group" | "customized" | "cart-combo" | "html-editor"
+  // For Fixed Group Tours
+  fixedDates?: {
+    startDate: Date
+    endDate: Date
+    availableDates: Date[]
+    maxGroupSize?: number
+  }
+  // For Cart/Combo items  
+  cartItems?: ICartItem[]
+  // For HTML Editor mode
+  htmlContent?: string
+  // Metadata tracking
+  lastUpdatedBy?: string
+  lastUpdatedAt?: Date
 }
 
 export interface IGalleryItem {
@@ -36,6 +52,23 @@ export interface IGalleryItem {
   altText?: string
   fileName: string
   uploadedAt: Date
+}
+
+export interface ICartItem {
+  id: string
+  name: string
+  productId: string
+  description: string
+  category: "hotel" | "flight" | "activity" | "transfer" | "meal" | "other"
+  price?: number
+  location?: string
+  // Hotel specific
+  nights?: number
+  roomType?: string
+  // Activity specific  
+  duration?: string
+  difficulty?: string
+  // No dates for cart items - they are standalone
 }
 
 export interface IItineraryDay {
@@ -240,6 +273,44 @@ const ItinerarySchema = new mongoose.Schema(
       primaryColor: String,
       secondaryColor: String,
     },
+    // NEW: Itinerary type categorization
+    itineraryType: {
+      type: String,
+      enum: ["fixed-group", "customized", "cart-combo", "html-editor"],
+      default: "customized",
+    },
+    // For Fixed Group Tours
+    fixedDates: {
+      startDate: Date,
+      endDate: Date,
+      availableDates: [Date],
+      maxGroupSize: Number,
+    },
+    // For Cart/Combo items
+    cartItems: [
+      {
+        id: { type: String, required: true },
+        name: { type: String, required: true },
+        productId: { type: String, required: true },
+        description: String,
+        category: {
+          type: String,
+          enum: ["hotel", "flight", "activity", "transfer", "meal", "other"],
+          required: true,
+        },
+        price: Number,
+        location: String,
+        nights: Number,
+        roomType: String,
+        duration: String,
+        difficulty: String,
+      },
+    ],
+    // For HTML Editor mode
+    htmlContent: String,
+    // Metadata tracking
+    lastUpdatedBy: String,
+    lastUpdatedAt: Date,
   },
   {
     timestamps: true,
