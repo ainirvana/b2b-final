@@ -845,8 +845,11 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
               <span className="text-sm font-medium text-gray-700">{isDetailedView ? "Detailed View" : "Summary View"}</span>
             </div>
           </div>
-          {/* Action Buttons */}
-          <div className="flex flex-wrap justify-between items-center mt-4 mb-6 gap-2">
+        </div>
+
+        {/* Action Buttons Block */}
+        <div className="bg-white rounded-xl shadow-sm border mb-8 p-6">
+          <div className="flex flex-wrap justify-between items-center gap-2">
             {/* Left Buttons */}
             <div className="flex space-x-2 flex-wrap">
               <Button variant="default" className="font-semibold whitespace-nowrap">
