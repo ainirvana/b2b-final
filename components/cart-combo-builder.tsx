@@ -504,7 +504,8 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
                         key={item.id}
                         className="border rounded-lg p-4 flex items-center justify-between"
                       >
-                        <div className="flex items-center gap-4">
+                        {/* Details Section */}
+                        <div className="flex items-center gap-4 flex-1">
                           <div className={`p-2 rounded-full ${CATEGORY_COLORS[item.category]}`}>
                             <IconComponent className="h-4 w-4" />
                           </div>
@@ -526,28 +527,40 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-right">
+
+                        {/* Separator */}
+                        <div className="h-12 w-px bg-gray-200 mx-4"></div>
+
+                        {/* Price Section */}
+                        <div className="flex items-center gap-4">
+                          <div className="text-center min-w-[80px]">
                             <p className="font-medium">${item.price * item.quantity}</p>
                             {item.quantity > 1 && (
                               <p className="text-xs text-gray-500">${item.price} each</p>
                             )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditItem(item)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+
+                          {/* Separator */}
+                          <div className="h-12 w-px bg-gray-200"></div>
+
+                          {/* Actions Section */}
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditItem(item)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteItem(item.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )
