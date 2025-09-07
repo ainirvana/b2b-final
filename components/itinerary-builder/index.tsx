@@ -971,9 +971,7 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
                   <DayTitle
                     day={day.day}
                     title={day.title}
-                    nights={day.nights}
                     onTitleChange={(newTitle) => updateDayTitle(dayIndex, newTitle)}
-                    onNightsChange={(newNights) => updateDayNights(dayIndex, newNights)}
                   />
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="sm" onClick={() => toggleDayCollapse(dayIndex)} className="p-2">
@@ -989,55 +987,34 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
                   </div>
                 </div>
               </CardHeader>
-              {!collapsedDays.has(dayIndex) && (
-                <CardContent>
-                  {isDetailedView ? (
-                    <div className="space-y-4 mt-4">
-                      <Textarea
-                        value={day.detailedDescription || ""}
-                        onChange={(e) => updateDayDescription(dayIndex, e.target.value, true)}
-                        placeholder="Enter detailed description for this day..."
-                        className="resize-none"
-                        rows={3}
-                      />
-                    </div>
-                  ) : (
-                    <div className="mt-2">
-                      <Input
-                        value={day.description || ""}
-                        onChange={(e) => updateDayDescription(dayIndex, e.target.value)}
-                        placeholder="Enter brief description..."
-                        className="border-none p-0 bg-transparent"
-                      />
-                    </div>
+                  {!collapsedDays.has(dayIndex) && (
+                    <CardContent>
+                      <div className="mt-4 space-y-4">
+                        {day.events.map((event, eventIndex) => (
+                          <EventCard
+                            key={`${event.id}-${dayIndex}-${eventIndex}`}
+                            event={event}
+                            isDetailedView={isDetailedView}
+                            onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
+                            onEdit={() => handleEditEvent(dayIndex, eventIndex)}
+                            onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
+                            onMealChange={(meal, value) => {
+                              // meals property is not part of IItineraryEvent, so this is removed
+                            }}
+                            onUpdate={(updatedEvent) => {
+                              const newDays = [...days]
+                              newDays[dayIndex].events[eventIndex] = {
+                                ...updatedEvent,
+                                highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
+                                listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
+                              }
+                              setDays(newDays)
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </CardContent>
                   )}
-
-                  <div className="mt-4 space-y-4">
-                    {day.events.map((event, eventIndex) => (
-                      <EventCard
-                        key={`${event.id}-${dayIndex}-${eventIndex}`}
-                        event={event}
-                        isDetailedView={isDetailedView}
-                        onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
-                        onEdit={() => handleEditEvent(dayIndex, eventIndex)}
-                        onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
-                        onMealChange={(meal, value) => {
-                          // meals property is not part of IItineraryEvent, so this is removed
-                        }}
-                        onUpdate={(updatedEvent) => {
-                          const newDays = [...days]
-                          newDays[dayIndex].events[eventIndex] = {
-                            ...updatedEvent,
-                            highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
-                            listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
-                          }
-                          setDays(newDays)
-                        }}
-                      />
-                    ))}
-                  </div>
-                </CardContent>
-              )}
             </Card>
           ))}
         </div>
