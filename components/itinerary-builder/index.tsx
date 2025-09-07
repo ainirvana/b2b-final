@@ -208,6 +208,9 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
   const [gallery, setGallery] = useState<IGalleryItem[]>([])
   const [collapsedDays, setCollapsedDays] = useState<Set<number>>(new Set())
 
+  const [highlightOptions, setHighlightOptions] = useState<string[]>([])
+  const [newHighlight, setNewHighlight] = useState<string>("")
+
   // Load existing itinerary data when editing
   useEffect(() => {
     const loadItineraryData = async () => {
@@ -294,6 +297,45 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
   const usedLibraryItems = new Set(
     days.flatMap((day) => day.events.filter((event) => event.libraryItemId).map((event) => event.libraryItemId)),
   ).size
+
+  const toggleHighlight = (highlight: string) => {
+    if (highlightOptions.includes(highlight)) {
+      if (days.some(day => day.events.some(event => event.highlights?.includes(highlight)))) {
+        // Remove highlight from all events
+        const newDays = days.map(day => {
+          const newEvents = day.events.map(event => {
+            const highlights = event.highlights || []
+            return {
+              ...event,
+              highlights: highlights.filter(h => h !== highlight),
+            }
+          })
+          return { ...day, events: newEvents }
+        })
+        setDays(newDays)
+      } else {
+        // Add highlight to all events
+        const newDays = days.map(day => {
+          const newEvents = day.events.map(event => {
+            const highlights = event.highlights || []
+            return {
+              ...event,
+              highlights: [...highlights, highlight],
+            }
+          })
+          return { ...day, events: newEvents }
+        })
+        setDays(newDays)
+      }
+    }
+  }
+
+  const addHighlight = (highlight: string) => {
+    if (!highlightOptions.includes(highlight)) {
+      setHighlightOptions([...highlightOptions, highlight])
+      setNewHighlight("")
+    }
+  }
 
   const handleDragStart = (
     type: "component" | "event" | "library-item",
@@ -830,81 +872,58 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
             className="min-h-[60px] border-none resize-none p-0"
             aria-label="Itinerary description"
           />
-          <div className="flex flex-wrap gap-2" aria-label="Highlights">
-            {[
-              "Daily Breakfast",
-              "Cab",
-              "Travel Insurance",
-              "Sightseeing",
-              "Hotel",
-              "Visa",
-              "Wildlife",
-              "Beach",
-              "Nature",
-              "Hill Station",
-              "Water Activities",
-            ].map((highlight) => (
-              <Badge
-                key={highlight}
-                variant="outline"
-                className={`cursor-pointer ${
-                  days.some(day =>
-                    day.events.some(event => event.highlights?.includes(highlight))
-                  )
-                    ? 'bg-[#2D7CEA] text-white'
-                    : 'bg-white text-gray-600'
-                }`}
-                onClick={() => {
-                  // Toggle highlight in all days' events (simplified for demo)
-                  const newDays = days.map(day => {
-                    const newEvents = day.events.map(event => {
-                      const highlights = event.highlights || []
-                      if (highlights.includes(highlight)) {
-                        return {
-                          ...event,
-                          highlights: highlights.filter(h => h !== highlight),
-                        }
-                      } else {
-                        return {
-                          ...event,
-                          highlights: [...highlights, highlight],
-                        }
-                      }
-                    })
-                    return { ...day, events: newEvents }
-                  })
-                  setDays(newDays)
-                }}
-                role="button"
-                tabIndex={0}
+          <div>
+            <h3 className="font-semibold mb-2">Highlights</h3>
+            <div className="flex flex-wrap gap-2 mb-2" aria-label="Highlights">
+              {highlightOptions.map((highlight) => (
+                <Badge
+                  key={highlight}
+                  variant="outline"
+                  className={`cursor-pointer ${
+                    days.some(day =>
+                      day.events.some(event => event.highlights?.includes(highlight))
+                    )
+                      ? 'bg-[#2D7CEA] text-white'
+                      : 'bg-white text-gray-600'
+                  }`}
+                  onClick={() => toggleHighlight(highlight)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      toggleHighlight(highlight)
+                    }
+                  }}
+                >
+                  {highlight}
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Add highlight"
+                value={newHighlight}
+                onChange={(e) => setNewHighlight(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+                  if (e.key === 'Enter' && newHighlight.trim()) {
                     e.preventDefault()
-                    // Same toggle logic as onClick
-                    const newDays = days.map(day => {
-                      const newEvents = day.events.map(event => {
-                        const highlights = event.highlights || []
-                        if (highlights.includes(highlight)) {
-                          return {
-                            ...event,
-                            highlights: highlights.filter(h => h !== highlight),
-                          }
-                        } else {
-                          return {
-                            ...event,
-                            highlights: [...highlights, highlight],
-                          }
-                        }
-                      })
-                      return { ...day, events: newEvents }
-                    })
-                    setDays(newDays)
+                    addHighlight(newHighlight.trim())
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button
+                onClick={() => {
+                  if (newHighlight.trim()) {
+                    addHighlight(newHighlight.trim())
                   }
                 }}
               >
-                {highlight}
-              </Badge>
-            ))}
+                Add
+              </Button>
+            </div>
           </div>
           {/* Detailed View Toggle */}
           <div className="flex items-center gap-2 mt-4">
