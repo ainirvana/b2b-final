@@ -975,18 +975,16 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
                     onTitleChange={(newTitle) => updateDayTitle(dayIndex, newTitle)}
                     onNightsChange={(newNights) => updateDayNights(dayIndex, newNights)}
                   />
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => toggleDayCollapse(dayIndex)}>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => toggleDayCollapse(dayIndex)} className="p-2">
                       {collapsedDays.has(dayIndex) ? (
-                        <ChevronDown className="h-4 w-4 mr-1" />
+                        <ChevronDown className="h-4 w-4" />
                       ) : (
-                        <ChevronUp className="h-4 w-4 mr-1" />
+                        <ChevronUp className="h-4 w-4" />
                       )}
-                      {collapsedDays.has(dayIndex) ? "Expand" : "Collapse"}
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setIsDetailedView(!isDetailedView)}>
-                      <Eye className="h-4 w-4 mr-1" />
-                      {isDetailedView ? "Hide Details" : "Show Details"}
+                    <Button variant="ghost" size="sm" onClick={() => setIsDetailedView(!isDetailedView)} className="p-2">
+                      <Eye className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
