@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import {
   ArrowLeft,
   Plus,
@@ -207,6 +208,9 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
   const [gallery, setGallery] = useState<IGalleryItem[]>([])
   const [collapsedDays, setCollapsedDays] = useState<Set<number>>(new Set())
 
+  const [highlightOptions, setHighlightOptions] = useState<string[]>([])
+  const [newHighlight, setNewHighlight] = useState<string>("")
+
   // Load existing itinerary data when editing
   useEffect(() => {
     const loadItineraryData = async () => {
@@ -293,6 +297,45 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
   const usedLibraryItems = new Set(
     days.flatMap((day) => day.events.filter((event) => event.libraryItemId).map((event) => event.libraryItemId)),
   ).size
+
+  const toggleHighlight = (highlight: string) => {
+    if (highlightOptions.includes(highlight)) {
+      if (days.some(day => day.events.some(event => event.highlights?.includes(highlight)))) {
+        // Remove highlight from all events
+        const newDays = days.map(day => {
+          const newEvents = day.events.map(event => {
+            const highlights = event.highlights || []
+            return {
+              ...event,
+              highlights: highlights.filter(h => h !== highlight),
+            }
+          })
+          return { ...day, events: newEvents }
+        })
+        setDays(newDays)
+      } else {
+        // Add highlight to all events
+        const newDays = days.map(day => {
+          const newEvents = day.events.map(event => {
+            const highlights = event.highlights || []
+            return {
+              ...event,
+              highlights: [...highlights, highlight],
+            }
+          })
+          return { ...day, events: newEvents }
+        })
+        setDays(newDays)
+      }
+    }
+  }
+
+  const addHighlight = (highlight: string) => {
+    if (!highlightOptions.includes(highlight)) {
+      setHighlightOptions([...highlightOptions, highlight])
+      setNewHighlight("")
+    }
+  }
 
   const handleDragStart = (
     type: "component" | "event" | "library-item",
@@ -801,52 +844,97 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
     <div className="flex h-screen">
       <div className="flex-1 p-6 overflow-y-auto h-full">
         {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-sm border mb-8 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs text-gray-500 font-medium" htmlFor="itinerary-title">Itinerary Name</label>
-              <Input
-                id="itinerary-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="text-2xl font-bold border-none p-0 h-auto bg-transparent focus:ring-0 focus:border-transparent"
-                placeholder="Enter Itinerary Title"
-                autoComplete="off"
-              />
-              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 mt-2">
-                <div className="flex items-center gap-2 mb-2 sm:mb-0">
-                  <label className="text-xs text-gray-400 font-medium" htmlFor="product-id">Product ID:</label>
-                  <Input
-                    id="product-id"
-                    value={productId}
-                    onChange={(e) => setProductId(e.target.value)}
-                    className="text-xs border-none p-0 h-auto bg-transparent font-mono text-gray-500 w-36 focus:ring-0 focus:border-transparent"
-                    placeholder="Product ID"
-                    readOnly
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs text-gray-500 font-medium" htmlFor="itinerary-description">Itinerary Description</label>
-                  <Textarea
-                    id="itinerary-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Enter itinerary description..."
-                    className="resize-none"
-                    rows={2}
-                  />
-                </div>
-              </div>
-              {/* Country Checkbox List removed */}
+        <div className="bg-white rounded-xl shadow-sm border mb-8 p-6 flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-gray-500" />
+            <Input
+              value={countries[0] || ""}
+              onChange={(e) => setCountries([e.target.value])}
+              className="max-w-[200px] h-8 text-gray-700"
+              placeholder="Enter destination..."
+              autoComplete="off"
+            />
+          </div>
+          <div className="bg-[#E8F3FF] text-[#2D7CEA] border-[#2D7CEA] border rounded-md flex items-center px-3 py-1 text-sm font-semibold select-none w-max">
+            {days.length} Days &nbsp;•&nbsp; {days.length > 0 ? days.length - 1 : 0} Nights
+          </div>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter itinerary title..."
+            className="text-lg font-semibold border-none p-0 h-auto bg-transparent focus:ring-0 focus:border-transparent"
+            aria-label="Itinerary title"
+          />
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter itinerary description..."
+            className="min-h-[60px] border-none resize-none p-0"
+            aria-label="Itinerary description"
+          />
+          <div>
+            <h3 className="font-semibold mb-2">Highlights</h3>
+            <div className="flex flex-wrap gap-2 mb-2" aria-label="Highlights">
+              {highlightOptions.map((highlight) => (
+                <Badge
+                  key={highlight}
+                  variant="outline"
+                  className={`cursor-pointer ${
+                    days.some(day =>
+                      day.events.some(event => event.highlights?.includes(highlight))
+                    )
+                      ? 'bg-[#2D7CEA] text-white'
+                      : 'bg-white text-gray-600'
+                  }`}
+                  onClick={() => toggleHighlight(highlight)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      toggleHighlight(highlight)
+                    }
+                  }}
+                >
+                  {highlight}
+                </Badge>
+              ))}
             </div>
-            {/* Detailed View Toggle */}
-            <div className="flex items-center gap-2 mt-4">
-              <Switch checked={isDetailedView} onCheckedChange={setIsDetailedView} />
-              <span className="text-sm font-medium text-gray-700">{isDetailedView ? "Detailed View" : "Summary View"}</span>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="Add highlight"
+                value={newHighlight}
+                onChange={(e) => setNewHighlight(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newHighlight.trim()) {
+                    e.preventDefault()
+                    addHighlight(newHighlight.trim())
+                  }
+                }}
+                className="flex-1"
+              />
+              <Button
+                onClick={() => {
+                  if (newHighlight.trim()) {
+                    addHighlight(newHighlight.trim())
+                  }
+                }}
+              >
+                Add
+              </Button>
             </div>
           </div>
-          {/* Action Buttons */}
-          <div className="flex flex-wrap justify-between items-center mt-4 mb-6 gap-2">
+          {/* Detailed View Toggle */}
+          <div className="flex items-center gap-2 mt-4">
+            <Switch checked={isDetailedView} onCheckedChange={setIsDetailedView} />
+            <span className="text-sm font-medium text-gray-700">{isDetailedView ? "Detailed View" : "Summary View"}</span>
+          </div>
+        </div>
+
+        {/* Action Buttons Block */}
+        <div className="bg-white rounded-xl shadow-sm border mb-8 p-6">
+          <div className="flex flex-wrap justify-between items-center gap-2">
             {/* Left Buttons */}
             <div className="flex space-x-2 flex-wrap">
               <Button variant="default" className="font-semibold whitespace-nowrap">
@@ -968,75 +1056,50 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
                   <DayTitle
                     day={day.day}
                     title={day.title}
-                    nights={day.nights}
                     onTitleChange={(newTitle) => updateDayTitle(dayIndex, newTitle)}
-                    onNightsChange={(newNights) => updateDayNights(dayIndex, newNights)}
                   />
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => toggleDayCollapse(dayIndex)}>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => toggleDayCollapse(dayIndex)} className="p-2">
                       {collapsedDays.has(dayIndex) ? (
-                        <ChevronDown className="h-4 w-4 mr-1" />
+                        <ChevronDown className="h-4 w-4" />
                       ) : (
-                        <ChevronUp className="h-4 w-4 mr-1" />
+                        <ChevronUp className="h-4 w-4" />
                       )}
-                      {collapsedDays.has(dayIndex) ? "Expand" : "Collapse"}
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setIsDetailedView(!isDetailedView)}>
-                      <Eye className="h-4 w-4 mr-1" />
-                      {isDetailedView ? "Hide Details" : "Show Details"}
+                    <Button variant="ghost" size="sm" onClick={() => setIsDetailedView(!isDetailedView)} className="p-2">
+                      <Eye className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              {!collapsedDays.has(dayIndex) && (
-                <CardContent>
-                  {isDetailedView ? (
-                    <div className="space-y-4 mt-4">
-                      <Textarea
-                        value={day.detailedDescription || ""}
-                        onChange={(e) => updateDayDescription(dayIndex, e.target.value, true)}
-                        placeholder="Enter detailed description for this day..."
-                        className="resize-none"
-                        rows={3}
-                      />
-                    </div>
-                  ) : (
-                    <div className="mt-2">
-                      <Input
-                        value={day.description || ""}
-                        onChange={(e) => updateDayDescription(dayIndex, e.target.value)}
-                        placeholder="Enter brief description..."
-                        className="border-none p-0 bg-transparent"
-                      />
-                    </div>
+                  {!collapsedDays.has(dayIndex) && (
+                    <CardContent>
+                      <div className="mt-4 space-y-4">
+                        {day.events.map((event, eventIndex) => (
+                          <EventCard
+                            key={`${event.id}-${dayIndex}-${eventIndex}`}
+                            event={event}
+                            isDetailedView={isDetailedView}
+                            onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
+                            onEdit={() => handleEditEvent(dayIndex, eventIndex)}
+                            onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
+                            onMealChange={(meal, value) => {
+                              // meals property is not part of IItineraryEvent, so this is removed
+                            }}
+                            onUpdate={(updatedEvent) => {
+                              const newDays = [...days]
+                              newDays[dayIndex].events[eventIndex] = {
+                                ...updatedEvent,
+                                highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
+                                listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
+                              }
+                              setDays(newDays)
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </CardContent>
                   )}
-
-                  <div className="mt-4 space-y-4">
-                    {day.events.map((event, eventIndex) => (
-                      <EventCard
-                        key={`${event.id}-${dayIndex}-${eventIndex}`}
-                        event={event}
-                        isDetailedView={isDetailedView}
-                        onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
-                        onEdit={() => handleEditEvent(dayIndex, eventIndex)}
-                        onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
-                        onMealChange={(meal, value) => {
-                          // meals property is not part of IItineraryEvent, so this is removed
-                        }}
-                        onUpdate={(updatedEvent) => {
-                          const newDays = [...days]
-                          newDays[dayIndex].events[eventIndex] = {
-                            ...updatedEvent,
-                            highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
-                            listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
-                          }
-                          setDays(newDays)
-                        }}
-                      />
-                    ))}
-                  </div>
-                </CardContent>
-              )}
             </Card>
           ))}
         </div>

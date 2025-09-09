@@ -117,24 +117,8 @@ export function ItineraryHeader({
             />
           </div>
           <div className="flex items-center gap-2">
-            <div className="bg-[#E8F3FF] text-[#2D7CEA] border-[#2D7CEA] border rounded-md flex items-center">
-              <Input
-                type="number"
-                value={days}
-                onChange={(e) => onDaysChange(Number(e.target.value))}
-                className="w-16 h-8 border-none text-center bg-transparent"
-                min={1}
-              />
-              <span className="px-1">Days</span>
-              <span className="px-1">•</span>
-              <Input
-                type="number"
-                value={nights}
-                onChange={(e) => onNightsChange(Number(e.target.value))}
-                className="w-16 h-8 border-none text-center bg-transparent"
-                min={0}
-              />
-              <span className="px-2">Nights</span>
+            <div className="bg-[#E8F3FF] text-[#2D7CEA] border-[#2D7CEA] border rounded-md flex items-center px-3 py-1 text-sm font-semibold select-none">
+              {days} Days &nbsp;•&nbsp; {days > 0 ? days - 1 : 0} Nights
             </div>
           </div>
         </div>
@@ -195,7 +179,6 @@ export function ItineraryHeader({
                         {/* Highlights */}
                         {highlights.length > 0 && (
                           <div style={{ marginBottom: '2rem' }}>
-                            <h2 style={{ fontSize: '18px', marginBottom: '1rem' }}>Highlights</h2>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                               {highlights.map((highlight, idx) => (
                                 <span key={idx} style={{
@@ -344,20 +327,22 @@ export function ItineraryHeader({
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="South of Thailand - Krabi, Phuket"
-          className="text-xl font-semibold h-12 border-none p-0"
+          className="text-lg font-semibold h-12 border-none p-0"
+          style={{ fontWeight: 600 }}
+          aria-label="Itinerary title"
         />
         <Textarea
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Enter itinerary description..."
           className="min-h-[60px] border-none resize-none p-0"
+          aria-label="Itinerary description"
         />
       </div>
 
       {/* Highlights */}
       <div className="space-y-2">
-        <h3 className="font-medium">Highlights</h3>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" aria-label="Highlights">
           {HIGHLIGHT_OPTIONS.map((highlight) => (
             <Badge
               key={highlight}
@@ -368,6 +353,14 @@ export function ItineraryHeader({
                   : 'bg-white text-gray-600'
               }`}
               onClick={() => toggleHighlight(highlight)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  toggleHighlight(highlight)
+                }
+              }}
             >
               {highlight}
             </Badge>
