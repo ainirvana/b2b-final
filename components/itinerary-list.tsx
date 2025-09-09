@@ -5,13 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Calendar, MapPin, Clock, Edit, Package, ShoppingCart, FileText, Users, DollarSign } from "lucide-react"
+import { Plus, Calendar, MapPin, Clock, Edit, Package, ShoppingCart, FileText, Users, DollarSign, Share2, Copy } from "lucide-react"
 import { IItinerary } from "@/models/Itinerary"
+import { useToast } from "@/hooks/use-toast"
 
 interface ItineraryListProps {
   onCreateNew: () => void
   onViewItinerary: (id: string) => void
   onEditItinerary: (id: string) => void
+  onShareItinerary?: (id: string) => void
 }
 
 const TYPE_CONFIG = {
@@ -37,10 +39,11 @@ const TYPE_CONFIG = {
   },
 }
 
-export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary }: ItineraryListProps) {
+export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, onShareItinerary }: ItineraryListProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [itineraries, setItineraries] = useState<IItinerary[]>([])
   const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
   // Load itineraries
   useEffect(() => {
@@ -68,6 +71,50 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary }:
         setLoading(false);
       });
   }, [])
+
+  const createQuickShare = async (itinerary: IItinerary) => {
+    try {
+      const response = await fetch("/api/shares", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title: `${itinerary.title} - Public Share`,
+          description: itinerary.description,
+          shareType: "individual",
+          itineraryId: itinerary._id,
+          settings: {
+            allowComments: false,
+            showPricing: true,
+            showContactInfo: true
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to create share")
+      }
+
+      const result = await response.json()
+      const shareUrl = result.publicUrl
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(shareUrl)
+      
+      toast({
+        title: "Share Link Created",
+        description: "Public share link copied to clipboard!"
+      })
+    } catch (err) {
+      console.error("Error creating quick share:", err)
+      toast({
+        title: "Share Failed",
+        description: "Failed to create share link. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }
 
   const filteredItineraries = itineraries.filter(itinerary => 
     itinerary.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -221,6 +268,14 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary }:
                       <Button variant="outline" size="sm" onClick={() => onEditItinerary(itinerary._id!)}>
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => createQuickShare(itinerary)}
+                        title="Create quick public share"
+                      >
+                        <Share2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

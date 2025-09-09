@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Receipt,
   FileText,
+  Share2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -38,6 +39,7 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
     { id: "itinerary", label: "Itinerary", icon: Package },
     { id: "library", label: "Library", icon: BookOpen },
     { id: "saved", label: "Saved", icon: Heart },
+    { id: "shares", label: "Shares", icon: Share2 },
     { id: "rfqs", label: "RFQs", icon: MessageSquare },
     { id: "cart", label: "Cart", icon: ShoppingCart },
     { id: "invoice", label: "Invoice", icon: Receipt },
