@@ -1,30 +1,25 @@
-# Itinerary Builder Summary View Implementation
+# Itinerary Builder All Inclusions View Implementation
 
-## Completed Tasks
-- [x] Updated EventCard component to pass isDetailedView prop to event subcomponents
-- [x] Modified FlightEvent to show only "fromCity ⟶ toCity" in summary view
-- [x] Modified HotelEvent to show only hotel name in summary view
-- [x] Modified ActivityEvent to show only activity name in summary view
-- [x] Modified TransferEvent to show only "fromLocation → toLocation" in summary view
-- [x] Verified ImageEvent already handles isDetailedView correctly
+## Current Task: Implement All Inclusions Button Functionality
 
-## Next Steps
-- [ ] Test the summary and detailed view toggle functionality
-- [ ] Verify that detailed view remains unchanged
+## Plan
+- [ ] Add view mode state to track current view (itinerary vs all-inclusions)
+- [ ] Add click handlers for Itinerary and All Inclusions buttons
+- [ ] Create grouped view rendering logic that combines events by category
+- [ ] Display events in category sections without day structure
+- [ ] Ensure existing itinerary view remains unchanged
+
+## Implementation Details
+- **All Inclusions View**: Groups all events by category (flight, hotel, activity, transfer, etc.)
+- **Category Sections**: Each category gets its own section with all related events
+- **No Day Cards**: Removes day-based structure, shows all components together
+- **Preserve Existing**: Keep current itinerary mode exactly as is
+
+## Files to Modify
+- components/itinerary-builder/index.tsx
+
+## Next Steps After Implementation
+- [ ] Test the All Inclusions view functionality
+- [ ] Verify that itinerary view remains unchanged
 - [ ] Check for any TypeScript errors or runtime issues
 - [ ] Ensure proper styling and layout in both views
-
-## Summary View Behavior
-- **Flight**: Shows "fromCity ⟶ toCity" with plane icon
-- **Hotel**: Shows hotel name with hotel icon
-- **Activity**: Shows activity name with camera icon
-- **Transfer**: Shows "fromLocation → toLocation" with car icon
-- **Image**: Shows image with title (already implemented)
-- **Other components**: Use existing summary rendering in EventCard
-
-## Files Modified
-- components/event-card.tsx
-- components/itinerary-builder/flight-event.tsx
-- components/itinerary-builder/hotel-event.tsx
-- components/itinerary-builder/activity-event.tsx
-- components/itinerary-builder/transfer-event.tsx
