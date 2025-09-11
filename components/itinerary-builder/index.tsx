@@ -940,23 +940,6 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
               <Button variant="default" className="font-semibold whitespace-nowrap">
                 Itinerary
               </Button>
-              <Button variant="outline" className="flex items-center space-x-1 whitespace-nowrap">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4.5v15m7.5-7.5h-15"
-                  />
-                </svg>
-                <span>City Level View</span>
-              </Button>
               <Button variant="outline" className="font-semibold whitespace-nowrap">
                 All Inclusions
               </Button>
