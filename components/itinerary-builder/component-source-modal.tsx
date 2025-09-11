@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Plus, Library, Star, Clock, Filter, Copy, Heart } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLibrary } from "@/hooks/use-library"
 import { LibraryToItineraryConverter } from "@/lib/library-converter"
 
@@ -227,7 +228,7 @@ export function ComponentSourceModal({
         case "name":
           return a.title.localeCompare(b.title)
         case "rating":
-          return (b.rating || 0) - (a.rating || 0)
+          return (b.rating || 0) - (a.rating || 0) // Note: rating might not exist on LibraryItem type
         case "recent":
           const aIndex = recentComponents.indexOf(a._id)
           const bIndex = recentComponents.indexOf(b._id)
@@ -448,7 +449,7 @@ export function ComponentSourceModal({
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <Select value={filterBy} onValueChange={setFilterBy}>
+                <Select value={filterBy} onValueChange={(value) => setFilterBy(value as "all" | "popular" | "recent" | "favorites")}>
                   <SelectTrigger className="w-40">
                     <Filter className="h-4 w-4 mr-2" />
                     <SelectValue />
@@ -538,130 +539,157 @@ export function ComponentSourceModal({
                 </Button>
               </div>
 
-              {/* Search and Filters */}
-              <div className="flex gap-4 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder={`Search ${componentTitle.toLowerCase()} items...`}
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name">Name</SelectItem>
-                    <SelectItem value="price">Price</SelectItem>
-                    <SelectItem value="rating">Rating</SelectItem>
-                    <SelectItem value="recent">Recent</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={filterBy} onValueChange={setFilterBy}>
-                  <SelectTrigger className="w-32">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Items</SelectItem>
-                    <SelectItem value="favorites">Favorites</SelectItem>
-                    <SelectItem value="recent">Recent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              <Tabs defaultValue="my-libraries" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="my-libraries" className="text-sm">
+                    <Library className="h-4 w-4 mr-2" />
+                    My Libraries
+                  </TabsTrigger>
+                  <TabsTrigger value="global-libraries" className="text-sm">
+                    <Library className="h-4 w-4 mr-2" />
+                    Global Libraries
+                  </TabsTrigger>
+                </TabsList>
 
-            <div className="flex-1 overflow-auto p-4">
-              {filteredLibraryItems.length === 0 ? (
-                <div className="text-center py-12">
-                  <Library className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-2">No {componentTitle.toLowerCase()} items found in library</p>
-                  <p className="text-sm text-gray-400">Try creating one manually instead</p>
-                  <Button variant="outline" className="mt-4 bg-transparent" onClick={handleSelectManual}>
-                    Create Manually
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4">
-                  {filteredLibraryItems.map((item) => {
-                    const validation = LibraryToItineraryConverter.validateLibraryItemForItinerary(item)
-                    const previewSummary = LibraryToItineraryConverter.getPreviewSummary(item)
-                    const isFavorite = favoriteComponents.includes(item._id)
-                    const isRecent = recentComponents.includes(item._id)
+                <TabsContent value="my-libraries" className="mt-0">
+                  {/* Search and Filters */}
+                  <div className="flex gap-4 mb-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder={`Search ${componentTitle.toLowerCase()} items...`}
+                        className="pl-10"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <Select value={sortBy} onValueChange={(value) => setSortBy(value as "name" | "price" | "rating" | "recent")}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name">Name</SelectItem>
+                        <SelectItem value="price">Price</SelectItem>
+                        <SelectItem value="rating">Rating</SelectItem>
+                        <SelectItem value="recent">Recent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={filterBy} onValueChange={(value) => setFilterBy(value as "all" | "popular" | "recent" | "favorites")}>
+                      <SelectTrigger className="w-32">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Items</SelectItem>
+                        <SelectItem value="favorites">Favorites</SelectItem>
+                        <SelectItem value="recent">Recent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    return (
-                      <Card
-                        key={item._id}
-                        className={`${getColor(item.category)} cursor-pointer hover:shadow-md transition-all ${!validation.isValid ? "opacity-75 border-yellow-300" : ""}`}
-                        onClick={() => handleSelectLibraryItem(item)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-start space-x-3">
-                            <div className="text-2xl">{getIcon(item.category)}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between">
-                                <h4 className="font-semibold text-lg text-gray-900 truncate">{item.title}</h4>
-                                <div className="flex items-center gap-2 ml-2">
-                                  <button
-                                    onClick={(e) => toggleFavorite(item._id, e)}
-                                    className={`p-1 rounded-full hover:bg-white/50 transition-colors ${
-                                      isFavorite ? "text-red-500" : "text-gray-400"
-                                    }`}
-                                  >
-                                    <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
-                                  </button>
-                                  {item.basePrice && (
-                                    <Badge variant="secondary">
-                                      {item.currency} {item.basePrice}
-                                    </Badge>
-                                  )}
+                  <div className="flex-1 overflow-auto">
+                    {filteredLibraryItems.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Library className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-2">No {componentTitle.toLowerCase()} items found in library</p>
+                        <p className="text-sm text-gray-400">Try creating one manually instead</p>
+                        <Button variant="outline" className="mt-4 bg-transparent" onClick={handleSelectManual}>
+                          Create Manually
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4 p-4">
+                        {filteredLibraryItems.map((item) => {
+                          const validation = LibraryToItineraryConverter.validateLibraryItemForItinerary(item)
+                          const previewSummary = LibraryToItineraryConverter.getPreviewSummary(item)
+                          const isFavorite = favoriteComponents.includes(item._id)
+                          const isRecent = recentComponents.includes(item._id)
+
+                          return (
+                            <Card
+                              key={item._id}
+                              className={`${getColor(item.category)} cursor-pointer hover:shadow-md transition-all ${!validation.isValid ? "opacity-75 border-yellow-300" : ""}`}
+                              onClick={() => handleSelectLibraryItem(item)}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex items-start space-x-3">
+                                  <div className="text-2xl">{getIcon(item.category)}</div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between">
+                                      <h4 className="font-semibold text-lg text-gray-900 truncate">{item.title}</h4>
+                                      <div className="flex items-center gap-2 ml-2">
+                                        <button
+                                          onClick={(e) => toggleFavorite(item._id, e)}
+                                          className={`p-1 rounded-full hover:bg-white/50 transition-colors ${
+                                            isFavorite ? "text-red-500" : "text-gray-400"
+                                          }`}
+                                        >
+                                          <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
+                                        </button>
+                                        {item.basePrice && (
+                                          <Badge variant="secondary">
+                                            {item.currency} {item.basePrice}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{previewSummary}</p>
+
+                                    <div className="flex items-center justify-between mt-3">
+                                      <div className="flex flex-wrap gap-1">
+                                        {isRecent && (
+                                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                            <Clock className="h-3 w-3 mr-1" />
+                                            Recent
+                                          </Badge>
+                                        )}
+                                        {item.city && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {item.city}
+                                          </Badge>
+                                        )}
+                                        {item.subCategory && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            {item.subCategory}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <Button size="sm">Select This Item</Button>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
 
-                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">{previewSummary}</p>
+                                {item.multimedia && item.multimedia.length > 0 && (
+                                  <div className="mt-3">
+                                    <img
+                                      src={item.multimedia[0] || "/placeholder.svg"}
+                                      alt={item.title}
+                                      className="w-full h-32 object-cover rounded border"
+                                    />
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
 
-                              <div className="flex items-center justify-between mt-3">
-                                <div className="flex flex-wrap gap-1">
-                                  {isRecent && (
-                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                      <Clock className="h-3 w-3 mr-1" />
-                                      Recent
-                                    </Badge>
-                                  )}
-                                  {item.city && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {item.city}
-                                    </Badge>
-                                  )}
-                                  {item.subCategory && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {item.subCategory}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <Button size="sm">Select This Item</Button>
-                              </div>
-                            </div>
-                          </div>
-
-                          {item.multimedia && item.multimedia.length > 0 && (
-                            <div className="mt-3">
-                              <img
-                                src={item.multimedia[0] || "/placeholder.svg"}
-                                alt={item.title}
-                                className="w-full h-32 object-cover rounded border"
-                              />
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
-              )}
+                <TabsContent value="global-libraries" className="mt-0">
+                  <div className="flex items-center justify-center py-16">
+                    <div className="text-center">
+                      <Library className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-500 mb-2">Global Libraries</h3>
+                      <p className="text-sm text-gray-400">
+                        Coming soon! Access to global library items from all agencies.
+                      </p>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         )}

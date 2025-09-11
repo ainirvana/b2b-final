@@ -24,6 +24,7 @@ import {
   Search,
   X
 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ICartItem } from "@/models/Itinerary"
 import { useToast } from "@/hooks/use-toast"
 import { useLibrary } from "@/hooks/use-library"
@@ -364,56 +365,83 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
                 <X className="h-5 w-5" />
               </Button>
             </div>
-            <div className="flex gap-4 mb-4">
-              <Input
-                placeholder="Search library..."
-                value={librarySearchQuery}
-                onChange={(e) => setLibrarySearchQuery(e.target.value)}
-                className="flex-grow"
-              />
-              <select
-                value={libraryCategoryFilter}
-                onChange={(e) => setLibraryCategoryFilter(e.target.value)}
-                className="p-2 border rounded-md"
-              >
-                <option value="all">All Categories</option>
-                <option value="flight">Flight</option>
-                <option value="hotel">Hotel</option>
-                <option value="activity">Activity</option>
-                <option value="transfer">Transfer</option>
-                <option value="meal">Meal</option>
-                <option value="others">Others</option>
-              </select>
-            </div>
-            <div className="max-h-96 overflow-y-auto border rounded-md p-2">
-              {libraryLoading ? (
-                <p>Loading library items...</p>
-              ) : filteredLibraryItems.length === 0 ? (
-                <p>No items found.</p>
-              ) : (
-                filteredLibraryItems.map(item => (
-                  <div
-                    key={item._id}
-                    className={`flex items-center justify-between p-2 border-b last:border-b-0 cursor-pointer ${
-                      selectedLibraryItems.includes(item._id) ? "bg-blue-100" : ""
-                    }`}
-                    onClick={() => toggleLibraryItemSelection(item._id)}
+            <Tabs defaultValue="my-libraries" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="my-libraries" className="text-sm">
+                  <Library className="h-4 w-4 mr-2" />
+                  My Libraries
+                </TabsTrigger>
+                <TabsTrigger value="global-libraries" className="text-sm">
+                  <Library className="h-4 w-4 mr-2" />
+                  Global Libraries
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="my-libraries" className="mt-0">
+                <div className="flex gap-4 mb-4">
+                  <Input
+                    placeholder="Search library..."
+                    value={librarySearchQuery}
+                    onChange={(e) => setLibrarySearchQuery(e.target.value)}
+                    className="flex-grow"
+                  />
+                  <select
+                    value={libraryCategoryFilter}
+                    onChange={(e) => setLibraryCategoryFilter(e.target.value)}
+                    className="p-2 border rounded-md"
                   >
-                    <div>
-                      <p className="font-medium">{item.title}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.category} - {item.city}, {item.country}
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={selectedLibraryItems.includes(item._id)}
-                      readOnly
-                    />
+                    <option value="all">All Categories</option>
+                    <option value="flight">Flight</option>
+                    <option value="hotel">Hotel</option>
+                    <option value="activity">Activity</option>
+                    <option value="transfer">Transfer</option>
+                    <option value="meal">Meal</option>
+                    <option value="others">Others</option>
+                  </select>
+                </div>
+                <div className="max-h-96 overflow-y-auto border rounded-md p-2">
+                  {libraryLoading ? (
+                    <p>Loading library items...</p>
+                  ) : filteredLibraryItems.length === 0 ? (
+                    <p>No items found.</p>
+                  ) : (
+                    filteredLibraryItems.map(item => (
+                      <div
+                        key={item._id}
+                        className={`flex items-center justify-between p-2 border-b last:border-b-0 cursor-pointer ${
+                          selectedLibraryItems.includes(item._id) ? "bg-blue-100" : ""
+                        }`}
+                        onClick={() => toggleLibraryItemSelection(item._id)}
+                      >
+                        <div>
+                          <p className="font-medium">{item.title}</p>
+                          <p className="text-xs text-gray-500">
+                            {item.category} - {item.city}, {item.country}
+                          </p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={selectedLibraryItems.includes(item._id)}
+                          readOnly
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="global-libraries" className="mt-0">
+                <div className="flex items-center justify-center py-16">
+                  <div className="text-center">
+                    <Library className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-500 mb-2">Global Libraries</h3>
+                    <p className="text-sm text-gray-400">
+                      Coming soon! Access to global library items from all agencies.
+                    </p>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+              </TabsContent>
+            </Tabs>
             <div className="flex justify-end mt-4 gap-2">
               <Button variant="outline" onClick={() => setShowLibraryImportModal(false)}>
                 Cancel
