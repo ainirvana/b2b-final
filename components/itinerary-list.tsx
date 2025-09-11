@@ -175,10 +175,25 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
             const TypeIcon = typeConfig.icon
 
             return (
-              <Card 
+              <Card
                 key={itinerary._id}
                 className="hover:shadow-md transition-shadow"
               >
+                {/* Preview Photo */}
+                {itinerary.gallery && itinerary.gallery.length > 0 && (
+                  <div className="relative mb-3">
+                    {(() => {
+                      const firstImage = itinerary.gallery.find(item => item.type === "image")
+                      return firstImage ? (
+                        <img
+                          src={firstImage.url}
+                          alt={firstImage.altText || itinerary.title}
+                          className="w-full h-32 object-cover rounded-t-lg"
+                        />
+                      ) : null
+                    })()}
+                  </div>
+                )}
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

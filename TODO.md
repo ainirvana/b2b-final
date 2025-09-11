@@ -1,25 +1,12 @@
-# Gallery Integration Task
+# TODO - Itinerary Preview Photos Implementation
 
-## Overview
-Add the gallery option (already available in customized package builder) to the three other itinerary builder formats:
-- Fixed Group Tours
-- Cart/Combo
-- HTML Editor
+## Completed Tasks
+- [x] Analyze current itinerary listing page and model structure
+- [x] Understand how preview photos are implemented in library
+- [x] Modify components/itinerary-list.tsx to add preview photo functionality
+- [x] Add conditional rendering for gallery images
+- [x] Style preview images similar to library (h-32, object-cover, rounded-t-lg)
+- [x] Ensure existing functionality remains unchanged
 
-## Tasks
-- [x] Add gallery to Fixed Group Tour Builder
-- [ ] Add gallery to Cart/Combo Builder
-- [ ] Add gallery to HTML Editor Builder
-
-## Implementation Details
-Each builder needs:
-- Import GalleryUpload component and IGalleryItem type
-- Add gallery state management
-- Load gallery data when editing
-- Add gallery section to UI
-- Include gallery in save data
-
-## Files to Edit
-- components/fixed-group-tour-builder.tsx
-- components/cart-combo-builder.tsx
-- components/html-editor-builder.tsx
+## Summary
+Successfully added preview photo functionality to itineraries on http://localhost:3000/itinerary page. Now itineraries with uploaded gallery photos will display the first image as a preview on their cards, similar to the library implementation. All existing features and functionality remain intact.
