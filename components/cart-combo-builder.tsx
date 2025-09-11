@@ -28,6 +28,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ICartItem } from "@/models/Itinerary"
 import { useToast } from "@/hooks/use-toast"
 import { useLibrary } from "@/hooks/use-library"
+import { GalleryUpload } from "./itinerary-builder/gallery-upload"
+import type { IGalleryItem } from "@/models/Itinerary"
 
 interface CartComboBuilderProps {
   itineraryId?: string
@@ -74,6 +76,9 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
     quantity: 1,
   })
 
+  // Gallery state
+  const [gallery, setGallery] = useState<IGalleryItem[]>([])
+
   // Load existing cart data if editing
   useEffect(() => {
     if (itineraryId) {
@@ -93,6 +98,7 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
         setDescription(data.description || "")
         setProductId(data.productId || productId)
         setCartItems(data.cartItems || [])
+        setGallery(data.gallery || [])
       }
     } catch (error) {
       console.error("Failed to load cart data:", error)
@@ -229,6 +235,7 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
         highlights: [],
         images: [],
         cartItems,
+        gallery,
       }
 
       const url = itineraryId ? `/api/itineraries/${itineraryId}` : "/api/itineraries"
@@ -595,6 +602,19 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
                   })}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Gallery */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gallery</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <GalleryUpload
+                gallery={gallery}
+                onGalleryUpdate={setGallery}
+              />
             </CardContent>
           </Card>
         </div>

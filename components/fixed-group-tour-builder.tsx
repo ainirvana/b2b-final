@@ -20,6 +20,8 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { ItineraryBuilder } from "./itinerary-builder"
+import { GalleryUpload } from "./itinerary-builder/gallery-upload"
+import type { IGalleryItem } from "@/models/Itinerary"
 
 interface FixedGroupTourBuilderProps {
   itineraryId?: string
@@ -45,6 +47,9 @@ export function FixedGroupTourBuilder({ itineraryId, onBack }: FixedGroupTourBui
   // Itinerary content
   const [showItineraryBuilder, setShowItineraryBuilder] = useState(false)
   const [basePrice, setBasePrice] = useState<number>(0)
+
+  // Gallery state
+  const [gallery, setGallery] = useState<IGalleryItem[]>([])
 
   // Load existing data if editing
   useEffect(() => {
@@ -74,6 +79,9 @@ export function FixedGroupTourBuilder({ itineraryId, onBack }: FixedGroupTourBui
           setCurrentBookings(data.fixedDates.currentBookings || 0)
           setAvailableDates(data.fixedDates.availableDates || [])
         }
+
+        // Load gallery data
+        setGallery(data.gallery || [])
       }
     } catch (error) {
       console.error("Failed to load tour data:", error)
@@ -185,6 +193,7 @@ export function FixedGroupTourBuilder({ itineraryId, onBack }: FixedGroupTourBui
           currentBookings,
           availableDates,
         },
+        gallery,
       }
 
       const url = itineraryId ? `/api/itineraries/${itineraryId}` : "/api/itineraries"
@@ -465,6 +474,22 @@ export function FixedGroupTourBuilder({ itineraryId, onBack }: FixedGroupTourBui
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Gallery Upload */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gallery</CardTitle>
+              <p className="text-sm text-gray-500">
+                Upload images for this tour (optional)
+              </p>
+            </CardHeader>
+            <CardContent>
+              <GalleryUpload
+                gallery={gallery}
+                onGalleryUpdate={setGallery}
+              />
             </CardContent>
           </Card>
         </div>

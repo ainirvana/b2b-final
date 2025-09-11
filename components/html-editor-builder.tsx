@@ -25,6 +25,8 @@ import {
 } from "lucide-react"
 import { IHtmlBlock } from "@/models/Itinerary"
 import { useToast } from "@/hooks/use-toast"
+import { GalleryUpload } from "./itinerary-builder/gallery-upload"
+import type { IGalleryItem } from "@/models/Itinerary"
 
 interface HtmlEditorBuilderProps {
   itineraryId?: string
@@ -60,6 +62,9 @@ export function HtmlEditorBuilder({ itineraryId, onBack }: HtmlEditorBuilderProp
     imageCaption: "",
   })
 
+  // Gallery state
+  const [gallery, setGallery] = useState<IGalleryItem[]>([])
+
   // Load existing HTML data if editing
   useEffect(() => {
     if (itineraryId) {
@@ -78,6 +83,7 @@ export function HtmlEditorBuilder({ itineraryId, onBack }: HtmlEditorBuilderProp
         setDescription(data.description || "")
         setProductId(data.productId || productId)
         setHtmlBlocks(data.htmlBlocks || [])
+        setGallery(data.gallery || [])
       }
     } catch (error) {
       console.error("Failed to load HTML data:", error)
@@ -240,6 +246,7 @@ export function HtmlEditorBuilder({ itineraryId, onBack }: HtmlEditorBuilderProp
         days: [],
         highlights: [],
         images: [],
+        gallery,
         htmlBlocks: htmlBlocks.sort((a, b) => a.order - b.order),
         htmlContent: generateHtmlContent(),
       }
@@ -525,6 +532,12 @@ export function HtmlEditorBuilder({ itineraryId, onBack }: HtmlEditorBuilderProp
         {/* Sidebar */}
         {!previewMode && (
           <div className="space-y-6">
+            {/* Gallery Upload */}
+            <GalleryUpload
+              gallery={gallery}
+              onGalleryUpdate={setGallery}
+            />
+
             {/* Add Block Menu */}
             <Card>
               <CardHeader>
