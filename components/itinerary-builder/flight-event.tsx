@@ -7,9 +7,23 @@ import { Badge } from "@/components/ui/badge"
 
 interface FlightEventProps {
   event: IItineraryEvent
+  isDetailedView?: boolean
 }
 
-export function FlightEvent({ event }: FlightEventProps) {
+export function FlightEvent({ event, isDetailedView = true }: FlightEventProps) {
+  if (!isDetailedView) {
+    // Summary view: show only fromCity -> toCity
+    return (
+      <div className="bg-white p-4 rounded-lg border border-gray-200 relative">
+        <EventSourceBadge event={event} />
+        <div className="flex items-center gap-2">
+          <Plane className="h-5 w-5 text-gray-700" />
+          <h4 className="text-lg font-semibold text-gray-800">{event.fromCity} ⟶ {event.toCity}</h4>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 relative">
       <EventSourceBadge event={event} />

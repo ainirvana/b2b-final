@@ -160,13 +160,13 @@ export function EventCard({
     >
       <CardContent className="p-4 relative">
         {event.category === "flight" ? (
-          <FlightEvent event={event} />
+          <FlightEvent event={event} isDetailedView={isDetailedView} />
         ) : event.category === "hotel" ? (
-          <HotelEvent event={event} />
+          <HotelEvent event={event} isDetailedView={isDetailedView} />
         ) : event.category === "transfer" ? (
-          <TransferEvent event={event} />
+          <TransferEvent event={event} isDetailedView={isDetailedView} />
         ) : event.category === "activity" ? (
-          <ActivityEvent event={event} />
+          <ActivityEvent event={event} isDetailedView={isDetailedView} />
         ) : event.category === "heading" ? (
           <div className="py-2">
             <div className="flex items-center gap-2 mb-2">

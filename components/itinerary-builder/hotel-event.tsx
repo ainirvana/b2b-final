@@ -7,11 +7,12 @@ import { EventSourceBadge } from "./source-badge"
 
 interface HotelEventProps {
   event: IItineraryEvent
+  isDetailedView?: boolean
   onEdit?: () => void
   onDelete?: () => void
 }
 
-export function HotelEvent({ event, onEdit, onDelete }: HotelEventProps) {
+export function HotelEvent({ event, isDetailedView = true, onEdit, onDelete }: HotelEventProps) {
   const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
       case "wifi":
@@ -25,6 +26,21 @@ export function HotelEvent({ event, onEdit, onDelete }: HotelEventProps) {
       default:
         return null
     }
+  }
+
+  if (!isDetailedView) {
+    // Summary view: show only hotel name
+    return (
+      <div className="bg-white p-4 rounded-lg border border-gray-200 relative">
+        <EventSourceBadge event={event} />
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <Hotel className="h-5 w-5 text-blue-600" />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-800">{event.title || "Hotel Name"}</h4>
+        </div>
+      </div>
+    )
   }
 
   return (

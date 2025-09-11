@@ -7,11 +7,12 @@ import { EventSourceBadge } from "./source-badge"
 
 interface ActivityEventProps {
   event: IItineraryEvent
+  isDetailedView?: boolean
   onEdit?: () => void
   onDelete?: () => void
 }
 
-export function ActivityEvent({ event, onEdit, onDelete }: ActivityEventProps) {
+export function ActivityEvent({ event, isDetailedView = true, onEdit, onDelete }: ActivityEventProps) {
   const getDifficultyColor = (difficulty?: string) => {
     switch (difficulty?.toLowerCase()) {
       case "easy":
@@ -23,6 +24,21 @@ export function ActivityEvent({ event, onEdit, onDelete }: ActivityEventProps) {
       default:
         return "bg-gray-100 text-gray-700 border-gray-200"
     }
+  }
+
+  if (!isDetailedView) {
+    // Summary view: show only activity name
+    return (
+      <div className="bg-white p-4 rounded-lg border border-gray-200 relative">
+        <EventSourceBadge event={event} />
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-green-100 rounded-lg">
+            <Camera className="h-5 w-5 text-green-600" />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-800">{event.title || "Activity Name"}</h4>
+        </div>
+      </div>
+    )
   }
 
   return (

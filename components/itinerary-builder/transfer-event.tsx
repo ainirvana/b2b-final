@@ -7,14 +7,30 @@ import { EventSourceBadge } from "./source-badge"
 
 interface TransferEventProps {
   event: IItineraryEvent
+  isDetailedView?: boolean
   onEdit?: () => void
   onDelete?: () => void
 }
 
-export function TransferEvent({ event, onEdit, onDelete }: TransferEventProps) {
+export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }: TransferEventProps) {
   const getVehicleIcon = (vehicleType?: string) => {
     // You could expand this with different vehicle icons
     return <Car className="h-5 w-5 text-purple-600" />
+  }
+
+  if (!isDetailedView) {
+    // Summary view: show only fromLocation -> toLocation
+    return (
+      <div className="bg-white rounded-lg border-0 relative">
+        <EventSourceBadge event={event} />
+        <div className="flex items-center gap-3 p-4">
+          <div className="p-2 bg-purple-100 rounded-lg">{getVehicleIcon(event.vehicleType)}</div>
+          <div className="text-lg font-semibold text-gray-800">
+            {event.fromLocation || "Pick-up location"} → {event.toLocation || "Drop-off location"}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
