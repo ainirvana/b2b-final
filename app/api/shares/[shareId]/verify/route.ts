@@ -5,12 +5,12 @@ import PublicShare, { ShareView } from "@/models/PublicShare"
 // POST /api/shares/[shareId]/verify - Verify password for protected shares
 export async function POST(
   request: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
     await connectToDatabase()
     
-    const { shareId } = params
+    const { shareId } = await params
     const { password } = await request.json()
     
     const share = await PublicShare.findOne({ shareId, isActive: true })

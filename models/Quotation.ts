@@ -1,0 +1,170 @@
+import mongoose from "mongoose"
+import { IItinerary } from "./Itinerary"
+
+export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
+  _id?: string
+  itineraryId: string // Reference to the original itinerary
+  pricingOptions: {
+    showIndividualPrices: boolean
+    showSubtotals: boolean
+    showTotal: boolean
+    markupType: "percentage" | "fixed"
+    markupValue: number
+    originalTotalPrice: number // Original price before markup
+    finalTotalPrice: number // Final price after markup
+  }
+  status: "draft" | "sent" | "accepted" | "rejected" | "expired"
+  validUntil?: Date
+  client: {
+    name: string
+    email?: string
+    phone?: string
+    referenceNo?: string
+  }
+  generatedDate: Date
+  notes?: string
+}
+
+const QuotationSchema = new mongoose.Schema(
+  {
+    itineraryId: { type: String, required: true },
+    productId: { type: String },
+    title: { type: String },
+    description: { type: String },
+    destination: { type: String },
+    countries: { type: [String] },
+    duration: { type: String },
+    totalPrice: { type: Number, default: 0 },
+    currency: { type: String, default: "USD" },
+    status: {
+      type: String,
+      enum: ["draft", "sent", "accepted", "rejected", "expired"],
+      default: "draft",
+    },
+    type: {
+      type: String,
+      enum: ["fixed-group-tour", "customized-package", "cart-combo", "html-editor"],
+      default: "customized-package",
+    },
+    createdBy: { type: String },
+    lastUpdatedBy: { type: String },
+    days: [
+      {
+        day: { type: Number, required: true },
+        date: { type: String, required: true },
+        title: { type: String, required: true },
+        description: String,
+        detailedDescription: String,
+        events: [
+          {
+            id: { type: String, required: true },
+            time: { type: String },
+            category: {
+              type: String,
+              enum: [
+                "flight",
+                "hotel",
+                "activity",
+                "transfer",
+                "meal",
+                "photo",
+                "other",
+                "heading",
+                "paragraph",
+                "list",
+                "image",
+              ],
+              required: true,
+            },
+            title: { type: String, required: true },
+            description: { type: String, required: true },
+            location: String,
+            mainPoint: String,
+            highlights: [String],
+            fromCity: String,
+            toCity: String,
+            airlines: String,
+            flightNumber: String,
+            startTime: String,
+            endTime: String,
+            flightClass: String,
+            flightNotes: String,
+            nights: Number,
+            checkIn: String,
+            checkOut: String,
+            images: [String],
+            price: { type: Number, default: 0 },
+            libraryItemId: String,
+            componentSource: {
+              type: String,
+              enum: ["manual", "my-library", "global-library", "my-library-edited", "global-library-edited"],
+            },
+            originalLibraryId: String,
+            versionHistory: [
+              {
+                timestamp: Date,
+                action: { type: String, enum: ["created", "edited", "imported"] },
+                source: String,
+              },
+            ],
+            imageUrl: String,
+            imageCaption: String,
+            imageAlt: String,
+            listItems: [String],
+            subtitle: String,
+          },
+        ],
+        nights: Number,
+        meals: {
+          breakfast: Boolean,
+          lunch: Boolean,
+          dinner: Boolean,
+        },
+      },
+    ],
+    highlights: [String],
+    images: [String],
+    gallery: [
+      {
+        id: { type: String, required: true },
+        url: { type: String, required: true },
+        type: { type: String, enum: ["image", "video"], required: true },
+        caption: String,
+        altText: String,
+        fileName: { type: String, required: true },
+        uploadedAt: { type: Date, required: true },
+      },
+    ],
+    branding: {
+      headerLogo: String,
+      headerText: String,
+      footerLogo: String,
+      footerText: String,
+      primaryColor: String,
+      secondaryColor: String,
+    },
+    pricingOptions: {
+      showIndividualPrices: { type: Boolean, default: true },
+      showSubtotals: { type: Boolean, default: true },
+      showTotal: { type: Boolean, default: true },
+      markupType: { type: String, enum: ["percentage", "fixed"], default: "percentage" },
+      markupValue: { type: Number, default: 0 },
+      originalTotalPrice: { type: Number, default: 0 },
+      finalTotalPrice: { type: Number, default: 0 },
+    },
+    validUntil: { type: Date },
+    client: {
+      name: { type: String, required: true },
+      email: String,
+      phone: String,
+      referenceNo: String,
+    },
+    generatedDate: { type: Date, default: Date.now },
+    notes: String,
+  },
+  {
+    timestamps: true,
+  }
+)
+
+export default mongoose.models.Quotation || mongoose.model<IQuotation>("Quotation", QuotationSchema)

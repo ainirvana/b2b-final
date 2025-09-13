@@ -3,14 +3,17 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShoppingCart, Package, Upload } from "lucide-react"
+import { ShoppingCart, Package, Upload, FileText } from "lucide-react"
 import { ComingSoon } from "./coming-soon"
+import { useRouter } from "next/navigation"
 
 interface QuotationOptionsProps {
   onOptionSelect: (option: string) => void
 }
 
 export function QuotationOptions({ onOptionSelect }: QuotationOptionsProps) {
+  const router = useRouter()
+  
   const options = [
     {
       id: "new-cart",
@@ -30,12 +33,26 @@ export function QuotationOptions({ onOptionSelect }: QuotationOptionsProps) {
       description: "Import and customize an existing saved itinerary",
       icon: Upload,
     },
+    {
+      id: "convert-from-itinerary",
+      title: "Convert from Itinerary",
+      description: "Convert an existing itinerary to a quotation with pricing controls",
+      icon: FileText,
+    },
   ]
+
+  const handleSelect = (optionId: string) => {
+    if (optionId === "convert-from-itinerary") {
+      router.push("/itinerary?selectForQuotation=true")
+    } else {
+      onOptionSelect(optionId)
+    }
+  }
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Choose Your Starting Point</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {options.map((option) => {
           const Icon = option.icon
           return (
@@ -49,7 +66,7 @@ export function QuotationOptions({ onOptionSelect }: QuotationOptionsProps) {
               <CardContent>
                 <p className="text-sm text-gray-600 mb-4">{option.description}</p>
                 <Button
-                  onClick={() => onOptionSelect(option.id)}
+                  onClick={() => handleSelect(option.id)}
                   className="w-full"
                 >
                   Select

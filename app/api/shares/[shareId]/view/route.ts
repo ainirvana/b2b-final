@@ -5,12 +5,12 @@ import PublicShare, { ShareView } from "@/models/PublicShare"
 // POST /api/shares/[shareId]/view - Track view for analytics
 export async function POST(
   request: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
     await connectToDatabase()
     
-    const { shareId } = params
+    const { shareId } = await params
     const userAgent = request.headers.get("user-agent") || "Unknown"
     const referrer = request.headers.get("referer")
     

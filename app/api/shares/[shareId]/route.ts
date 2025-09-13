@@ -5,12 +5,12 @@ import PublicShare, { ShareView } from "@/models/PublicShare"
 // GET /api/shares/[shareId] - Get specific share
 export async function GET(
   request: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
     await connectToDatabase()
     
-    const { shareId } = params
+    const { shareId } = await params
     
     const share = await PublicShare.findOne({ shareId, isActive: true })
       .populate({

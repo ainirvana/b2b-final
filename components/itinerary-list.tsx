@@ -5,9 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Calendar, MapPin, Clock, Edit, Package, ShoppingCart, FileText, Users, DollarSign, Share2, Copy } from "lucide-react"
+import { Plus, Calendar, MapPin, Clock, Edit, Package, ShoppingCart, FileText, Users, DollarSign, Share2, Copy, FileDigit } from "lucide-react"
 import { IItinerary } from "@/models/Itinerary"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { useQuotations } from "@/hooks/use-quotations"
 
 interface ItineraryListProps {
   onCreateNew: () => void
@@ -43,7 +48,15 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
   const [searchQuery, setSearchQuery] = useState("")
   const [itineraries, setItineraries] = useState<IItinerary[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedItinerary, setSelectedItinerary] = useState<IItinerary | null>(null)
+  const [clientInfo, setClientInfo] = useState({ name: "", email: "", phone: "", referenceNo: "", notes: "" })
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false)
+  
   const { toast } = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const selectForQuotation = searchParams.get("selectForQuotation") === "true"
+  const { convertItineraryToQuotation, isLoading: isConverting } = useQuotations()
 
   // Load itineraries
   useEffect(() => {
@@ -116,6 +129,43 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
     }
   }
 
+  const handleItinerarySelect = (itinerary: IItinerary) => {
+    if (selectForQuotation) {
+      setSelectedItinerary(itinerary)
+      setConvertDialogOpen(true)
+    } else {
+      onViewItinerary(itinerary._id!)
+    }
+  }
+
+  const handleClientInfoChange = (field: string, value: string) => {
+    setClientInfo(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleConvertToQuotation = async () => {
+    if (!selectedItinerary || !selectedItinerary._id) return
+    
+    try {
+      const quotationId = await convertItineraryToQuotation(
+        selectedItinerary._id,
+        clientInfo
+      )
+      
+      if (quotationId) {
+        setConvertDialogOpen(false)
+        setSelectedItinerary(null)
+        router.push(`/quotation-builder/${quotationId}`)
+      }
+    } catch (error) {
+      console.error("Failed to convert itinerary to quotation:", error)
+      toast({
+        title: "Conversion Failed",
+        description: "Could not convert itinerary to quotation.",
+        variant: "destructive"
+      })
+    }
+  }
+
   const filteredItineraries = itineraries.filter(itinerary => 
     itinerary.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     itinerary.destination.toLowerCase().includes(searchQuery.toLowerCase())
@@ -136,13 +186,23 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold">Itineraries</h2>
-          <p className="text-sm text-gray-500">Create and manage your travel itineraries</p>
+          <h2 className="text-2xl font-bold">{selectForQuotation ? "Select Itinerary for Quotation" : "Itineraries"}</h2>
+          <p className="text-sm text-gray-500">
+            {selectForQuotation 
+              ? "Select an itinerary to convert to a quotation" 
+              : "Create and manage your travel itineraries"}
+          </p>
         </div>
-        <Button onClick={onCreateNew}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create New
-        </Button>
+        {!selectForQuotation ? (
+          <Button onClick={onCreateNew}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create New
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={() => router.push("/quotation-builder")}>
+            Cancel
+          </Button>
+        )}
       </div>
 
       <div className="mb-6">
@@ -277,21 +337,35 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
                     </div>
 
                     <div className="flex justify-end space-x-2 mt-4">
-                      <Button variant="outline" size="sm" onClick={() => onViewItinerary(itinerary._id!)}>
-                        View
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => onEditItinerary(itinerary._id!)}>
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => createQuickShare(itinerary)}
-                        title="Create quick public share"
-                      >
-                        <Share2 className="h-4 w-4" />
-                      </Button>
+                      {selectForQuotation ? (
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => handleItinerarySelect(itinerary)}
+                        >
+                          <FileDigit className="h-4 w-4 mr-2" />
+                          Select for Quotation
+                        </Button>
+                      ) : (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => onViewItinerary(itinerary._id!)}>
+                            View
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => onEditItinerary(itinerary._id!)}>
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => createQuickShare(itinerary)}
+                            title="Create quick public share"
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -300,6 +374,85 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
           })
         )}
       </div>
+
+      <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Create Quotation from Itinerary</DialogTitle>
+            <DialogDescription>
+              Enter client information to create a quotation from the selected itinerary.
+              You'll be able to adjust pricing options on the next screen.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Client Name *</Label>
+              <Input 
+                id="name" 
+                value={clientInfo.name} 
+                onChange={(e) => handleClientInfoChange("name", e.target.value)}
+                placeholder="Enter client name"
+                required
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email (Optional)</Label>
+              <Input 
+                id="email" 
+                type="email"
+                value={clientInfo.email} 
+                onChange={(e) => handleClientInfoChange("email", e.target.value)}
+                placeholder="client@example.com"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="phone">Phone (Optional)</Label>
+              <Input 
+                id="phone" 
+                value={clientInfo.phone} 
+                onChange={(e) => handleClientInfoChange("phone", e.target.value)}
+                placeholder="+1 234 567 8900"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="referenceNo">Reference No. (Optional)</Label>
+              <Input 
+                id="referenceNo" 
+                value={clientInfo.referenceNo} 
+                onChange={(e) => handleClientInfoChange("referenceNo", e.target.value)}
+                placeholder="QT-12345"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea 
+                id="notes" 
+                value={clientInfo.notes} 
+                onChange={(e) => handleClientInfoChange("notes", e.target.value)}
+                placeholder="Any special requirements or notes"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConvertDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConvertToQuotation}
+              disabled={!clientInfo.name || isConverting}
+            >
+              {isConverting ? "Converting..." : "Create Quotation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
