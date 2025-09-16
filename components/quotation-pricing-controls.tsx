@@ -42,7 +42,17 @@ export function QuotationPricingControls({
   const handleOptionChange = <K extends keyof PricingOptions>(key: K, value: PricingOptions[K]) => {
     const newOptions = { ...options, [key]: value }
     setOptions(newOptions)
-    onOptionsChange(newOptions)
+    // Don't immediately call onOptionsChange for text/number inputs to avoid refresh during typing
+    if (key !== "markupValue") {
+      onOptionsChange(newOptions)
+    }
+  }
+
+  // Handle markup value change with debounce
+  const handleMarkupChange = (value: number) => {
+    const newOptions = { ...options, markupValue: value }
+    setOptions(newOptions)
+    // Let the Apply button handle the submission
   }
 
   return (
@@ -136,7 +146,7 @@ export function QuotationPricingControls({
                     min="0"
                     max="100"
                     value={options.markupType === "percentage" ? options.markupValue : 0}
-                    onChange={(e) => handleOptionChange("markupValue", Number(e.target.value))}
+                    onChange={(e) => handleMarkupChange(Number(e.target.value))}
                     className="w-full"
                   />
                   <span className="ml-2">%</span>
@@ -153,7 +163,7 @@ export function QuotationPricingControls({
                     type="number"
                     min="0"
                     value={options.markupType === "fixed" ? options.markupValue : 0}
-                    onChange={(e) => handleOptionChange("markupValue", Number(e.target.value))}
+                    onChange={(e) => handleMarkupChange(Number(e.target.value))}
                     className="w-full"
                   />
                 </div>

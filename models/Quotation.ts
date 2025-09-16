@@ -13,6 +13,9 @@ export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
     originalTotalPrice: number // Original price before markup
     finalTotalPrice: number // Final price after markup
   }
+  subtotal?: number // Base price before markup
+  markup?: number // Calculated markup amount
+  total?: number // Final total after markup
   status: "draft" | "sent" | "accepted" | "rejected" | "expired"
   validUntil?: Date
   client: {
@@ -152,6 +155,9 @@ const QuotationSchema = new mongoose.Schema(
       originalTotalPrice: { type: Number, default: 0 },
       finalTotalPrice: { type: Number, default: 0 },
     },
+    subtotal: { type: Number },
+    markup: { type: Number },
+    total: { type: Number },
     validUntil: { type: Date },
     client: {
       name: { type: String, required: true },

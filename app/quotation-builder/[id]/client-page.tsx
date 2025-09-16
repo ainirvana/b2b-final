@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Sidebar } from "@/components/sidebar"
 import { TopHeader } from "@/components/top-header"
 import { QuotationPricingControls } from "@/components/quotation-pricing-controls"
@@ -13,7 +15,8 @@ import { QuotationClientEditor, ClientInfo } from "@/components/quotation-client
 import { QuotationSettings, QuotationSettingsData } from "@/components/quotation-settings"
 import { useQuotations, QuotationData } from "@/hooks/use-quotations"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, Save, Send, Printer, Download, Eye, EyeOff, Calculator } from "lucide-react"
+import { ArrowLeft, Save, Send, Printer, Download, Eye, EyeOff, Calculator, Percent, DollarSign } from "lucide-react"
+import { recalculateQuotationTotals } from "@/lib/pricing-utils"
 
 // Define interfaces for type safety
 interface DayEvent {
@@ -46,14 +49,44 @@ export function QuotationDetail({ id }: { id: string }) {
   const { fetchQuotation, updateQuotation, isLoading } = useQuotations()
   const { toast } = useToast()
 
+  // Calculate total prices
+  const recalculateTotals = (quotationData: QuotationData) => {
+    // Calculate original total price from all events
+    let originalTotal = 0;
+    if (quotationData.days && quotationData.days.length > 0) {
+      quotationData.days.forEach(day => {
+        day.events.forEach(event => {
+          if (event.price) {
+            originalTotal += parseFloat(event.price.toString());
+          }
+        });
+      });
+    }
+    
+    // Create a quotation object with the calculated subtotal
+    const quotationWithSubtotal = {
+      ...quotationData,
+      subtotal: originalTotal,
+      pricingOptions: {
+        ...quotationData.pricingOptions,
+        originalTotalPrice: originalTotal
+      }
+    };
+    
+    // Use the shared utility to calculate all totals
+    return recalculateQuotationTotals(quotationWithSubtotal);
+  };
+
   // Fetch quotation data
   useEffect(() => {
     const loadQuotation = async () => {
       if (!id) return
       const data = await fetchQuotation(id)
       if (data) {
-        setQuotation(data)
-        setShowPrices(data.pricingOptions.showIndividualPrices)
+        // Calculate totals when loading the quotation
+        const updatedData = recalculateTotals(data);
+        setQuotation(updatedData)
+        setShowPrices(updatedData.pricingOptions.showIndividualPrices)
       }
     }
 
@@ -319,9 +352,59 @@ export function QuotationDetail({ id }: { id: string }) {
                                           )}
                                         </div>
                                         
-                                        {showPrices && event.price && (
+                                        {showPrices && event.price !== undefined && (
                                           <div className="text-right">
-                                            <p className="font-medium">{quotation.currency} {event.price.toFixed(2)}</p>
+                                            <div className="flex items-center">
+                                              <span className="mr-1">{quotation.currency}</span>
+                                              <Input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={event.price}
+                                                onChange={(e) => {
+                                                  // Create a copy of the quotation to modify
+                                                  const updatedQuotation = {...quotation};
+                                                  // Find the event to update
+                                                  const dayIndex = updatedQuotation.days.findIndex((d: any) => d.day === day.day);
+                                                  const eventIndex = updatedQuotation.days[dayIndex].events.findIndex((e: any) => e.id === event.id);
+                                                  
+                                                  if (dayIndex >= 0 && eventIndex >= 0) {
+                                                    // Update the price
+                                                    updatedQuotation.days[dayIndex].events[eventIndex].price = parseFloat(e.target.value);
+                                                    
+                                                    // Recalculate totals
+                                                    const recalculatedQuotation = recalculateTotals(updatedQuotation);
+                                                    
+                                                    // Update local state immediately for responsive UI
+                                                    setQuotation(recalculatedQuotation);
+                                                  }
+                                                }}
+                                                onBlur={async () => {
+                                                  // Save changes when input loses focus
+                                                  try {
+                                                    // Send both days and updated pricing options
+                                                    await updateQuotation(quotation._id!, {
+                                                      days: quotation.days,
+                                                      pricingOptions: quotation.pricingOptions,
+                                                      totalPrice: quotation.pricingOptions.finalTotalPrice
+                                                    });
+                                                  } catch (error) {
+                                                    console.error("Error updating price:", error);
+                                                    toast({
+                                                      title: "Error",
+                                                      description: "Failed to update price",
+                                                      variant: "destructive"
+                                                    });
+                                                  }
+                                                }}
+                                                className="w-24 text-right"
+                                              />
+                                            </div>
+                                            {event.category === "hotel" && event.nights && (
+                                              <p className="text-xs text-muted-foreground">
+                                                {event.nights} night{event.nights !== 1 ? 's' : ''}
+                                              </p>
+                                            )}
                                           </div>
                                         )}
                                       </div>
@@ -338,39 +421,148 @@ export function QuotationDetail({ id }: { id: string }) {
 
                       {/* Pricing Summary */}
                       {(showPrices || quotation.pricingOptions.showTotal) && (
-                        <div className="space-y-2">
-                          <h3 className="font-medium">Pricing Summary</h3>
-                          
-                          {showPrices && quotation.pricingOptions.showSubtotals && (
-                            <div className="flex justify-between">
-                              <span>Subtotal:</span>
-                              <span>{quotation.currency} {quotation.pricingOptions.originalTotalPrice.toFixed(2)}</span>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <h3 className="font-medium">Pricing Summary</h3>
+                            
+                            {/* Quick Markup Controls */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <Label htmlFor="preview-markup-type" className="text-sm whitespace-nowrap">Markup Type:</Label>
+                                <select
+                                  id="preview-markup-type"
+                                  value={quotation.pricingOptions.markupType}
+                                  onChange={async (e) => {
+                                    const newType = e.target.value as "percentage" | "fixed";
+                                    try {
+                                      // Create updated quotation with new markup type
+                                      const updatedQuotation = {
+                                        ...quotation,
+                                        pricingOptions: {
+                                          ...quotation.pricingOptions,
+                                          markupType: newType
+                                        }
+                                      };
+                                      
+                                      // Recalculate totals with the new markup type
+                                      const recalculatedQuotation = recalculateTotals(updatedQuotation);
+                                      
+                                      // Update local state for responsiveness
+                                      setQuotation(recalculatedQuotation);
+                                      
+                                      // Also update on server
+                                      await updateQuotation(quotation._id!, {
+                                        pricingOptions: recalculatedQuotation.pricingOptions,
+                                        subtotal: recalculatedQuotation.subtotal,
+                                        markup: recalculatedQuotation.markup,
+                                        total: recalculatedQuotation.total
+                                      });
+                                    } catch (error) {
+                                      console.error("Error updating markup type:", error);
+                                      toast({
+                                        title: "Error",
+                                        description: "Failed to update markup type",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  }}
+                                  className="rounded-md border-input py-1 px-2 text-sm"
+                                >
+                                  <option value="percentage">Percentage</option>
+                                  <option value="fixed">Fixed Amount</option>
+                                </select>
+                              </div>
+                              
+                              <div className="flex items-center gap-1">
+                                <Label htmlFor="preview-markup-value" className="text-sm whitespace-nowrap">
+                                  {quotation.pricingOptions.markupType === "percentage" ? "Value (%):" : "Amount:"}
+                                </Label>
+                                <div className="flex items-center">
+                                  {quotation.pricingOptions.markupType === "fixed" && (
+                                    <span className="text-sm mr-1">{quotation.currency}</span>
+                                  )}
+                                  <Input
+                                    id="preview-markup-value"
+                                    type="number"
+                                    min="0"
+                                    step={quotation.pricingOptions.markupType === "percentage" ? "1" : "0.01"}
+                                    value={quotation.pricingOptions.markupValue}
+                                    onChange={(e) => {
+                                      // Create updated quotation with new markup value
+                                      const updatedQuotation = {
+                                        ...quotation,
+                                        pricingOptions: {
+                                          ...quotation.pricingOptions,
+                                          markupValue: parseFloat(e.target.value) || 0
+                                        }
+                                      };
+                                      
+                                      // Recalculate totals with the new markup
+                                      const recalculatedQuotation = recalculateTotals(updatedQuotation);
+                                      
+                                      // Update local state for responsiveness
+                                      setQuotation(recalculatedQuotation);
+                                    }}
+                                    onBlur={async () => {
+                                      // Save changes when input loses focus
+                                      try {
+                                        await updateQuotation(quotation._id!, {
+                                          pricingOptions: quotation.pricingOptions,
+                                          subtotal: quotation.subtotal,
+                                          markup: quotation.markup,
+                                          total: quotation.total
+                                        });
+                                      } catch (error) {
+                                        console.error("Error updating markup value:", error);
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to update markup value",
+                                          variant: "destructive"
+                                        });
+                                      }
+                                    }}
+                                    className="w-20"
+                                  />
+                                  {quotation.pricingOptions.markupType === "percentage" && (
+                                    <span className="text-sm ml-1">%</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          )}
+                          </div>
                           
-                          {showPrices && quotation.pricingOptions.markupValue > 0 && (
-                            <div className="flex justify-between">
-                              <span>
-                                {quotation.pricingOptions.markupType === "percentage" 
-                                  ? `Service Fee (${quotation.pricingOptions.markupValue}%):`
-                                  : "Service Fee:"}
-                              </span>
-                              <span>
-                                {quotation.currency} {(
-                                  quotation.pricingOptions.markupType === "percentage"
-                                    ? (quotation.pricingOptions.originalTotalPrice * (quotation.pricingOptions.markupValue / 100))
-                                    : quotation.pricingOptions.markupValue
-                                ).toFixed(2)}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {quotation.pricingOptions.showTotal && (
-                            <div className="flex justify-between font-bold pt-2">
-                              <span>Total:</span>
-                              <span>{quotation.currency} {quotation.pricingOptions.finalTotalPrice.toFixed(2)}</span>
-                            </div>
-                          )}
+                          <div className="space-y-2 bg-muted/20 p-3 rounded-md">
+                            {showPrices && quotation.pricingOptions.showSubtotals && (
+                              <div className="flex justify-between">
+                                <span>Subtotal:</span>
+                                <span>{quotation.currency} {(quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0).toFixed(2)}</span>
+                              </div>
+                            )}
+                            
+                            {showPrices && quotation.pricingOptions.markupValue > 0 && (
+                              <div className="flex justify-between">
+                                <span>
+                                  {quotation.pricingOptions.markupType === "percentage" 
+                                    ? `Service Fee (${quotation.pricingOptions.markupValue}%):`
+                                    : "Service Fee:"}
+                                </span>
+                                <span>
+                                  {quotation.currency} {(quotation.markup || 
+                                    (quotation.pricingOptions.markupType === "percentage"
+                                      ? ((quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0) * (quotation.pricingOptions.markupValue / 100))
+                                      : quotation.pricingOptions.markupValue)
+                                  ).toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {quotation.pricingOptions.showTotal && (
+                              <div className="flex justify-between font-bold pt-2">
+                                <span>Total:</span>
+                                <span>{quotation.currency} {(quotation.total || quotation.pricingOptions.finalTotalPrice || 0).toFixed(2)}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import Quotation from "@/models/Quotation"
 import { isValidObjectId } from "mongoose"
+import { recalculateQuotationTotals } from "@/lib/pricing-utils"
 
 // GET /api/quotations/[id]
 export async function GET(
@@ -60,19 +61,21 @@ export async function PUT(
 
     // Update pricing options if provided
     if (updateData.pricingOptions) {
-      // Calculate final price based on markup
-      let finalTotalPrice = updateData.pricingOptions.originalTotalPrice || quotation.pricingOptions.originalTotalPrice
+      // Use the recalculation function to get updated pricing
+      const recalculatedQuotation = recalculateQuotationTotals({
+        ...quotation.toObject(),
+        pricingOptions: {
+          ...quotation.pricingOptions,
+          ...updateData.pricingOptions
+        }
+      });
       
-      if (updateData.pricingOptions.markupType === "percentage" && updateData.pricingOptions.markupValue) {
-        finalTotalPrice = finalTotalPrice * (1 + updateData.pricingOptions.markupValue / 100)
-      } else if (updateData.pricingOptions.markupType === "fixed" && updateData.pricingOptions.markupValue) {
-        finalTotalPrice = finalTotalPrice + updateData.pricingOptions.markupValue
-      }
-      
-      // Update final total price
-      updateData.pricingOptions.finalTotalPrice = finalTotalPrice
-      // Update total price field as well
-      updateData.totalPrice = finalTotalPrice
+      // Update all the pricing fields
+      updateData.pricingOptions = recalculatedQuotation.pricingOptions;
+      updateData.subtotal = recalculatedQuotation.subtotal;
+      updateData.markup = recalculatedQuotation.markup;
+      updateData.total = recalculatedQuotation.total;
+      updateData.totalPrice = recalculatedQuotation.total; // For backward compatibility
     }
 
     // Update quotation
