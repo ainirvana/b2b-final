@@ -15,8 +15,11 @@ import { QuotationClientEditor, ClientInfo } from "@/components/quotation-client
 import { QuotationSettings, QuotationSettingsData } from "@/components/quotation-settings"
 import { useQuotations, QuotationData } from "@/hooks/use-quotations"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, Save, Send, Printer, Download, Eye, EyeOff, Calculator, Percent, DollarSign } from "lucide-react"
+import { ArrowLeft, Save, Send, Printer, Download, Eye, EyeOff, Calculator, Percent, DollarSign, Lock } from "lucide-react"
 import { recalculateQuotationTotals } from "@/lib/pricing-utils"
+import { convertCurrency, convertQuotationPrices, formatCurrencyWithSymbol } from "@/lib/currency-utils"
+import { CurrencyConversion } from "@/components/currency-conversion"
+import { VersionControl } from "@/components/version-control"
 
 // Define interfaces for type safety
 interface DayEvent {
@@ -44,6 +47,8 @@ export function QuotationDetail({ id }: { id: string }) {
   const [quotation, setQuotation] = useState<QuotationData | null>(null)
   const [activeTab, setActiveTab] = useState("preview")
   const [showPrices, setShowPrices] = useState(true)
+  const [displayCurrency, setDisplayCurrency] = useState<string>("")
+  const [versionLocked, setVersionLocked] = useState<boolean>(false)
   
   const router = useRouter()
   const { fetchQuotation, updateQuotation, isLoading } = useQuotations()
@@ -54,8 +59,8 @@ export function QuotationDetail({ id }: { id: string }) {
     // Calculate original total price from all events
     let originalTotal = 0;
     if (quotationData.days && quotationData.days.length > 0) {
-      quotationData.days.forEach(day => {
-        day.events.forEach(event => {
+      quotationData.days.forEach((day: Day) => {
+        day.events.forEach((event: DayEvent) => {
           if (event.price) {
             originalTotal += parseFloat(event.price.toString());
           }
@@ -87,6 +92,15 @@ export function QuotationDetail({ id }: { id: string }) {
         const updatedData = recalculateTotals(data);
         setQuotation(updatedData)
         setShowPrices(updatedData.pricingOptions.showIndividualPrices)
+        
+        // Set initial display currency to the quotation's base currency
+        setDisplayCurrency(updatedData.currency || "USD")
+        
+        // Check if the latest version is locked
+        if (updatedData.versionHistory && updatedData.versionHistory.length > 0) {
+          const latestVersion = updatedData.versionHistory[updatedData.versionHistory.length - 1]
+          setVersionLocked(latestVersion.locked || false)
+        }
       }
     }
 
@@ -193,6 +207,106 @@ export function QuotationDetail({ id }: { id: string }) {
     }
   }
 
+  // Handle currency conversion settings change
+  const handleCurrencyChange = async (currencySettings: any) => {
+    if (!quotation) return
+
+    try {
+      const updatedQuotation = await updateQuotation(quotation._id!, {
+        currencySettings
+      })
+
+      if (updatedQuotation) {
+        setQuotation(updatedQuotation)
+        toast({
+          title: "Success",
+          description: "Currency settings updated successfully",
+        })
+      }
+    } catch (error) {
+      console.error("Error updating currency settings:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update currency settings",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Handle display currency change
+  const handleDisplayCurrencyChange = (currency: string) => {
+    setDisplayCurrency(currency)
+  }
+
+  // Handle version control
+  const handleCreateVersion = async (versionData: { notes: string }) => {
+    if (!quotation) return
+
+    try {
+      // Create a new version with the current state
+      const response = await fetch(`/api/quotations/${quotation._id}/versions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(versionData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create new version')
+      }
+
+      const updatedQuotation = await response.json()
+      setQuotation(updatedQuotation)
+      toast({
+        title: "Success",
+        description: "New version created successfully",
+      })
+    } catch (error) {
+      console.error("Error creating version:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create new version",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Handle version locking
+  const handleLockVersion = async (versionId: string) => {
+    if (!quotation) return
+
+    try {
+      // Lock the specified version
+      const response = await fetch(`/api/quotations/${quotation._id}/lock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ versionId }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to lock version')
+      }
+
+      const updatedQuotation = await response.json()
+      setQuotation(updatedQuotation)
+      setVersionLocked(true)
+      toast({
+        title: "Success",
+        description: "Version locked successfully",
+      })
+    } catch (error) {
+      console.error("Error locking version:", error)
+      toast({
+        title: "Error",
+        description: "Failed to lock version",
+        variant: "destructive",
+      })
+    }
+  }
+
   // Render loading state
   if (isLoading || !quotation) {
     return (
@@ -259,9 +373,11 @@ export function QuotationDetail({ id }: { id: string }) {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="preview">Preview</TabsTrigger>
                 <TabsTrigger value="configure">Configure</TabsTrigger>
+                <TabsTrigger value="currency">Currency</TabsTrigger>
+                <TabsTrigger value="versions">Versions</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
 
@@ -355,12 +471,23 @@ export function QuotationDetail({ id }: { id: string }) {
                                         {showPrices && event.price !== undefined && (
                                           <div className="text-right">
                                             <div className="flex items-center">
-                                              <span className="mr-1">{quotation.currency}</span>
+                                              <span className="mr-1">
+                                                {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates
+                                                  ? displayCurrency
+                                                  : quotation.currency}
+                                              </span>
                                               <Input
                                                 type="number"
                                                 min="0"
                                                 step="0.01"
-                                                value={event.price}
+                                                value={displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates
+                                                  ? convertCurrency(
+                                                      parseFloat(event.price.toString()),
+                                                      quotation.currency,
+                                                      displayCurrency,
+                                                      quotation.currencySettings.exchangeRates
+                                                    )
+                                                  : event.price}
                                                 onChange={(e) => {
                                                   // Create a copy of the quotation to modify
                                                   const updatedQuotation = {...quotation};
@@ -369,8 +496,20 @@ export function QuotationDetail({ id }: { id: string }) {
                                                   const eventIndex = updatedQuotation.days[dayIndex].events.findIndex((e: any) => e.id === event.id);
                                                   
                                                   if (dayIndex >= 0 && eventIndex >= 0) {
-                                                    // Update the price
-                                                    updatedQuotation.days[dayIndex].events[eventIndex].price = parseFloat(e.target.value);
+                                                    // Update the price - convert back to base currency if needed
+                                                    let newPrice = parseFloat(e.target.value);
+                                                    
+                                                    // If displaying in a different currency, convert back to base currency
+                                                    if (displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates) {
+                                                      newPrice = convertCurrency(
+                                                        newPrice,
+                                                        displayCurrency,
+                                                        quotation.currency,
+                                                        quotation.currencySettings.exchangeRates
+                                                      );
+                                                    }
+                                                    
+                                                    updatedQuotation.days[dayIndex].events[eventIndex].price = newPrice;
                                                     
                                                     // Recalculate totals
                                                     const recalculatedQuotation = recalculateTotals(updatedQuotation);
@@ -535,7 +674,20 @@ export function QuotationDetail({ id }: { id: string }) {
                             {showPrices && quotation.pricingOptions.showSubtotals && (
                               <div className="flex justify-between">
                                 <span>Subtotal:</span>
-                                <span>{quotation.currency} {(quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0).toFixed(2)}</span>
+                                <span>
+                                  {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates ? 
+                                    formatCurrencyWithSymbol(
+                                      convertCurrency(
+                                        quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0,
+                                        quotation.currency,
+                                        displayCurrency,
+                                        quotation.currencySettings.exchangeRates
+                                      ),
+                                      displayCurrency
+                                    ) :
+                                    `${quotation.currency} ${(quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0).toFixed(2)}`
+                                  }
+                                </span>
                               </div>
                             )}
                             
@@ -547,11 +699,25 @@ export function QuotationDetail({ id }: { id: string }) {
                                     : "Service Fee:"}
                                 </span>
                                 <span>
-                                  {quotation.currency} {(quotation.markup || 
-                                    (quotation.pricingOptions.markupType === "percentage"
-                                      ? ((quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0) * (quotation.pricingOptions.markupValue / 100))
-                                      : quotation.pricingOptions.markupValue)
-                                  ).toFixed(2)}
+                                  {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates ? 
+                                    formatCurrencyWithSymbol(
+                                      convertCurrency(
+                                        quotation.markup || 
+                                          (quotation.pricingOptions.markupType === "percentage"
+                                            ? ((quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0) * (quotation.pricingOptions.markupValue / 100))
+                                            : quotation.pricingOptions.markupValue),
+                                        quotation.currency,
+                                        displayCurrency,
+                                        quotation.currencySettings.exchangeRates
+                                      ),
+                                      displayCurrency
+                                    ) :
+                                    `${quotation.currency} ${(quotation.markup || 
+                                      (quotation.pricingOptions.markupType === "percentage"
+                                        ? ((quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0) * (quotation.pricingOptions.markupValue / 100))
+                                        : quotation.pricingOptions.markupValue)
+                                    ).toFixed(2)}`
+                                  }
                                 </span>
                               </div>
                             )}
@@ -559,7 +725,20 @@ export function QuotationDetail({ id }: { id: string }) {
                             {quotation.pricingOptions.showTotal && (
                               <div className="flex justify-between font-bold pt-2">
                                 <span>Total:</span>
-                                <span>{quotation.currency} {(quotation.total || quotation.pricingOptions.finalTotalPrice || 0).toFixed(2)}</span>
+                                <span>
+                                  {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates ? 
+                                    formatCurrencyWithSymbol(
+                                      convertCurrency(
+                                        quotation.total || quotation.pricingOptions.finalTotalPrice || 0,
+                                        quotation.currency,
+                                        displayCurrency,
+                                        quotation.currencySettings.exchangeRates
+                                      ),
+                                      displayCurrency
+                                    ) :
+                                    `${quotation.currency} ${(quotation.total || quotation.pricingOptions.finalTotalPrice || 0).toFixed(2)}`
+                                  }
+                                </span>
                               </div>
                             )}
                           </div>
@@ -569,19 +748,33 @@ export function QuotationDetail({ id }: { id: string }) {
                   </CardContent>
                 </Card>
                 
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print
-                  </Button>
-                  <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
-                  </Button>
-                  <Button>
-                    <Send className="mr-2 h-4 w-4" />
-                    Send to Client
-                  </Button>
+                <div className="flex justify-between items-center mt-4">
+                  <div className="flex items-center">
+                    {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates && (
+                      <div className="text-sm text-muted-foreground">
+                        Displaying prices in {displayCurrency} (1 {quotation.currency} = {quotation.currencySettings.exchangeRates[displayCurrency]} {displayCurrency})
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" disabled={!versionLocked}>
+                      <Printer className="mr-2 h-4 w-4" />
+                      Print
+                    </Button>
+                    <Button variant="outline" disabled={!versionLocked}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download PDF
+                    </Button>
+                    <Button>
+                      <Send className="mr-2 h-4 w-4" />
+                      Send to Client
+                    </Button>
+                    {!versionLocked && (
+                      <div className="text-sm text-amber-600 ml-2 flex items-center">
+                        <Lock className="h-4 w-4 mr-1" /> Version must be locked before printing or downloading
+                      </div>
+                    )}
+                  </div>
                 </div>
               </TabsContent>
 
@@ -672,6 +865,65 @@ export function QuotationDetail({ id }: { id: string }) {
                       />
                     </CardContent>
                   </Card>
+                </div>
+              </TabsContent>
+
+              {/* Currency Tab */}
+              <TabsContent value="currency" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Currency Conversion Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CurrencyConversion
+                      currencySettings={{
+                        baseCurrency: quotation.currency || "USD",
+                        displayCurrency: displayCurrency || quotation.currency || "USD",
+                        exchangeRates: quotation.currencySettings?.exchangeRates || {
+                          USD: 1,
+                          EUR: 0.92,
+                          INR: 83.13,
+                        }
+                      }}
+                      onUpdateSettings={handleCurrencyChange}
+                      onUpdateDisplayCurrency={handleDisplayCurrencyChange}
+                    />
+                  </CardContent>
+                </Card>
+                <div className="flex justify-end">
+                  <Button onClick={() => setActiveTab("preview")}>
+                    Back to Preview
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* Versions Tab */}
+              <TabsContent value="versions" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Version Control</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <VersionControl
+                      versionHistory={quotation.versionHistory || []}
+                      currentVersion={quotation.versionHistory?.length || 1}
+                      isLocked={versionLocked}
+                      onCreateVersion={(description: string) => handleCreateVersion({ notes: description })}
+                      onLockVersion={() => {
+                        if (quotation.versionHistory && quotation.versionHistory.length > 0) {
+                          const latestVersion = quotation.versionHistory[quotation.versionHistory.length - 1];
+                          return handleLockVersion(latestVersion.versionNumber.toString());
+                        }
+                        return Promise.resolve();
+                      }}
+                      onViewVersion={() => {}}
+                    />
+                  </CardContent>
+                </Card>
+                <div className="flex justify-end">
+                  <Button onClick={() => setActiveTab("preview")}>
+                    Back to Preview
+                  </Button>
                 </div>
               </TabsContent>
 

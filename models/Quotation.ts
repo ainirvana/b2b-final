@@ -24,6 +24,26 @@ export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
     phone?: string
     referenceNo?: string
   }
+  // Currency conversion settings
+  currencySettings?: {
+    baseCurrency: string // The currency in which prices are stored (e.g., USD)
+    displayCurrency: string // The currency to display prices in (e.g., INR, EUR)
+    exchangeRates: {
+      [currency: string]: number // Exchange rates from base currency to other currencies
+    }
+  }
+  // Version control
+  versionHistory?: Array<{
+    versionNumber: number
+    createdAt: Date
+    description: string
+    isLocked: boolean
+    lockedBy?: string
+    lockedAt?: Date
+  }>
+  // Current version information
+  currentVersion?: number
+  isLocked?: boolean
   generatedDate: Date
   notes?: string
 }
@@ -158,6 +178,31 @@ const QuotationSchema = new mongoose.Schema(
     subtotal: { type: Number },
     markup: { type: Number },
     total: { type: Number },
+    // Currency conversion settings
+    currencySettings: {
+      baseCurrency: { type: String, default: "USD" },
+      displayCurrency: { type: String, default: "USD" },
+      exchangeRates: {
+        type: Map,
+        of: Number,
+        default: {
+          "USD": 1,
+          "EUR": 0.92,
+          "INR": 83.36
+        }
+      }
+    },
+    // Version control
+    versionHistory: [{
+      versionNumber: { type: Number, required: true },
+      createdAt: { type: Date, default: Date.now },
+      description: { type: String },
+      isLocked: { type: Boolean, default: false },
+      lockedBy: { type: String },
+      lockedAt: { type: Date }
+    }],
+    currentVersion: { type: Number, default: 1 },
+    isLocked: { type: Boolean, default: false },
     validUntil: { type: Date },
     client: {
       name: { type: String, required: true },
