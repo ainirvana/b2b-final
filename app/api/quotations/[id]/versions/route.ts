@@ -44,12 +44,11 @@ export async function POST(
     }
 
     // Determine the next version number
-    const currentVersion = quotation.currentVersion || 1
-    const nextVersion = currentVersion + 1
+    const nextVersion = quotation.versionHistory.length + 1
 
     // Create a new version entry with current data
     quotation.versionHistory.push({
-      versionNumber: currentVersion,
+      versionNumber: nextVersion,
       createdAt: new Date(),
       description,
       isLocked: false

@@ -99,8 +99,13 @@ export function QuotationDetail({ id }: { id: string }) {
         // Check if the latest version is locked
         if (updatedData.versionHistory && updatedData.versionHistory.length > 0) {
           const latestVersion = updatedData.versionHistory[updatedData.versionHistory.length - 1]
-          setVersionLocked(latestVersion.locked || false)
+          setVersionLocked(latestVersion.isLocked || false)
+        } else {
+          setVersionLocked(false)
         }
+
+        // Also check the global lock status
+        setVersionLocked(updatedData.isLocked || false)
       }
     }
 
@@ -110,6 +115,16 @@ export function QuotationDetail({ id }: { id: string }) {
   // Handle pricing options change
   const handlePricingOptionsChange = async (options: any) => {
     if (!quotation) return
+
+    // Don't save if the quotation is locked
+    if (versionLocked) {
+      toast({
+        title: "Error",
+        description: "Cannot modify a locked version. Create a new version first.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const updatedQuotation = await updateQuotation(quotation._id!, {
@@ -243,21 +258,24 @@ export function QuotationDetail({ id }: { id: string }) {
     if (!quotation) return
 
     try {
-      // Create a new version with the current state
+      // Create a new version with the current state - convert notes to description
       const response = await fetch(`/api/quotations/${quotation._id}/versions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(versionData),
+        body: JSON.stringify({ description: versionData.notes }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create new version')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create new version')
       }
 
       const updatedQuotation = await response.json()
       setQuotation(updatedQuotation)
+      // Reset version lock since this is a new version
+      setVersionLocked(false)
       toast({
         title: "Success",
         description: "New version created successfully",
@@ -360,7 +378,51 @@ export function QuotationDetail({ id }: { id: string }) {
                     </>
                   )}
                 </Button>
-                <Button>
+                <Button 
+                  onClick={async () => {
+                    if (!quotation) return;
+                    
+                    // Don't save if the quotation is locked
+                    if (versionLocked) {
+                      toast({
+                        title: "Error",
+                        description: "Cannot save changes to a locked version. Create a new version first.",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    try {
+                      const updatedQuotation = await updateQuotation(quotation._id!, {
+                        days: quotation.days,
+                        pricingOptions: quotation.pricingOptions,
+                        client: quotation.client,
+                        currencySettings: quotation.currencySettings,
+                        subtotal: quotation.subtotal,
+                        markup: quotation.markup,
+                        total: quotation.total,
+                        notes: quotation.notes,
+                        title: quotation.title,
+                        description: quotation.description
+                      });
+
+                      if (updatedQuotation) {
+                        setQuotation(updatedQuotation);
+                        toast({
+                          title: "Success",
+                          description: "Quotation saved successfully"
+                        });
+                      }
+                    } catch (error) {
+                      console.error("Error saving quotation:", error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to save quotation",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                >
                   <Save className="mr-2 h-4 w-4" />
                   Save
                 </Button>
@@ -906,7 +968,7 @@ export function QuotationDetail({ id }: { id: string }) {
                   <CardContent>
                     <VersionControl
                       versionHistory={quotation.versionHistory || []}
-                      currentVersion={quotation.versionHistory?.length || 1}
+                      currentVersion={quotation.currentVersion || 1}
                       isLocked={versionLocked}
                       onCreateVersion={(description: string) => handleCreateVersion({ notes: description })}
                       onLockVersion={() => {

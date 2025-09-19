@@ -202,8 +202,8 @@ export function VersionControl({
                         .slice()
                         .sort((a, b) => b.versionNumber - a.versionNumber)
                         .slice(0, 3)
-                        .map((version) => (
-                          <TableRow key={version.versionNumber}>
+                        .map((version, index) => (
+                          <TableRow key={`recent-${version.versionNumber}-${index}`}>
                             <TableCell>v{version.versionNumber}</TableCell>
                             <TableCell>{formatDate(version.createdAt)}</TableCell>
                             <TableCell className="max-w-[200px] truncate">{version.description}</TableCell>
@@ -306,8 +306,8 @@ export function VersionControl({
                     {versionHistory
                       .slice()
                       .sort((a, b) => b.versionNumber - a.versionNumber)
-                      .map((version) => (
-                        <TableRow key={version.versionNumber}>
+                      .map((version, index) => (
+                        <TableRow key={`history-${version.versionNumber}-${index}`}>
                           <TableCell>v{version.versionNumber}</TableCell>
                           <TableCell>{formatDate(version.createdAt)}</TableCell>
                           <TableCell className="max-w-[200px] truncate">{version.description}</TableCell>
