@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
 import { useLibrary } from "@/hooks/use-library"
 import { toast } from "sonner"
 
@@ -51,6 +52,10 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
     availableFrom: "",
     availableUntil: "",
     variants: ""
+  })
+  const [advancedPricing, setAdvancedPricing] = useState({
+    enabled: false,
+    paxPricing: Array.from({ length: 21 }, (_, i) => ({ paxCount: i, price: "" }))
   })
   const [citySuggestions, setCitySuggestions] = useState<CityData[]>([])
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
@@ -88,6 +93,18 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
       setSelectedSubCategory(editingItem.subCategory || "Flight")
       setSelectedTransferOptions(editingItem.transferOptions || ["any"])
       setUploadedFiles(editingItem.multimedia || [])
+      
+      // Initialize advanced pricing
+      if (editingItem.advancedPricing) {
+        const paxPricing = Array.from({ length: 21 }, (_, i) => {
+          const existing = editingItem.advancedPricing.paxPricing?.find(p => p.paxCount === i)
+          return { paxCount: i, price: existing?.price?.toString() || "" }
+        })
+        setAdvancedPricing({
+          enabled: editingItem.advancedPricing.enabled || false,
+          paxPricing
+        })
+      }
     }
   }, [editingItem])
 
@@ -242,6 +259,22 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
     )
   }
 
+  const handleAdvancedPricingToggle = () => {
+    setAdvancedPricing(prev => ({
+      ...prev,
+      enabled: !prev.enabled
+    }))
+  }
+
+  const handlePaxPriceChange = (paxCount: number, price: string) => {
+    setAdvancedPricing(prev => ({
+      ...prev,
+      paxPricing: prev.paxPricing.map(item => 
+        item.paxCount === paxCount ? { ...item, price } : item
+      )
+    }))
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
@@ -308,12 +341,19 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
         labels: formData.labels,
         notes: formData.notes,
         transferOptions: selectedCategory === "Transfer" ? selectedTransferOptions : [],
-        basePrice: formData.basePrice ? parseFloat(formData.basePrice) : undefined,
+        basePrice: selectedCategory === "Activity" && advancedPricing.enabled ? undefined : (formData.basePrice ? parseFloat(formData.basePrice) : undefined),
         currency: formData.currency,
         availableFrom: formData.availableFrom ? new Date(formData.availableFrom) : undefined,
         availableUntil: formData.availableUntil ? new Date(formData.availableUntil) : undefined,
         variants: formData.variants,
-        multimedia: uploadedFiles
+        multimedia: uploadedFiles,
+        advancedPricing: selectedCategory === "Activity" ? {
+          enabled: advancedPricing.enabled,
+          paxPricing: advancedPricing.enabled ? advancedPricing.paxPricing
+            .filter(item => item.price && item.price.trim() !== "")
+            .map(item => ({ paxCount: item.paxCount, price: parseFloat(item.price) }))
+            : []
+        } : undefined
       }
 
       if (isEditing) {
@@ -343,6 +383,10 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
         availableFrom: "",
         availableUntil: "",
         variants: ""
+      })
+      setAdvancedPricing({
+        enabled: false,
+        paxPricing: Array.from({ length: 21 }, (_, i) => ({ paxCount: i, price: "" }))
       })
       setUploadedFiles([])
       setSelectedCategory("Flight")
@@ -574,29 +618,83 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
             {/* Price */}
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-3 block">Price</Label>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs text-gray-600">Base Price</Label>
-                  <div className="relative mt-1">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              
+              {/* Advanced Pricing Toggle for Activity */}
+              {selectedCategory === "Activity" && (
+                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700">Advanced Pricing</Label>
+                      <p className="text-xs text-gray-500">Set different prices for different group sizes (0-20 pax)</p>
+                    </div>
+                    <Switch
+                      checked={advancedPricing.enabled}
+                      onCheckedChange={handleAdvancedPricingToggle}
+                    />
+                  </div>
+                  
+                  {advancedPricing.enabled && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                        {advancedPricing.paxPricing.map((item) => (
+                          <div key={item.paxCount} className="flex items-center space-x-2">
+                            <Label className="text-xs text-gray-600 w-12">{item.paxCount} pax:</Label>
+                            <div className="relative flex-1">
+                              <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                              <Input
+                                placeholder="0.00"
+                                value={item.price}
+                                onChange={(e) => handlePaxPriceChange(item.paxCount, e.target.value)}
+                                className="pl-6 text-xs h-8 border border-gray-300 rounded focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Regular Price Fields */}
+              {(!advancedPricing.enabled || selectedCategory !== "Activity") && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-gray-600">Base Price</Label>
+                    <div className="relative mt-1">
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="0.00"
+                        value={formData.basePrice}
+                        onChange={(e) => handleInputChange("basePrice", e.target.value)}
+                        className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-600">Currency</Label>
                     <Input
-                      placeholder="0.00"
-                      value={formData.basePrice}
-                      onChange={(e) => handleInputChange("basePrice", e.target.value)}
-                      className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                      placeholder="USD"
+                      value={formData.currency}
+                      onChange={(e) => handleInputChange("currency", e.target.value)}
+                      className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
                     />
                   </div>
                 </div>
-                <div>
+              )}
+              
+              {/* Currency field for advanced pricing */}
+              {advancedPricing.enabled && selectedCategory === "Activity" && (
+                <div className="mt-3">
                   <Label className="text-xs text-gray-600">Currency</Label>
                   <Input
                     placeholder="USD"
                     value={formData.currency}
                     onChange={(e) => handleInputChange("currency", e.target.value)}
-                    className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                    className="mt-1 w-32 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
                   />
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Availability */}

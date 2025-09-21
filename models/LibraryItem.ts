@@ -18,6 +18,14 @@ const LibraryItemSchema = new mongoose.Schema({
   multimedia: [String], // Array of file URLs
   startDate: String,
   endDate: String,
+  // Advanced pricing for Activity & Experiences
+  advancedPricing: {
+    enabled: { type: Boolean, default: false },
+    paxPricing: [{
+      paxCount: Number, // Number of pax (0-20)
+      price: Number     // Price for this pax count
+    }]
+  },
   // Flexible field for any additional data
   extraFields: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, {
