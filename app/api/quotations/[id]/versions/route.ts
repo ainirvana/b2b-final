@@ -46,16 +46,29 @@ export async function POST(
     // Determine the next version number
     const nextVersion = quotation.versionHistory.length + 1
 
+    // Capture current state for the version
+    const versionState = {
+      days: quotation.days,
+      pricingOptions: quotation.pricingOptions,
+      subtotal: quotation.subtotal,
+      markup: quotation.markup,
+      total: quotation.total,
+      currencySettings: quotation.currencySettings
+    }
+
     // Create a new version entry with current data
     quotation.versionHistory.push({
       versionNumber: nextVersion,
       createdAt: new Date(),
       description,
-      isLocked: false
+      isLocked: false,
+      state: versionState,
+      isDraft: true
     })
 
-    // Update current version
+    // Update current version and mark as draft
     quotation.currentVersion = nextVersion
+    quotation.isDraft = true
 
     // Save changes
     await quotation.save()

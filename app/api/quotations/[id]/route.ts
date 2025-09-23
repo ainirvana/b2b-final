@@ -78,6 +78,23 @@ export async function PUT(
       updateData.totalPrice = recalculatedQuotation.total; // For backward compatibility
     }
 
+    // Get the current version
+    const currentVersion = quotation.currentVersion || 1
+    const versionIndex = quotation.versionHistory?.findIndex(
+      (v: any) => v.versionNumber === currentVersion
+    )
+
+    // If this version is locked, prevent updates
+    if (versionIndex !== -1 && quotation.versionHistory[versionIndex].isLocked) {
+      return NextResponse.json({ error: "Cannot update a locked version" }, { status: 400 })
+    }
+
+    // Set the draft flag
+    updateData.isDraft = true
+    if (versionIndex !== -1) {
+      quotation.versionHistory[versionIndex].isDraft = true
+    }
+
     // Update quotation
     const updatedQuotation = await Quotation.findByIdAndUpdate(id, updateData, {
       new: true,

@@ -40,10 +40,20 @@ export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
     isLocked: boolean
     lockedBy?: string
     lockedAt?: Date
+    state: {
+      days: any[]
+      pricingOptions: any
+      subtotal: number
+      markup: number
+      total: number
+      currencySettings: any
+    }
+    isDraft: boolean
   }>
   // Current version information
   currentVersion?: number
   isLocked?: boolean
+  isDraft?: boolean
   generatedDate: Date
   notes?: string
 }

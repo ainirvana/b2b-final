@@ -29,24 +29,31 @@ export async function POST(
       return NextResponse.json({ error: "Quotation not found" }, { status: 404 })
     }
 
-    // Check if current version is already locked
-    if (quotation.isLocked) {
-      return NextResponse.json({ error: "This version is already locked" }, { status: 400 })
-    }
-
-    // Lock the current version
-    quotation.isLocked = true
-
+    const { versionNumber } = await request.json()
+    
     // Initialize version history if it doesn't exist
     if (!quotation.versionHistory) {
       quotation.versionHistory = []
     }
 
-    // Find the current version in history
-    const currentVersion = quotation.currentVersion || 1
+    // Find the specified version in history
     const versionIndex = quotation.versionHistory.findIndex(
-      (v: any) => v.versionNumber === currentVersion
+      (v: any) => v.versionNumber === versionNumber
     )
+
+    // Check if version exists and is not already locked
+    if (versionIndex === -1) {
+      return NextResponse.json({ error: "Version not found" }, { status: 404 })
+    }
+
+    if (quotation.versionHistory[versionIndex].isLocked) {
+      return NextResponse.json({ error: "This version is already locked" }, { status: 400 })
+    }
+
+    // Check if version has unsaved changes (is a draft)
+    if (quotation.versionHistory[versionIndex].isDraft) {
+      return NextResponse.json({ error: "Cannot lock a draft version. Please save changes first." }, { status: 400 })
+    }
 
     if (versionIndex >= 0) {
       // Update existing version entry
@@ -56,12 +63,21 @@ export async function POST(
     } else {
       // Add current version to history if not found
       quotation.versionHistory.push({
-        versionNumber: currentVersion,
+        versionNumber: versionNumber,
         createdAt: new Date(),
         description: "Version locked",
         isLocked: true,
         lockedBy: userName || "Unknown user",
-        lockedAt: new Date()
+        lockedAt: new Date(),
+        state: {
+          days: quotation.days,
+          pricingOptions: quotation.pricingOptions,
+          subtotal: quotation.subtotal,
+          markup: quotation.markup,
+          total: quotation.total,
+          currencySettings: quotation.currencySettings
+        },
+        isDraft: false
       })
     }
 

@@ -39,18 +39,22 @@ interface VersionControlProps {
   versionHistory: VersionInfo[]
   currentVersion: number
   isLocked: boolean
+  isDraft: boolean
   onCreateVersion: (description: string) => Promise<void>
   onLockVersion: () => Promise<void>
   onViewVersion: (versionNumber: number) => void
+  onSaveVersion: () => Promise<void>
 }
 
 export function VersionControl({
   versionHistory = [],
   currentVersion = 1,
   isLocked = false,
+  isDraft = false,
   onCreateVersion,
   onLockVersion,
-  onViewVersion
+  onViewVersion,
+  onSaveVersion
 }: VersionControlProps) {
   const { toast } = useToast()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -70,6 +74,15 @@ export function VersionControl({
       toast({
         title: "Error",
         description: "Please provide a description for the new version",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (isLocked) {
+      toast({
+        title: "Error",
+        description: "Cannot create a new version from a locked version",
         variant: "destructive"
       })
       return
@@ -171,9 +184,19 @@ export function VersionControl({
                       <Plus className="h-4 w-4 mr-1" />
                       New Version
                     </Button>
+                    {isDraft && (
+                      <Button
+                        variant="secondary"
+                        onClick={onSaveVersion}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Save Changes
+                      </Button>
+                    )}
                     <Button 
                       variant="secondary"
                       onClick={handleLockVersion}
+                      disabled={isDraft}
                     >
                       <Lock className="h-4 w-4 mr-1" />
                       Lock Version

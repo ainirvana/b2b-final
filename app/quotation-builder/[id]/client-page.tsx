@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { saveQuotationVersion } from "@/hooks/use-save-quotation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -393,6 +394,7 @@ export function QuotationDetail({ id }: { id: string }) {
                     }
 
                     try {
+                      // First update the quotation
                       const updatedQuotation = await updateQuotation(quotation._id!, {
                         days: quotation.days,
                         pricingOptions: quotation.pricingOptions,
@@ -970,6 +972,7 @@ export function QuotationDetail({ id }: { id: string }) {
                       versionHistory={quotation.versionHistory || []}
                       currentVersion={quotation.currentVersion || 1}
                       isLocked={versionLocked}
+                      isDraft={quotation.isDraft || false}
                       onCreateVersion={(description: string) => handleCreateVersion({ notes: description })}
                       onLockVersion={() => {
                         if (quotation.versionHistory && quotation.versionHistory.length > 0) {
@@ -977,6 +980,23 @@ export function QuotationDetail({ id }: { id: string }) {
                           return handleLockVersion(latestVersion.versionNumber.toString());
                         }
                         return Promise.resolve();
+                      }}
+                      onSaveVersion={async () => {
+                        try {
+                          const updatedQuotation = await saveQuotationVersion(quotation._id!);
+                          setQuotation(updatedQuotation);
+                          toast({
+                            title: "Success",
+                            description: "Changes saved successfully",
+                          });
+                        } catch (error) {
+                          console.error("Error saving changes:", error);
+                          toast({
+                            title: "Error",
+                            description: "Failed to save changes",
+                            variant: "destructive",
+                          });
+                        }
                       }}
                       onViewVersion={() => {}}
                     />
