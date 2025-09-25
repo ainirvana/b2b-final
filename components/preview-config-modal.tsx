@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, Users, Baby } from "lucide-react"
+import { Calendar, Users, Baby, Layout } from "lucide-react"
 
 interface PreviewConfigModalProps {
   isOpen: boolean
@@ -19,6 +19,7 @@ export interface PreviewConfig {
   children: number
   withDates: boolean
   startDate?: string
+  template: number
 }
 
 export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfigModalProps) {
@@ -26,6 +27,7 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
   const [children, setChildren] = useState(0)
   const [withDates, setWithDates] = useState(false)
   const [startDate, setStartDate] = useState("")
+  const [template, setTemplate] = useState(1)
 
   const handleConfirm = () => {
     onConfirm({
@@ -33,6 +35,7 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
       children,
       withDates,
       startDate: withDates ? startDate : undefined,
+      template,
     })
     onClose()
   }
@@ -46,6 +49,41 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
           <CardTitle className="text-xl font-bold">Preview Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Template Selection */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Layout className="h-5 w-5 text-purple-500" />
+              <Label className="text-base font-medium">Template</Label>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setTemplate(1)}
+                className={`p-3 rounded-lg border-2 text-left transition-all ${
+                  template === 1
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="font-medium">Template 1</div>
+                <div className="text-xs text-gray-500">Professional Layout</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTemplate(2)}
+                className={`p-3 rounded-lg border-2 text-left transition-all ${
+                  template === 2
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="font-medium">Template 2</div>
+                <div className="text-xs text-gray-500">Coming Soon</div>
+              </button>
+            </div>
+          </div>
+
           {/* Travelers */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">

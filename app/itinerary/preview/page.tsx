@@ -28,6 +28,7 @@ interface PreviewItinerary {
     children: number
     withDates: boolean
     startDate?: string
+    template: number
   }
 }
 
@@ -289,6 +290,13 @@ export default function ItineraryPreviewPage() {
 
       {/* Content */}
       <div id="preview-content" className="max-w-5xl mx-auto p-4 space-y-6">
+        {itinerary.previewConfig?.template === 2 ? (
+          <div className="text-center p-8 bg-gray-50 rounded-lg">
+            <h2 className="text-2xl font-bold mb-4">Template 2 - Coming Soon</h2>
+            <p className="text-gray-600">This template is under development. Please use Template 1 for now.</p>
+          </div>
+        ) : (
+          <>
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-6 md:p-8">
           <div className="absolute inset-0 opacity-20" style={{
@@ -462,7 +470,7 @@ export default function ItineraryPreviewPage() {
             <Card key={index} className="avoid-break overflow-hidden border-0 shadow-lg bg-white">
               {/* Day Header */}
               <div className="luxury-gradient p-4 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 opacity-90"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 opacity-90"></div>
                 <div className="relative z-10 flex items-center justify-between text-white">
                   <div>
                     <h3 className="day-title text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif' }}>
@@ -747,6 +755,8 @@ export default function ItineraryPreviewPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+          </>
         )}
       </div>
     </div>
