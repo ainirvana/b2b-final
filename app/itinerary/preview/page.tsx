@@ -28,7 +28,6 @@ interface PreviewItinerary {
     children: number
     withDates: boolean
     startDate?: string
-    endDate?: string
   }
 }
 
@@ -352,7 +351,7 @@ export default function ItineraryPreviewPage() {
                 <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
                   <Calendar className="h-4 w-4 text-green-300" />
                   <span className="font-medium text-sm">
-                    {new Date(itinerary.previewConfig.startDate).toLocaleDateString()} - {itinerary.previewConfig.endDate ? new Date(itinerary.previewConfig.endDate).toLocaleDateString() : 'TBD'}
+                    {new Date(itinerary.previewConfig.startDate).toLocaleDateString()} - {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (itinerary.days.length - 1) * 24 * 60 * 60 * 1000).toLocaleDateString()}
                   </span>
                 </div>
               )}
@@ -470,11 +469,25 @@ export default function ItineraryPreviewPage() {
                       Day {day.day}: {day.title}
                     </h3>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center space-x-4">
                     {day.nights > 0 && (
                       <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
                         {day.nights} {day.nights === 1 ? "Night" : "Nights"}
                       </Badge>
+                    )}
+                    {/* Calendar Date Display */}
+                    {itinerary.previewConfig?.withDates && itinerary.previewConfig.startDate && (
+                      <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 text-center min-w-[80px]">
+                        <div className="text-xs uppercase tracking-wide opacity-90 leading-none">
+                          {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en', { month: 'short' })}-{new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).getFullYear().toString().slice(-2)}
+                        </div>
+                        <div className="text-3xl font-bold leading-none">
+                          {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).getDate()}
+                        </div>
+                        <div className="text-xs uppercase tracking-wide opacity-90 leading-none">
+                          {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en', { weekday: 'short' })}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

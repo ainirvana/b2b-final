@@ -19,7 +19,6 @@ export interface PreviewConfig {
   children: number
   withDates: boolean
   startDate?: string
-  endDate?: string
 }
 
 export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfigModalProps) {
@@ -27,7 +26,6 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
   const [children, setChildren] = useState(0)
   const [withDates, setWithDates] = useState(false)
   const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
 
   const handleConfirm = () => {
     onConfirm({
@@ -35,7 +33,6 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
       children,
       withDates,
       startDate: withDates ? startDate : undefined,
-      endDate: withDates ? endDate : undefined,
     })
     onClose()
   }
@@ -93,27 +90,16 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
             </div>
 
             {withDates && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="startDate" className="text-sm text-gray-600">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="endDate" className="text-sm text-gray-600">End Date</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="startDate" className="text-sm text-gray-600">Start Date</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">End date will be calculated automatically based on trip duration</p>
               </div>
             )}
           </div>
