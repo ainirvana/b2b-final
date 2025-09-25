@@ -658,3 +658,16 @@
 .summary-event-price {
   @apply text-sm font-medium text-blue-600;
 }
+
+/* Pinterest-style Masonry Gallery Flex Utilities */
+.flex-2 {
+  flex: 2;
+}
+
+.flex-3 {
+  flex: 3;
+}
+
+.flex-4 {
+  flex: 4;
+}
