@@ -44,6 +44,8 @@ export function QuotationOptions({ onOptionSelect }: QuotationOptionsProps) {
   const handleSelect = (optionId: string) => {
     if (optionId === "convert-from-itinerary") {
       router.push("/itinerary?selectForQuotation=true")
+    } else if (optionId === "new-itinerary") {
+      onOptionSelect("create-blank-itinerary")
     } else {
       onOptionSelect(optionId)
     }

@@ -54,6 +54,8 @@ export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
   currentVersion?: number
   isLocked?: boolean
   isDraft?: boolean
+  isQuotationOnly?: boolean // Flag to identify itineraries created specifically for quotations
+  quotationLead?: any // Store lead data associated with quotation
   generatedDate: Date
   notes?: string
 }

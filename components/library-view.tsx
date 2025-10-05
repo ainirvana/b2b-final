@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useLibrary } from "@/hooks/use-library"
 import { Search, Edit, PlaneLanding, Hotel, MapPin, Car, Trash2 } from "lucide-react"
 import { format } from "date-fns"
@@ -11,6 +11,8 @@ import { SelectCategoryModal } from "@/components/select-category-modal"
 import { AddEditEventModal } from "@/components/add-edit-event-modal"
 import { Sidebar } from "@/components/sidebar"
 import { toast } from "sonner"
+import ShareManagement from "@/components/share-management"
+import { IItinerary } from "@/models/Itinerary"
 
 interface ILibraryItem {
   id: string
@@ -30,11 +32,41 @@ export function LibraryView() {
   const [showSelectCategoryModal, setShowSelectCategoryModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
-  const [activeLibrary, setActiveLibrary] = useState<'personal' | 'institutional' | 'public'>('personal')
+  const [activeLibrary, setActiveLibrary] = useState<'personal' | 'institutional' | 'public' | 'shares'>('personal')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   
+  // Shares related state
+  const [itineraries, setItineraries] = useState<IItinerary[]>([])
+  const [sharesLoading, setSharesLoading] = useState(false)
+  
   const { items: dbItems, loading, deleteItem } = useLibrary()
+
+  // Fetch itineraries for shares
+  useEffect(() => {
+    if (activeLibrary === 'shares') {
+      fetchItineraries()
+    }
+  }, [activeLibrary])
+
+  const fetchItineraries = async () => {
+    try {
+      setSharesLoading(true)
+      const response = await fetch("/api/itineraries")
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch itineraries")
+      }
+
+      const data = await response.json()
+      setItineraries(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error("Error fetching itineraries:", error)
+      setItineraries([])
+    } finally {
+      setSharesLoading(false)
+    }
+  }
   
   // Transform DB items to component format
   const items: ILibraryItem[] = dbItems.map(item => {
@@ -129,7 +161,8 @@ export function LibraryView() {
             {[
               { id: 'personal', label: 'My Library' },
               { id: 'institutional', label: 'MY LIVE WEBLINKS' },
-              { id: 'public', label: 'Global Library' }
+              { id: 'public', label: 'Global Library' },
+              { id: 'shares', label: 'Shares' }
             ].map((library) => (
               <Button
                 key={library.id}
@@ -282,6 +315,18 @@ export function LibraryView() {
                 <a href="#" className="block text-blue-600 hover:text-blue-800">link 1</a>
                 <a href="#" className="block text-blue-600 hover:text-blue-800">link 2</a>
               </div>
+            </div>
+          ) : activeLibrary === 'shares' ? (
+            <div>
+              {sharesLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <p className="text-lg font-medium">Loading...</p>
+                  </div>
+                </div>
+              ) : (
+                <ShareManagement availableItineraries={itineraries} />
+              )}
             </div>
           ) : (
             <div className="text-center py-12">

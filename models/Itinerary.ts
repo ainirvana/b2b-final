@@ -41,6 +41,9 @@ export interface IItinerary {
   // NEW: HTML Editor content
   htmlContent?: string
   htmlBlocks?: IHtmlBlock[]
+  // NEW: Quotation-specific fields
+  isQuotationOnly?: boolean // Flag to identify itineraries created specifically for quotations
+  quotationLead?: any // Store lead data associated with quotation
 }
 
 export interface IGalleryItem {
@@ -334,6 +337,9 @@ const ItinerarySchema = new mongoose.Schema(
         createdAt: { type: Date, default: Date.now },
       },
     ],
+    // Quotation-specific fields
+    isQuotationOnly: { type: Boolean, default: false },
+    quotationLead: mongoose.Schema.Types.Mixed,
   },
   {
     timestamps: true,

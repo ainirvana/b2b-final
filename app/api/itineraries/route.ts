@@ -72,7 +72,12 @@ export async function GET(request: NextRequest) {
   try {
     await connectWithRetry()
 
-    const itineraries = await Itinerary.find({}).sort({ createdAt: -1 })
+    const itineraries = await Itinerary.find({ 
+      $or: [
+        { isQuotationOnly: { $ne: true } },
+        { isQuotationOnly: { $exists: false } }
+      ]
+    }).sort({ createdAt: -1 })
 
     return NextResponse.json({
       data: itineraries,

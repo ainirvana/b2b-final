@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { QuotationLeadForm } from "@/components/quotation-lead-form"
 import { QuotationOptions } from "@/components/quotation-options"
+import { QuotationItineraryBuilder } from "@/components/quotation-itinerary-builder"
 import { ComingSoon } from "@/components/coming-soon"
 import { useQuotations, QuotationData } from "@/hooks/use-quotations"
 import { useToast } from "@/hooks/use-toast"
@@ -56,7 +57,7 @@ interface LeadFormData {
   contactDetails?: string
 }
 
-type Step = "list" | "lead-form" | "options" | "coming-soon"
+type Step = "list" | "lead-form" | "options" | "create-blank-itinerary" | "coming-soon"
 
 export default function QuotationBuilderPage() {
   const [currentStep, setCurrentStep] = useState<Step>("list")
@@ -81,7 +82,11 @@ export default function QuotationBuilderPage() {
 
   const handleOptionSelect = (option: string) => {
     console.log("Selected option:", option)
-    setCurrentStep("coming-soon")
+    if (option === "create-blank-itinerary") {
+      setCurrentStep("create-blank-itinerary")
+    } else {
+      setCurrentStep("coming-soon")
+    }
   }
 
   // Fetch quotations
@@ -324,6 +329,13 @@ export default function QuotationBuilderPage() {
         )
       case "options":
         return <QuotationOptions onOptionSelect={handleOptionSelect} />
+      case "create-blank-itinerary":
+        return leadData ? (
+          <QuotationItineraryBuilder 
+            leadData={leadData} 
+            onBack={() => setCurrentStep("options")} 
+          />
+        ) : null
       case "coming-soon":
         return <ComingSoon />
       default:
