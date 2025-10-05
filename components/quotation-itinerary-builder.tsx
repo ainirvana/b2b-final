@@ -1,10 +1,9 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Save } from "lucide-react"
 import { ItineraryBuilder } from "@/components/itinerary-builder"
 import { useItineraries } from "@/hooks/use-itineraries"
 import { useQuotations } from "@/hooks/use-quotations"
@@ -23,47 +22,49 @@ interface QuotationItineraryBuilderProps {
 
 export function QuotationItineraryBuilder({ leadData, onBack }: QuotationItineraryBuilderProps) {
   const [isCreating, setIsCreating] = useState(false)
+  const [createdItineraryId, setCreatedItineraryId] = useState<string | null>(null)
   const { createItinerary } = useItineraries()
   const { convertItineraryToQuotation } = useQuotations()
   const { toast } = useToast()
   const router = useRouter()
 
-  const handleItineraryComplete = async (itineraryData: any) => {
-    setIsCreating(true)
-    try {
-      // First create the itinerary with a special flag to mark it as quotation-only
-      const itineraryResult = await createItinerary({
-        ...itineraryData,
-        isQuotationOnly: true, // Special flag to prevent it from showing in main itinerary list
-        quotationLead: leadData, // Store lead data with the itinerary
-      })
-
-      if (itineraryResult && itineraryResult._id) {
-        // Convert the itinerary to a quotation immediately
-        const quotationId = await convertItineraryToQuotation(
-          itineraryResult._id,
-          {
-            name: leadData.name,
-            email: leadData.contactDetails || "",
-            phone: "",
-            referenceNo: leadData.leadReferenceNo || "",
-            notes: leadData.remarks || "",
-          }
-        )
-
-        if (quotationId) {
-          toast({
-            title: "Success",
-            description: "Itinerary created and converted to quotation successfully!",
-          })
-          router.push(`/quotation-builder/${quotationId}`)
-        }
-      }
-    } catch (error) {
-      console.error("Error creating itinerary for quotation:", error)
+  // Handle when user completes building the itinerary
+  const handleCompleteAndCreateQuotation = async () => {
+    if (!createdItineraryId) {
       toast({
         title: "Error",
-        description: "Failed to create itinerary. Please try again.",
+        description: "Please save your itinerary first before creating quotation.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsCreating(true)
+    try {
+      // Convert the itinerary to a quotation
+      const quotationId = await convertItineraryToQuotation(
+        createdItineraryId,
+        {
+          name: leadData.name,
+          email: leadData.contactDetails || "",
+          phone: "",
+          referenceNo: leadData.leadReferenceNo || "",
+          notes: leadData.remarks || "",
+        }
+      )
+
+      if (quotationId) {
+        toast({
+          title: "Success",
+          description: "Itinerary converted to quotation successfully!",
+        })
+        router.push(`/quotation-builder/${quotationId}`)
+      }
+    } catch (error) {
+      console.error("Error converting itinerary to quotation:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create quotation. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -73,250 +74,146 @@ export function QuotationItineraryBuilder({ leadData, onBack }: QuotationItinera
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-6 border-b bg-white">
+      <div className="p-4 border-b bg-white flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={onBack} disabled={isCreating}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Create Itinerary for Quotation</h1>
+            <h1 className="text-xl font-bold">Create Itinerary for Quotation</h1>
             <p className="text-sm text-gray-500">
               Build an itinerary for {leadData.name} that will be converted to a quotation
             </p>
           </div>
         </div>
+        
+        {createdItineraryId && (
+          <Button 
+            onClick={handleCompleteAndCreateQuotation}
+            disabled={isCreating}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {isCreating ? "Creating Quotation..." : "Complete & Create Quotation"}
+          </Button>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <ItineraryBuilderForQuotation
-          onComplete={handleItineraryComplete}
-          isCreating={isCreating}
+        <QuotationItineraryBuilderContent
           leadData={leadData}
+          onItineraryCreated={setCreatedItineraryId}
+          onSaveRequested={async () => {
+            // This will be called when the itinerary is saved
+            console.log("[DEBUG] Itinerary saved, ready for quotation conversion")
+          }}
         />
       </div>
     </div>
   )
 }
 
-// Internal component that wraps the ItineraryBuilder for quotation-specific use
-function ItineraryBuilderForQuotation({ 
-  onComplete, 
-  isCreating,
-  leadData 
+// Internal component that uses the full ItineraryBuilder with quotation-specific setup
+function QuotationItineraryBuilderContent({ 
+  leadData,
+  onItineraryCreated,
+  onSaveRequested
 }: { 
-  onComplete: (data: any) => void
-  isCreating: boolean
   leadData: any
+  onItineraryCreated: (id: string) => void
+  onSaveRequested?: () => Promise<void>
 }) {
-  return (
-    <div className="h-full p-6">
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle>Build Your Itinerary</CardTitle>
-          <p className="text-sm text-gray-600">
-            Create a detailed itinerary that will be used as the basis for your quotation.
-            Add destinations, activities, hotels, and other travel components.
-          </p>
-        </CardHeader>
-        <CardContent className="h-full">
-          {/* Custom itinerary builder interface for quotations */}
-          <QuotationSpecificItineraryBuilder 
-            onComplete={onComplete}
-            isCreating={isCreating}
-            leadData={leadData}
-          />
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
+  const [tempItineraryId, setTempItineraryId] = useState<string | null>(null)
+  const { createItinerary } = useItineraries()
+  const { toast } = useToast()
 
-// Simplified itinerary builder specifically for quotation workflow
-function QuotationSpecificItineraryBuilder({ 
-  onComplete, 
-  isCreating,
-  leadData 
-}: { 
-  onComplete: (data: any) => void
-  isCreating: boolean
-  leadData: any
-}) {
-  const [step, setStep] = useState<'basic' | 'detailed'>('basic')
-  const [title, setTitle] = useState(`${leadData.name}'s Itinerary`)
-  const [description, setDescription] = useState(leadData.remarks || "")
-  const [destination, setDestination] = useState("")
-  const [duration, setDuration] = useState("5 days")
-  const [basicItineraryData, setBasicItineraryData] = useState<any>(null)
-  
-  const handleCreateBasicItinerary = () => {
-    const data = {
-      title,
-      description,
-      destination,
-      duration,
-      currency: "USD",
-      totalPrice: 0,
-      days: [
-        {
-          day: 1,
-          date: new Date().toISOString().split('T')[0],
-          title: "Arrival",
-          description: "Arrival day",
-          events: [],
-          meals: { breakfast: false, lunch: false, dinner: false }
+  // Create a temporary itinerary for the builder to work with
+  useEffect(() => {
+    console.log("[DEBUG] QuotationItineraryBuilderContent useEffect triggered")
+    const initializeItinerary = async () => {
+      try {
+        console.log("[DEBUG] Initializing temporary itinerary for quotation")
+        const initialData = {
+          title: `${leadData.name}'s Itinerary`,
+          description: leadData.remarks || "Itinerary created for quotation",
+          destination: "Enter destination",
+          duration: "5 days",
+          currency: "USD",
+          totalPrice: 0,
+          status: "draft" as const,
+          type: "customized-package" as const,
+          createdBy: "agent-user",
+          countries: [],
+          days: [
+            {
+              day: 1,
+              date: new Date().toISOString().split("T")[0],
+              title: "Day 1",
+              description: "",
+              detailedDescription: "",
+              events: [],
+              nights: 0,
+              meals: {
+                breakfast: false,
+                lunch: false,
+                dinner: false,
+              },
+            }
+          ],
+          highlights: [],
+          images: [],
+          // Mark as quotation-only to prevent showing in main itinerary list
+          isQuotationOnly: true,
+          quotationLead: leadData,
         }
-      ],
-      highlights: [],
-      images: [],
-      countries: destination ? [destination] : [],
-      type: "customized-package",
-      status: "draft",
-      createdBy: "quotation-agent",
+
+        const result = await createItinerary(initialData)
+        if (result && result._id) {
+          console.log("[DEBUG] Temporary itinerary created with ID:", result._id)
+          setTempItineraryId(result._id)
+          onItineraryCreated(result._id)
+        }
+      } catch (error) {
+        console.error("Error creating temporary itinerary:", error)
+        toast({
+          title: "Error",
+          description: "Failed to initialize itinerary builder",
+          variant: "destructive",
+        })
+      }
     }
-    
-    setBasicItineraryData(data)
-    setStep('detailed')
+
+    if (!tempItineraryId) {
+      initializeItinerary()
+    }
+  }, [leadData, createItinerary, onItineraryCreated, toast, tempItineraryId])
+
+  // Custom onBack handler that doesn't navigate away
+  const handleBack = () => {
+    // Don't navigate back from here - the parent component handles this
+    return
   }
 
-  const handleDetailedComplete = (detailedData: any) => {
-    onComplete({
-      ...basicItineraryData,
-      ...detailedData,
-      isQuotationOnly: true,
-      quotationLead: leadData,
-    })
-  }
-
-  if (step === 'detailed' && basicItineraryData) {
+  if (!tempItineraryId) {
     return (
-      <div className="h-full">
-        <div className="mb-4">
-          <Button 
-            variant="ghost" 
-            onClick={() => setStep('basic')}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Basic Info
-          </Button>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Initializing Itinerary Builder...</p>
+          <p className="text-sm text-gray-500">Setting up your workspace</p>
         </div>
-        <ItineraryBuilderEmbedded 
-          initialData={basicItineraryData}
-          onComplete={handleDetailedComplete}
-          isCreating={isCreating}
-        />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4">
-        <div>
-          <label className="text-sm font-medium">Itinerary Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full mt-1 px-3 py-2 border rounded-md"
-            placeholder="Enter itinerary title"
-          />
-        </div>
-        
-        <div>
-          <label className="text-sm font-medium">Destination</label>
-          <input
-            type="text"
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            className="w-full mt-1 px-3 py-2 border rounded-md"
-            placeholder="Enter destination"
-          />
-        </div>
-        
-        <div>
-          <label className="text-sm font-medium">Duration</label>
-          <input
-            type="text"
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            className="w-full mt-1 px-3 py-2 border rounded-md"
-            placeholder="e.g., 5 days, 1 week"
-          />
-        </div>
-        
-        <div>
-          <label className="text-sm font-medium">Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full mt-1 px-3 py-2 border rounded-md"
-            rows={3}
-            placeholder="Brief description of the trip"
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleCreateBasicItinerary}
-          disabled={isCreating || !title || !destination}
-          className="min-w-[200px]"
-        >
-          Continue to Detailed Builder
-        </Button>
-      </div>
-      
-      <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg">
-        <p className="font-medium mb-2">Next Steps:</p>
-        <ul className="space-y-1 text-xs">
-          <li>• Set basic itinerary information</li>
-          <li>• Build detailed day-by-day itinerary</li>
-          <li>• Add activities, hotels, and transportation</li>
-          <li>• Set pricing for each component</li>
-          <li>• Convert to quotation automatically</li>
-        </ul>
-      </div>
-    </div>
-  )
-}
-
-// Embedded itinerary builder component
-function ItineraryBuilderEmbedded({ 
-  initialData, 
-  onComplete, 
-  isCreating 
-}: { 
-  initialData: any
-  onComplete: (data: any) => void
-  isCreating: boolean
-}) {
-  const [itineraryData, setItineraryData] = useState(initialData)
-
-  const handleSave = () => {
-    onComplete(itineraryData)
-  }
-
-  return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 overflow-hidden">
-        {/* This would integrate with the full ItineraryBuilder component */}
-        <div className="h-full p-4 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-          <div className="text-center">
-            <h3 className="text-lg font-medium mb-2">Detailed Itinerary Builder</h3>
-            <p className="text-gray-600 mb-4">
-              Here you would build the detailed itinerary with days, events, pricing, etc.
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              Current itinerary: {itineraryData.title} - {itineraryData.destination}
-            </p>
-            <Button onClick={handleSave} disabled={isCreating}>
-              {isCreating ? "Creating Quotation..." : "Complete & Create Quotation"}
-            </Button>
-          </div>
-        </div>
-      </div>
+    <div className="h-full">
+      <ItineraryBuilder 
+        itineraryId={tempItineraryId}
+        onBack={handleBack}
+        onSave={onSaveRequested}
+      />
     </div>
   )
 }
