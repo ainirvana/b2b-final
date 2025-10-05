@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Calendar, MapPin, Clock, Edit, Package, ShoppingCart, FileText, Users, DollarSign, Share2, Copy, FileDigit } from "lucide-react"
+import { Plus, Calendar, MapPin, Clock, Edit, Package, ShoppingCart, FileText, Users, DollarSign, Share2, Copy, FileDigit, Loader2 } from "lucide-react"
 import { IItinerary } from "@/models/Itinerary"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -19,6 +19,7 @@ interface ItineraryListProps {
   onViewItinerary: (id: string) => void
   onEditItinerary: (id: string) => void
   onShareItinerary?: (id: string) => void
+  viewLoadingId?: string | null
 }
 
 const TYPE_CONFIG = {
@@ -44,7 +45,7 @@ const TYPE_CONFIG = {
   },
 }
 
-export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, onShareItinerary }: ItineraryListProps) {
+export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, onShareItinerary, viewLoadingId }: ItineraryListProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [itineraries, setItineraries] = useState<IItinerary[]>([])
   const [loading, setLoading] = useState(true)
@@ -196,7 +197,7 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
         {!selectForQuotation ? (
           <Button onClick={onCreateNew}>
             <Plus className="mr-2 h-4 w-4" />
-            Create New
+            New Itinerary
           </Button>
         ) : (
           <Button variant="outline" onClick={() => router.push("/quotation-builder")}>
@@ -233,6 +234,7 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
             const itineraryType = itinerary.type || "customized-package"
             const typeConfig = TYPE_CONFIG[itineraryType as keyof typeof TYPE_CONFIG] || TYPE_CONFIG["customized-package"]
             const TypeIcon = typeConfig.icon
+            const isViewing = itinerary._id ? viewLoadingId === itinerary._id : false
 
             return (
               <Card
@@ -349,8 +351,20 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
                         </Button>
                       ) : (
                         <>
-                          <Button variant="outline" size="sm" onClick={() => onViewItinerary(itinerary._id!)}>
-                            View
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onViewItinerary(itinerary._id!)}
+                            disabled={isViewing}
+                          >
+                            {isViewing ? (
+                              <>
+                                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                                Opening...
+                              </>
+                            ) : (
+                              "View"
+                            )}
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => onEditItinerary(itinerary._id!)}>
                             <Edit className="h-4 w-4 mr-1" />

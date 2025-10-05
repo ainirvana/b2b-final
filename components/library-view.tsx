@@ -160,9 +160,9 @@ export function LibraryView() {
           <div className="flex space-x-1">
             {[
               { id: 'personal', label: 'My Library' },
-              { id: 'institutional', label: 'MY LIVE WEBLINKS' },
+              { id: 'institutional', label: 'Shares' },
               { id: 'public', label: 'Global Library' },
-              { id: 'shares', label: 'Shares' }
+              { id: 'shares', label: 'MY WEBLINKS' }
             ].map((library) => (
               <Button
                 key={library.id}
