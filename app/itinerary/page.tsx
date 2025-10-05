@@ -1,54 +1,93 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { ItineraryList } from "@/components/itinerary-list"
 import { ItineraryBuilder } from "@/components/itinerary-builder"
 import { TopHeader } from "@/components/top-header"
 import { Sidebar } from "@/components/sidebar"
 import { ItinerarySetupModal } from "@/components/itinerary-setup-modal"
+import { PreviewConfigModal, PreviewConfig } from "@/components/preview-config-modal"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+import type { IItinerary } from "@/models/Itinerary"
+
+type ItineraryWithExtras = IItinerary & {
+  additionalSections?: Record<string, string>
+}
+
+const formatGeneratedAt = (date: Date): string => {
+  const day = date.getDate().toString().padStart(2, "0")
+  const month = date.toLocaleString("default", { month: "short" })
+  const year = date.getFullYear().toString().slice(-2)
+  const hours = date.getHours().toString().padStart(2, "0")
+  const minutes = date.getMinutes().toString().padStart(2, "0")
+  return `${day} ${month}' ${year} ${hours}:${minutes}`
+}
 
 function ItineraryPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { toast } = useToast()
   const itineraryId = searchParams.get('id')
-  const mode = searchParams.get('mode') // 'create', 'edit', 'view'
-  const [currentView, setCurrentView] = useState<'list' | 'builder' | 'viewer'>(
-    mode === 'create' ? 'builder' : mode === 'edit' ? 'builder' : itineraryId ? 'viewer' : 'list'
+  const mode = searchParams.get('mode')
+  const [currentView, setCurrentView] = useState<'list' | 'builder'>(
+    mode === 'create' || mode === 'edit' ? 'builder' : 'list'
   )
   const [showSetupModal, setShowSetupModal] = useState(false)
+  const [previewItinerary, setPreviewItinerary] = useState<ItineraryWithExtras | null>(null)
+  const [isPreviewConfigOpen, setIsPreviewConfigOpen] = useState(false)
+  const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null)
+  const [lastPreviewedId, setLastPreviewedId] = useState<string | null>(null)
 
   const handleCreateNew = () => {
     setShowSetupModal(true)
   }
 
+  const launchPreviewForItinerary = useCallback(
+    async (id: string) => {
+      if (!id) {
+        return
+      }
+
+      setPreviewLoadingId(id)
+      try {
+        const response = await fetch(`/api/itineraries/${id}`)
+        if (!response.ok) {
+          throw new Error(`Failed to load itinerary (${response.status})`)
+        }
+
+        const itineraryData = (await response.json()) as ItineraryWithExtras
+        setPreviewItinerary(itineraryData)
+        setIsPreviewConfigOpen(true)
+      } catch (error) {
+        console.error('Failed to load itinerary for preview:', error)
+        toast({
+          title: 'Preview unavailable',
+          description: 'Could not load itinerary details. Please try again.',
+          variant: 'destructive',
+        })
+      } finally {
+        setPreviewLoadingId(null)
+        setLastPreviewedId(id)
+      }
+    },
+    [toast],
+  )
+
   const handleViewItinerary = (id: string) => {
-    // Fetch the itinerary to get its type for proper routing
-    fetch(`/api/itineraries/${id}`)
-      .then(res => res.json())
-      .then(itinerary => {
-        const type = itinerary.type || 'customized-package'
-        router.push(`/itinerary/builder?id=${id}&mode=view&type=${type}`)
-      })
-      .catch(err => {
-        console.error('Failed to fetch itinerary type:', err)
-        // Fallback to default type
-        router.push(`/itinerary/builder?id=${id}&mode=view&type=customized-package`)
-      })
+    launchPreviewForItinerary(id)
   }
 
   const handleEditItinerary = (id: string) => {
     setCurrentView('builder')
-    // Fetch the itinerary to get its type for proper routing
     fetch(`/api/itineraries/${id}`)
-      .then(res => res.json())
-      .then(itinerary => {
+      .then((res) => res.json())
+      .then((itinerary) => {
         const type = itinerary.type || 'customized-package'
         router.push(`/itinerary/builder?id=${id}&mode=edit&type=${type}`)
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Failed to fetch itinerary type:', err)
-        // Fallback to default type
         router.push(`/itinerary/builder?id=${id}&mode=edit&type=customized-package`)
       })
   }
@@ -58,18 +97,107 @@ function ItineraryPageContent() {
     router.push('/itinerary')
   }
 
-  const renderContent = () => {
-    switch (currentView) {
-      case 'builder':
-        return <ItineraryBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
-      case 'viewer':
-        return <ItineraryBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
-      default:
-        return <ItineraryList onCreateNew={handleCreateNew} onViewItinerary={handleViewItinerary} onEditItinerary={handleEditItinerary} />
+  const handlePreviewClose = () => {
+    setIsPreviewConfigOpen(false)
+    setPreviewItinerary(null)
+    setPreviewLoadingId(null)
+    router.replace('/itinerary')
+  }
+
+  const handlePreviewConfirm = (config: PreviewConfig) => {
+    if (!previewItinerary) {
+      toast({
+        title: 'Preview unavailable',
+        description: 'No itinerary data available for preview.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      const days = previewItinerary.days || []
+      const totalPriceFromEvents = days.reduce((sum, day) => {
+        const dayEvents = day.events || []
+        const dayTotal = dayEvents.reduce((eventSum, event) => eventSum + (event.price || 0), 0)
+        return sum + dayTotal
+      }, 0)
+      const totalNights = days.reduce((sum, day) => sum + (day.nights || 0), 0)
+
+      const previewData = {
+        title: previewItinerary.title || 'Untitled Itinerary',
+        description: previewItinerary.description || '',
+        productId: previewItinerary.productId || '',
+        country:
+          previewItinerary.countries?.[0] ||
+          previewItinerary.destination ||
+          'Multiple Destinations',
+        days,
+        nights: totalNights,
+        branding: previewItinerary.branding || {},
+        totalPrice: totalPriceFromEvents || previewItinerary.totalPrice || 0,
+        generatedAt: formatGeneratedAt(new Date()),
+        additionalSections: previewItinerary.additionalSections || {},
+        gallery: previewItinerary.gallery || [],
+        previewConfig: config,
+      }
+
+      localStorage.setItem('itinerary-preview', JSON.stringify(previewData))
+
+      const previewWindow = window.open('/itinerary/preview', '_blank', 'noopener')
+      if (!previewWindow) {
+        router.push('/itinerary/preview')
+      } else {
+        previewWindow.focus()
+      }
+
+      toast({
+        title: 'Preview Ready',
+        description: 'Opening itinerary preview in a new tab.',
+      })
+    } catch (error) {
+      console.error('Failed to generate preview:', error)
+      toast({
+        title: 'Preview failed',
+        description: 'Could not generate the itinerary preview. Please try again.',
+        variant: 'destructive',
+      })
     }
   }
 
-  // Handle setup modal close
+  useEffect(() => {
+    if (!itineraryId) {
+      setLastPreviewedId(null)
+      return
+    }
+
+    if (mode === 'edit' || mode === 'create') {
+      return
+    }
+
+    if (previewLoadingId) {
+      return
+    }
+
+    if (itineraryId !== lastPreviewedId) {
+      launchPreviewForItinerary(itineraryId)
+    }
+  }, [itineraryId, mode, previewLoadingId, lastPreviewedId, launchPreviewForItinerary])
+
+  const renderContent = () => {
+    if (currentView === 'builder') {
+      return <ItineraryBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
+    }
+
+    return (
+      <ItineraryList
+        onCreateNew={handleCreateNew}
+        onViewItinerary={handleViewItinerary}
+        onEditItinerary={handleEditItinerary}
+        viewLoadingId={previewLoadingId}
+      />
+    )
+  }
+
   const handleSetupModalClose = () => {
     setShowSetupModal(false)
   }
@@ -79,10 +207,13 @@ function ItineraryPageContent() {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopHeader />
-        <main className="flex-1 overflow-auto animate-fade-in">
-          {renderContent()}
-        </main>
+        <main className="flex-1 overflow-auto animate-fade-in">{renderContent()}</main>
       </div>
+      <PreviewConfigModal
+        isOpen={isPreviewConfigOpen}
+        onClose={handlePreviewClose}
+        onConfirm={handlePreviewConfirm}
+      />
       <ItinerarySetupModal
         isOpen={showSetupModal}
         onClose={handleSetupModalClose}
@@ -98,3 +229,4 @@ export default function ItineraryPage() {
     </Suspense>
   )
 }
+
