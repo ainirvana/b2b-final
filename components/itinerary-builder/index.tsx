@@ -38,6 +38,7 @@ import { LibraryUsageStats } from "./library-usage-stats"
 import { ComponentSourceModal } from "./component-source-modal"
 import { BrandingSettings } from "./branding-settings"
 import { GalleryUpload } from "./gallery-upload"
+import { PreviewConfigModal, PreviewConfig } from "../preview-config-modal"
 import type { IItineraryDay, IItineraryEvent, IGalleryItem } from "@/models/Itinerary"
 import { LibraryToItineraryConverter } from "@/lib/library-converter"
 import { useLibrary } from "@/hooks/use-library"
@@ -272,6 +273,7 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
 
   const [isSaving, setIsSaving] = useState(false)
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
+  const [showPreviewConfig, setShowPreviewConfig] = useState(false)
   const [activeSidebar, setActiveSidebar] = useState<"components" | "library">("components")
   const [draggedItem, setDraggedItem] = useState<{
     type: "component" | "event" | "library-item"
@@ -601,7 +603,11 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
     return `${day} ${month}' ${year} ${hours}:${minutes}`
   }
 
-  const handlePreview = async () => {
+  const handlePreview = () => {
+    setShowPreviewConfig(true)
+  }
+
+  const handlePreviewConfirm = async (config: PreviewConfig) => {
     setIsGeneratingPreview(true)
     try {
       const totalPrice = days.reduce(
@@ -609,16 +615,21 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
         0,
       )
 
+      const totalNights = days.reduce((sum, day) => sum + (day.nights || 0), 0)
+
       const previewData = {
         title,
         description,
         productId,
+        country: countries[0] || extractDestination(),
         days,
+        nights: totalNights,
         branding,
         totalPrice,
         generatedAt: formatDate(new Date()),
         additionalSections,
-        gallery, // Include gallery in preview data
+        gallery,
+        previewConfig: config,
       }
 
       localStorage.setItem("itinerary-preview", JSON.stringify(previewData))
@@ -1289,6 +1300,12 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
         isOpen={!!editingEvent}
         onClose={() => setEditingEvent(null)}
         onSave={handleSaveEvent}
+      />
+
+      <PreviewConfigModal
+        isOpen={showPreviewConfig}
+        onClose={() => setShowPreviewConfig(false)}
+        onConfirm={handlePreviewConfirm}
       />
     </div>
   )
