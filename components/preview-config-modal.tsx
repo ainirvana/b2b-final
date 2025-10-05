@@ -74,12 +74,12 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
                 onClick={() => setTemplate(2)}
                 className={`p-3 rounded-lg border-2 text-left transition-all ${
                   template === 2
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    ? 'border-purple-500 bg-purple-50 text-purple-700'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
                 <div className="font-medium">Template 2</div>
-                <div className="text-xs text-gray-500">Coming Soon</div>
+                <div className="text-xs text-gray-500">Timeline Design</div>
               </button>
             </div>
           </div>
