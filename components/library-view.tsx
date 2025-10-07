@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useLibrary } from "@/hooks/use-library"
 import { Search, Edit, PlaneLanding, Hotel, MapPin, Car, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { SelectCategoryModal } from "@/components/select-category-modal"
-import { AddEditEventModal } from "@/components/add-edit-event-modal"
 import { Sidebar } from "@/components/sidebar"
 import { toast } from "sonner"
 import ShareManagement from "@/components/share-management"
@@ -17,13 +19,13 @@ import { IItinerary } from "@/models/Itinerary"
 interface ILibraryItem {
   id: string
   title: string
-  type: 'arrival' | 'transport' | 'activity' | 'hotel'
+  type: string
   date: string
   location?: string
   multimedia?: string[]
+  libraryId?: string | null
+  libraryName?: string
 }
-
-type LibraryItemInput = Partial<ILibraryItem>
 
 export function LibraryView() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -32,22 +34,27 @@ export function LibraryView() {
   const [showSelectCategoryModal, setShowSelectCategoryModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
-  const [activeLibrary, setActiveLibrary] = useState<'personal' | 'institutional' | 'public' | 'shares'>('personal')
+  const [activeLibraryTab, setActiveLibraryTab] = useState<'personal' | 'institutional' | 'public' | 'shares'>('personal')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [activeLibraryGroupId, setActiveLibraryGroupId] = useState<string>('')
+  const [showCreateLibraryModal, setShowCreateLibraryModal] = useState(false)
+  const [newLibraryName, setNewLibraryName] = useState('')
+  const [newLibraryDescription, setNewLibraryDescription] = useState('')
+  const [creatingLibrary, setCreatingLibrary] = useState(false)
   
   // Shares related state
   const [itineraries, setItineraries] = useState<IItinerary[]>([])
   const [sharesLoading, setSharesLoading] = useState(false)
   
-  const { items: dbItems, loading, deleteItem } = useLibrary()
+  const { items: dbItems, libraries, loading, librariesLoading, deleteItem, createLibrary } = useLibrary()
 
   // Fetch itineraries for shares
   useEffect(() => {
-    if (activeLibrary === 'shares') {
+    if (activeLibraryTab === 'shares') {
       fetchItineraries()
     }
-  }, [activeLibrary])
+  }, [activeLibraryTab])
 
   const fetchItineraries = async () => {
     try {
@@ -72,14 +79,17 @@ export function LibraryView() {
   const items: ILibraryItem[] = dbItems.map(item => {
     const createdDate = item.createdAt ? new Date(item.createdAt) : new Date()
     const isValidDate = createdDate instanceof Date && !isNaN(createdDate.getTime())
-    
+    const normalizedCategory = (item.category || 'activity').toLowerCase()
+
     return {
       id: item._id,
       title: item.title,
-      type: (item.category || 'activity').toLowerCase() as 'arrival' | 'transport' | 'activity' | 'hotel',
+      type: normalizedCategory,
       date: isValidDate ? createdDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       location: item.city || item.country,
-      multimedia: item.multimedia || []
+      multimedia: item.multimedia || [],
+      libraryId: item.libraryCollection?._id ?? null,
+      libraryName: item.libraryCollection?.name || undefined,
     }
   })
 
@@ -96,13 +106,72 @@ export function LibraryView() {
     }
   }
 
+  useEffect(() => {
+    const hasUngroupedItems = dbItems.some((item) => !item.libraryCollection)
+
+    if (libraries.length === 0) {
+      setActiveLibraryGroupId((current) => {
+        if (hasUngroupedItems) {
+          return current === 'ungrouped' ? current : 'ungrouped'
+        }
+        return ''
+      })
+      return
+    }
+
+    if (activeLibraryGroupId === 'ungrouped') {
+      if (hasUngroupedItems) {
+        return
+      }
+      setActiveLibraryGroupId(libraries[0]._id)
+      return
+    }
+
+    const isActiveValid = libraries.some((library) => library._id === activeLibraryGroupId)
+    if (!isActiveValid) {
+      setActiveLibraryGroupId(libraries[0]._id)
+    }
+  }, [libraries, dbItems, activeLibraryGroupId])
+
   const categories = ['all', 'flight', 'hotel', 'activity', 'transfer', 'ancillaries', 'package', 'others', 'meal']
+
+  const ungroupedExists = items.some(item => !item.libraryId)
+
+  const libraryOptions = useMemo(() => {
+    const base = libraries.map((library) => ({
+      id: library._id,
+      name: library.name,
+      description: library.description,
+      isVirtual: false,
+    }))
+
+    if (ungroupedExists) {
+      base.push({
+        id: 'ungrouped',
+        name: 'Ungrouped Items',
+        description: 'Items without a library',
+        isVirtual: true,
+      })
+    }
+
+    return base
+  }, [libraries, ungroupedExists])
 
   const filteredItems = items
     .filter(item => {
+      const matchesLibrary = activeLibraryGroupId
+        ? activeLibraryGroupId === 'ungrouped'
+          ? !item.libraryId
+          : item.libraryId === activeLibraryGroupId
+        : true
+      const normalizedCategory = item.type.toLowerCase()
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesCategory = selectedCategory === 'all' || item.type === selectedCategory
-      return matchesSearch && matchesCategory
+      const matchesCategory = (
+        selectedCategory === 'all' ||
+        normalizedCategory === selectedCategory ||
+        (selectedCategory === 'others' && !['flight', 'hotel', 'activity', 'transfer', 'meal', 'ancillaries', 'package'].includes(normalizedCategory))
+      )
+      return matchesLibrary && matchesSearch && matchesCategory
     })
     .sort((a, b) => {
       const dateA = new Date(a.date).getTime()
@@ -148,6 +217,46 @@ export function LibraryView() {
     setShowAddModal(true)
   }
 
+  const handleOpenCreateItem = () => {
+    if (!activeLibraryGroupId || activeLibraryGroupId === 'ungrouped') {
+      toast.error('Create or select a library before adding items')
+      return
+    }
+    setShowSelectCategoryModal(true)
+  }
+
+  const handleCreateLibrarySubmit = async () => {
+    const name = newLibraryName.trim()
+    if (!name) {
+      toast.error('Library name is required')
+      return
+    }
+
+    setCreatingLibrary(true)
+    try {
+      const created = await createLibrary({ name, description: newLibraryDescription.trim() || undefined })
+      if (created?._id) {
+        setActiveLibraryGroupId(created._id)
+      }
+      toast.success('Library created successfully')
+      setShowCreateLibraryModal(false)
+      setNewLibraryName('')
+      setNewLibraryDescription('')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create library'
+      toast.error(message)
+    } finally {
+      setCreatingLibrary(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!showCreateLibraryModal) {
+      setNewLibraryName('')
+      setNewLibraryDescription('')
+    }
+  }, [showCreateLibraryModal])
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
@@ -166,9 +275,9 @@ export function LibraryView() {
             ].map((library) => (
               <Button
                 key={library.id}
-                onClick={() => setActiveLibrary(library.id as any)}
+                onClick={() => setActiveLibraryTab(library.id as any)}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeLibrary === library.id
+                  activeLibraryTab === library.id
                     ? 'bg-yellow-500 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
@@ -181,23 +290,55 @@ export function LibraryView() {
 
         {/* Library Content */}
         <div className="flex-1 p-6 overflow-auto">
-          {activeLibrary === 'personal' ? (
+          {activeLibraryTab === 'personal' ? (
             <div>
               {/* Personal Library Header */}
               <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                   <div>
                     <h2 className="text-xl font-semibold text-gray-900">My Library</h2>
                     <p className="text-sm text-gray-600">Manage your personal travel library items</p>
                   </div>
-                  <Button 
-                    onClick={() => setShowSelectCategoryModal(true)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium"
-                  >
-                    + Add Library
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setNewLibraryName('')
+                        setNewLibraryDescription('')
+                        setShowCreateLibraryModal(true)
+                      }}
+                      className="border-gray-300 text-gray-700 hover:bg-gray-100"
+                    >
+                      + New Library
+                    </Button>
+                    <Button
+                      onClick={handleOpenCreateItem}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium"
+                    >
+                      + Add Item
+                    </Button>
+                  </div>
                 </div>
-                
+
+                <div className="flex flex-wrap items-center gap-2 mb-6">
+                  {librariesLoading ? (
+                    <p className="text-sm text-gray-500">Loading libraries...</p>
+                  ) : libraryOptions.length === 0 ? (
+                    <p className="text-sm text-gray-500">Create a library to start adding items.</p>
+                  ) : (
+                    libraryOptions.map((library) => (
+                      <Button
+                        key={library.id}
+                        variant={library.id === activeLibraryGroupId ? 'default' : 'outline'}
+                        onClick={() => setActiveLibraryGroupId(library.id)}
+                        className={library.id === activeLibraryGroupId ? 'bg-black text-white hover:bg-black/90' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}
+                      >
+                        {library.name}
+                      </Button>
+                    ))
+                  )}
+                </div>
+
                 {/* Filters */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
@@ -308,7 +449,7 @@ export function LibraryView() {
                 )}
               </div>
             </div>
-          ) : activeLibrary === 'institutional' ? (
+          ) : activeLibraryTab === 'institutional' ? (
             <div className="py-12">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">my live channels</h2>
               <div className="space-y-2">
@@ -316,7 +457,7 @@ export function LibraryView() {
                 <a href="#" className="block text-blue-600 hover:text-blue-800">link 2</a>
               </div>
             </div>
-          ) : activeLibrary === 'shares' ? (
+          ) : activeLibraryTab === 'shares' ? (
             <div>
               {sharesLoading ? (
                 <div className="flex items-center justify-center h-64">
@@ -345,6 +486,7 @@ export function LibraryView() {
           setShowSelectCategoryModal(false)
           toast.success('Library item created successfully')
         }}
+        defaultLibraryId={activeLibraryGroupId && activeLibraryGroupId !== 'ungrouped' ? activeLibraryGroupId : undefined}
       />
 
       {/* Add/Edit Modal */}
@@ -361,8 +503,52 @@ export function LibraryView() {
             toast.success('Library item updated successfully')
           }}
           editingItem={editingItem}
+          defaultLibraryId={editingItem?.libraryCollection?._id}
         />
       )}
+
+      <Dialog open={showCreateLibraryModal} onOpenChange={setShowCreateLibraryModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Library</DialogTitle>
+            <DialogDescription>Organize your items by creating a dedicated library folder.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="libraryName" className="text-sm font-medium text-gray-700">Library Name</Label>
+              <Input
+                id="libraryName"
+                value={newLibraryName}
+                onChange={(e) => setNewLibraryName(e.target.value)}
+                placeholder="E.g. Bali Activities"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="libraryDescription" className="text-sm font-medium text-gray-700">Description (optional)</Label>
+              <Textarea
+                id="libraryDescription"
+                value={newLibraryDescription}
+                onChange={(e) => setNewLibraryDescription(e.target.value)}
+                placeholder="Tell your team what belongs in this library"
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateLibraryModal(false)}>Cancel</Button>
+            <Button
+              onClick={handleCreateLibrarySubmit}
+              disabled={creatingLibrary || !newLibraryName.trim()}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              {creatingLibrary ? 'Creating...' : 'Create Library'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+

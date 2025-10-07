@@ -1,6 +1,29 @@
 import mongoose from 'mongoose'
 
-const LibraryItemSchema = new mongoose.Schema({
+const libraryCollectionField = {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'LibraryCollection',
+  default: null,
+  set: (value: unknown) => {
+    if (!value) {
+      return null
+    }
+
+    if (typeof value === 'string') {
+      return mongoose.Types.ObjectId.isValid(value)
+        ? new mongoose.Types.ObjectId(value)
+        : null
+    }
+
+    if (value instanceof mongoose.Types.ObjectId) {
+      return value
+    }
+
+    return null
+  },
+}
+
+const baseSchemaDefinition = {
   title: { type: String, required: true },
   category: { type: String, required: true },
   subCategory: String,
@@ -21,16 +44,32 @@ const LibraryItemSchema = new mongoose.Schema({
   // Advanced pricing for Activity & Experiences
   advancedPricing: {
     enabled: { type: Boolean, default: false },
-    paxPricing: [{
-      paxCount: Number, // Number of pax (0-20)
-      price: Number     // Price for this pax count
-    }]
+    paxPricing: [
+      {
+        paxCount: Number, // Number of pax (0-20)
+        price: Number // Price for this pax count
+      },
+    ],
   },
   // Flexible field for any additional data
-  extraFields: { type: mongoose.Schema.Types.Mixed, default: {} }
-}, {
-  timestamps: true,
-  strict: false // Allows additional fields not defined in schema
-})
+  extraFields: { type: mongoose.Schema.Types.Mixed, default: {} },
+  libraryCollection: libraryCollectionField,
+}
 
-export default mongoose.models.LibraryItem || mongoose.model('LibraryItem', LibraryItemSchema)
+let LibraryItem: mongoose.Model<any>
+
+if (mongoose.models.LibraryItem) {
+  LibraryItem = mongoose.models.LibraryItem
+  if (!LibraryItem.schema.path('libraryCollection')) {
+    LibraryItem.schema.add({ libraryCollection: libraryCollectionField })
+  }
+} else {
+  const LibraryItemSchema = new mongoose.Schema(baseSchemaDefinition, {
+    timestamps: true,
+    strict: false, // Allows additional fields not defined in schema
+  })
+
+  LibraryItem = mongoose.model('LibraryItem', LibraryItemSchema)
+}
+
+export default LibraryItem

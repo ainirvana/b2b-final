@@ -18,6 +18,7 @@ interface CityData {
   longitude?: string;
   key: string;
 }
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,9 +34,10 @@ interface SelectCategoryModalProps {
   onClose: () => void
   onItemCreated: () => void
   editingItem?: any
+  defaultLibraryId?: string
 }
 
-export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingItem }: SelectCategoryModalProps) {
+export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingItem, defaultLibraryId }: SelectCategoryModalProps) {
   const [selectedCategory, setSelectedCategory] = useState("Flight")
   const [selectedSubCategory, setSelectedSubCategory] = useState("Flight")
   const [selectedTransferOptions, setSelectedTransferOptions] = useState<string[]>(["any"])
@@ -62,8 +64,11 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedLibraryId, setSelectedLibraryId] = useState<string>("")
+  const [newLibraryName, setNewLibraryName] = useState("")
+  const [creatingLibrary, setCreatingLibrary] = useState(false)
   
-  const { createItem } = useLibrary()
+  const { createItem, updateItem, libraries, createLibrary, fetchLibraries } = useLibrary()
   const isEditing = !!editingItem
 
   // Initialize form with editing data
@@ -107,6 +112,36 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
       }
     }
   }, [editingItem])
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    if (libraries.length === 0) {
+      fetchLibraries().catch((error) => console.error('Failed to refresh libraries', error))
+    }
+
+    if (editingItem?.libraryCollection?._id) {
+      setSelectedLibraryId(editingItem.libraryCollection._id)
+      return
+    }
+
+    if (defaultLibraryId && libraries.some((library) => library._id === defaultLibraryId)) {
+      setSelectedLibraryId(defaultLibraryId)
+      return
+    }
+
+    if (selectedLibraryId && libraries.some((library) => library._id === selectedLibraryId)) {
+      return
+    }
+
+    if (libraries.length > 0) {
+      setSelectedLibraryId(libraries[0]._id)
+    } else {
+      setSelectedLibraryId('')
+    }
+  }, [isOpen, editingItem, defaultLibraryId, selectedLibraryId, libraries, fetchLibraries])
 
   const categories = [
     { id: "Flight", label: "Flight", icon: Plane },
@@ -322,9 +357,37 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
     setUploadedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  const handleCreateLibrary = async () => {
+    const trimmedName = newLibraryName.trim()
+    if (!trimmedName) {
+      toast.error('Library name is required')
+      return
+    }
+
+    setCreatingLibrary(true)
+    try {
+      const created = await createLibrary({ name: trimmedName })
+      if (created?._id) {
+        setSelectedLibraryId(created._id)
+      }
+      setNewLibraryName('')
+      toast.success('Library created successfully')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create library'
+      toast.error(message)
+    } finally {
+      setCreatingLibrary(false)
+    }
+  }
+
   const handleSave = async () => {
     if (!formData.title.trim()) {
       toast.error('Title is required')
+      return
+    }
+
+    if (!selectedLibraryId) {
+      toast.error('Please select a library')
       return
     }
 
@@ -333,6 +396,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
       const itemData = {
         title: formData.title,
         category: selectedCategory,
+        libraryCollection: selectedLibraryId,
         subCategory: selectedSubCategory,
         city: formData.city,
         country: formData.country,
@@ -356,14 +420,8 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
         } : undefined
       }
 
-      if (isEditing) {
-        // Update existing item
-        const response = await fetch(`/api/library/${editingItem._id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(itemData)
-        })
-        if (!response.ok) throw new Error('Failed to update item')
+      if (isEditing && editingItem?._id) {
+        await updateItem(editingItem._id, itemData)
       } else {
         await createItem(itemData)
       }
@@ -394,7 +452,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
       setSelectedTransferOptions(["any"])
     } catch (error) {
       console.error('Error creating item:', error)
-      toast.error('Failed to create library item')
+      toast.error('Failed to save library item')
     } finally {
       setSaving(false)
     }
@@ -429,6 +487,53 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Library Selection */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Library</Label>
+                <p className="text-xs text-gray-500">Choose where this item should live</p>
+              </div>
+            </div>
+            <Select
+              value={selectedLibraryId}
+              onValueChange={setSelectedLibraryId}
+              disabled={libraries.length === 0}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={libraries.length === 0 ? 'No libraries yet' : 'Select a library'}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {libraries.length === 0 ? (
+                  <SelectItem value="" disabled>No libraries available</SelectItem>
+                ) : (
+                  libraries.map((library) => (
+                    <SelectItem key={library._id} value={library._id}>
+                      {library.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            <div className="flex items-center space-x-2">
+              <Input
+                value={newLibraryName}
+                onChange={(e) => setNewLibraryName(e.target.value)}
+                placeholder="Create a new library"
+              />
+              <Button
+                type="button"
+                onClick={handleCreateLibrary}
+                disabled={creatingLibrary || !newLibraryName.trim()}
+                className="min-w-[120px]"
+              >
+                {creatingLibrary ? 'Creating...' : 'Add Library'}
+              </Button>
+            </div>
+          </div>
+
           {/* Main Categories */}
           <div>
             <div className="grid grid-cols-4 gap-2 mb-4">
@@ -782,7 +887,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
                           onClick={() => removeFile(index)}
                           className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
                         >
-                          ×
+                          Ãƒâ€”
                         </button>
                       </div>
                     ))}
@@ -814,3 +919,5 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
     </Dialog>
   )
 }
+
+
