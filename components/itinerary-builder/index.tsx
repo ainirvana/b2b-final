@@ -51,6 +51,7 @@ import { useRouter } from "next/navigation"
 interface ItineraryBuilderProps {
   itineraryId?: string
   onBack: () => void
+  onSave?: () => Promise<void>
 }
 
 const EMPTY_DAY: IItineraryDay = {
@@ -169,7 +170,7 @@ const COMPONENT_TEMPLATES = [
   },
 ]
 
-export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps) {
+export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuilderProps) {
   const { items: libraryItems } = useLibrary()
   const { createItinerary, updateItinerary } = useItineraries()
   const { toast } = useToast()
@@ -218,10 +219,12 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
     const loadItineraryData = async () => {
       if (itineraryId) {
         try {
+          console.log("[DEBUG] Loading itinerary data for ID:", itineraryId)
           const response = await fetch(`/api/itineraries/${itineraryId}`)
           if (response.ok) {
             const itineraryData = await response.json()
 
+            console.log("[DEBUG] Loaded itinerary data:", itineraryData)
             // Populate all state with loaded data
             setTitle(itineraryData.title || "")
             setDescription(itineraryData.description || "")
@@ -376,10 +379,16 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
     }
   }
 
-  const handleDrop = (dayIndex: number, position: number) => {
-    if (!draggedItem) return
+  const handleDrop = async (dayIndex: number, position: number) => {
+    if (!draggedItem) {
+      console.log("[DEBUG] No dragged item found")
+      return
+    }
+
+    console.log("[DEBUG] Dropping item:", draggedItem, "to day:", dayIndex, "position:", position)
 
     if (draggedItem.type === "component") {
+      console.log("[DEBUG] Opening component source modal")
       setComponentSourceModal({
         isOpen: true,
         component: draggedItem.item,
@@ -391,20 +400,36 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
     const newDays = [...days]
 
     if (draggedItem.type === "library-item") {
+      console.log("[DEBUG] Converting library item to event")
       const newEvent = convertLibraryItemToEvent(draggedItem.item)
+      console.log("[DEBUG] New event created:", newEvent)
       newDays[dayIndex].events.splice(position, 0, newEvent)
+      console.log("[DEBUG] Updated days array:", newDays)
     } else if (
       draggedItem.type === "event" &&
       draggedItem.sourceDay !== undefined &&
       draggedItem.sourceIndex !== undefined
     ) {
+      console.log("[DEBUG] Moving existing event")
       const [movedEvent] = newDays[draggedItem.sourceDay].events.splice(draggedItem.sourceIndex, 1)
       newDays[dayIndex].events.splice(position, 0, movedEvent)
     }
 
+    console.log("[DEBUG] Setting new days state")
     setDays(newDays)
     setDraggedItem(null)
     setDropTarget(null)
+    console.log("[DEBUG] Drop operation completed")
+
+    // Auto-save after dropping if we have an itineraryId
+    if (itineraryId) {
+      console.log("[DEBUG] Auto-saving after drop")
+      try {
+        await autoSave(newDays)
+      } catch (error) {
+        console.error("[DEBUG] Auto-save failed:", error)
+      }
+    }
   }
 
   const updateDayTitle = (dayIndex: number, newTitle: string) => {
@@ -718,6 +743,11 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
         if (!itineraryId && result._id) {
           window.history.replaceState(null, "", `/itinerary?mode=edit&id=${result._id}`)
         }
+
+        // Call the onSave callback if provided
+        if (onSave) {
+          await onSave()
+        }
       }
     } catch (error) {
       console.error("[v0] Save error:", error)
@@ -729,6 +759,64 @@ export function ItineraryBuilder({ itineraryId, onBack }: ItineraryBuilderProps)
       })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const autoSave = async (updatedDays?: IItineraryDay[]) => {
+    if (!itineraryId) return
+
+    try {
+      console.log("[DEBUG] Auto-saving itinerary...")
+      
+      const daysToSave = updatedDays || days
+      const totalPrice = daysToSave.reduce(
+        (sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0),
+        0,
+      )
+
+      const itineraryData = {
+        productId: productId.trim() || `ITN-${Date.now().toString(36).toUpperCase()}`,
+        title: title.trim(),
+        description: description.trim(),
+        destination: extractDestination() || "Multiple Destinations",
+        duration: `${daysToSave.length} ${daysToSave.length === 1 ? "day" : "days"}`,
+        totalPrice,
+        currency: "USD",
+        status: "draft" as const,
+        createdBy: "agent-user",
+        countries,
+        days: daysToSave.map((day) => ({
+          ...day,
+          events: day.events.map((event) => ({
+            ...event,
+            title: event.title || `New ${event.category}`,
+            description: event.description || "No description provided",
+            highlights: event.highlights || [],
+            listItems: event.listItems || [],
+            price: event.price || 0,
+            versionHistory: event.versionHistory || [
+              {
+                timestamp: new Date(),
+                action: "created" as const,
+                source: event.componentSource || "manual",
+              },
+            ],
+          })),
+        })),
+        highlights: extractHighlights(),
+        images: extractImages(),
+        gallery,
+        branding,
+      }
+
+      const result = await updateItinerary(itineraryId, itineraryData)
+      console.log("[DEBUG] Auto-save completed successfully")
+      
+      if (onSave) {
+        await onSave()
+      }
+    } catch (error) {
+      console.error("[DEBUG] Auto-save failed:", error)
     }
   }
 
