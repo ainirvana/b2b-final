@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { useLibrary } from "@/hooks/use-library"
-import { Search, Edit, PlaneLanding, Hotel, MapPin, Car, Trash2 } from "lucide-react"
+import { Search, Edit, PlaneLanding, Hotel, MapPin, Car, Trash2, Package } from "lucide-react"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +29,7 @@ interface ILibraryItem {
 }
 
 export function LibraryView() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedItems, setSelectedItems] = useState<string[]>([])
@@ -300,6 +302,14 @@ export function LibraryView() {
                     <p className="text-sm text-gray-600">Manage your personal travel library items</p>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push("/itinerary")}
+                      className="border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <Package className="h-4 w-4" />
+                      <span>Itineraries</span>
+                    </Button>
                     <Button
                       variant="outline"
                       onClick={() => {

@@ -5,9 +5,7 @@ import travLogo from "../trav_platforms_logo.jpg"
 
 import {
   Home,
-  Package,
   BookOpen,
-  Heart,
   MessageSquare,
   ShoppingCart,
   User,
@@ -16,6 +14,8 @@ import {
   Receipt,
   FileText,
   Share2,
+  DollarSign,
+  Settings,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -36,14 +36,14 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home },
-    { id: "itinerary", label: "Itinerary", icon: Package },
     { id: "library", label: "Library", icon: BookOpen },
-    { id: "saved", label: "Saved", icon: Heart },
     { id: "shares", label: "Shares", icon: Share2 },
     { id: "rfqs", label: "RFQs", icon: MessageSquare },
+    { id: "finance", label: "Finance", icon: DollarSign },
+    { id: "quotation-builder", label: "Quotation Builder", icon: FileText },
+    { id: "settings", label: "Settings", icon: Settings },
     { id: "cart", label: "Cart", icon: ShoppingCart },
     { id: "invoice", label: "Invoice", icon: Receipt },
-    { id: "quotation-builder", label: "Quotation Builder", icon: FileText },
   ]
 
   return (
