@@ -46,14 +46,15 @@ export async function POST(
     // Determine the next version number
     const nextVersion = quotation.versionHistory.length + 1
 
-    // Capture current state for the version
+    // Capture current state for the version (detached snapshot)
+    const quotationSnapshot = quotation.toObject()
     const versionState = {
-      days: quotation.days,
-      pricingOptions: quotation.pricingOptions,
-      subtotal: quotation.subtotal,
-      markup: quotation.markup,
-      total: quotation.total,
-      currencySettings: quotation.currencySettings
+      days: quotationSnapshot.days,
+      pricingOptions: quotationSnapshot.pricingOptions,
+      subtotal: quotationSnapshot.subtotal,
+      markup: quotationSnapshot.markup,
+      total: quotationSnapshot.total,
+      currencySettings: quotationSnapshot.currencySettings
     }
 
     // Create a new version entry with current data

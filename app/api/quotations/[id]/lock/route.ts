@@ -20,17 +20,21 @@ export async function POST(
       return NextResponse.json({ error: "Invalid quotation ID format" }, { status: 400 })
     }
 
-    // Get the user information (for tracking who locked the version)
-    const { userName } = await request.json()
-
     // Check if quotation exists
     const quotation = await Quotation.findById(id)
     if (!quotation) {
       return NextResponse.json({ error: "Quotation not found" }, { status: 404 })
     }
 
-    const { versionNumber } = await request.json()
-    
+    // Body can only be read once; parse and destructure in a single call
+    const { userName, versionNumber } = await request.json()
+    const parsedVersionNumber =
+      typeof versionNumber === "number" ? versionNumber : Number(versionNumber)
+
+    if (!parsedVersionNumber || Number.isNaN(parsedVersionNumber)) {
+      return NextResponse.json({ error: "Version number is required" }, { status: 400 })
+    }
+
     // Initialize version history if it doesn't exist
     if (!quotation.versionHistory) {
       quotation.versionHistory = []
@@ -38,7 +42,7 @@ export async function POST(
 
     // Find the specified version in history
     const versionIndex = quotation.versionHistory.findIndex(
-      (v: any) => v.versionNumber === versionNumber
+      (v: any) => v.versionNumber === parsedVersionNumber
     )
 
     // Check if version exists and is not already locked
@@ -62,24 +66,29 @@ export async function POST(
       quotation.versionHistory[versionIndex].lockedAt = new Date()
     } else {
       // Add current version to history if not found
+      const quotationSnapshot = quotation.toObject()
       quotation.versionHistory.push({
-        versionNumber: versionNumber,
+        versionNumber: parsedVersionNumber,
         createdAt: new Date(),
         description: "Version locked",
         isLocked: true,
         lockedBy: userName || "Unknown user",
         lockedAt: new Date(),
         state: {
-          days: quotation.days,
-          pricingOptions: quotation.pricingOptions,
-          subtotal: quotation.subtotal,
-          markup: quotation.markup,
-          total: quotation.total,
-          currencySettings: quotation.currencySettings
+          days: quotationSnapshot.days,
+          pricingOptions: quotationSnapshot.pricingOptions,
+          subtotal: quotationSnapshot.subtotal,
+          markup: quotationSnapshot.markup,
+          total: quotationSnapshot.total,
+          currencySettings: quotationSnapshot.currencySettings
         },
         isDraft: false
       })
     }
+
+    quotation.isLocked = true
+    quotation.isDraft = false
+    quotation.markModified("versionHistory")
 
     // Save changes
     await quotation.save()

@@ -42,16 +42,18 @@ export async function POST(
     }
 
     // Update the version state with current values and mark as not draft
+    const quotationSnapshot = quotation.toObject()
     quotation.versionHistory[versionIndex].state = {
-      days: quotation.days,
-      pricingOptions: quotation.pricingOptions,
-      subtotal: quotation.subtotal,
-      markup: quotation.markup,
-      total: quotation.total,
-      currencySettings: quotation.currencySettings
+      days: quotationSnapshot.days,
+      pricingOptions: quotationSnapshot.pricingOptions,
+      subtotal: quotationSnapshot.subtotal,
+      markup: quotationSnapshot.markup,
+      total: quotationSnapshot.total,
+      currencySettings: quotationSnapshot.currencySettings
     }
     quotation.versionHistory[versionIndex].isDraft = false
     quotation.isDraft = false
+    quotation.markModified("versionHistory")
 
     // Save changes
     await quotation.save()

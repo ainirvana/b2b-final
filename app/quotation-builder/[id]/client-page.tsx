@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { saveQuotationVersion } from "@/hooks/use-save-quotation"
@@ -21,6 +21,8 @@ import { recalculateQuotationTotals } from "@/lib/pricing-utils"
 import { convertCurrency, convertQuotationPrices, formatCurrencyWithSymbol } from "@/lib/currency-utils"
 import { CurrencyConversion } from "@/components/currency-conversion"
 import { VersionControl } from "@/components/version-control"
+import html2canvas from "html2canvas"
+import jsPDF from "jspdf"
 
 // Define interfaces for type safety
 interface DayEvent {
@@ -50,10 +52,21 @@ export function QuotationDetail({ id }: { id: string }) {
   const [showPrices, setShowPrices] = useState(true)
   const [displayCurrency, setDisplayCurrency] = useState<string>("")
   const [versionLocked, setVersionLocked] = useState<boolean>(false)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const previewRef = useRef<HTMLDivElement | null>(null)
   
   const router = useRouter()
   const { fetchQuotation, updateQuotation, isLoading } = useQuotations()
   const { toast } = useToast()
+
+  const syncQuotationState = (updated: QuotationData | null) => {
+    if (!updated) {
+      return null
+    }
+    setQuotation(updated)
+    setVersionLocked(updated.isLocked || false)
+    return updated
+  }
 
   // Calculate total prices
   const recalculateTotals = (quotationData: QuotationData) => {
@@ -117,16 +130,6 @@ export function QuotationDetail({ id }: { id: string }) {
   const handlePricingOptionsChange = async (options: any) => {
     if (!quotation) return
 
-    // Don't save if the quotation is locked
-    if (versionLocked) {
-      toast({
-        title: "Error",
-        description: "Cannot modify a locked version. Create a new version first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
       const updatedQuotation = await updateQuotation(quotation._id!, {
         pricingOptions: {
@@ -136,8 +139,10 @@ export function QuotationDetail({ id }: { id: string }) {
       })
 
       if (updatedQuotation) {
-        setQuotation(updatedQuotation)
-        setShowPrices(updatedQuotation.pricingOptions.showIndividualPrices)
+        const syncedQuotation = syncQuotationState(updatedQuotation)
+        if (syncedQuotation) {
+          setShowPrices(syncedQuotation.pricingOptions.showIndividualPrices)
+        }
         toast({
           title: "Success",
           description: "Pricing options updated successfully",
@@ -162,8 +167,8 @@ export function QuotationDetail({ id }: { id: string }) {
         client: clientInfo
       })
 
-      if (updatedQuotation) {
-        setQuotation(updatedQuotation)
+      const syncedQuotation = syncQuotationState(updatedQuotation)
+      if (syncedQuotation) {
         toast({
           title: "Success",
           description: "Client information updated successfully",
@@ -188,8 +193,8 @@ export function QuotationDetail({ id }: { id: string }) {
         ...settings
       })
 
-      if (updatedQuotation) {
-        setQuotation(updatedQuotation)
+      const syncedQuotation = syncQuotationState(updatedQuotation)
+      if (syncedQuotation) {
         toast({
           title: "Success",
           description: "Quotation settings updated successfully",
@@ -208,6 +213,78 @@ export function QuotationDetail({ id }: { id: string }) {
   // Handle go back
   const handleGoBack = () => {
     router.push('/dashboard')
+  }
+
+  // Handle PDF download
+  const handleDownloadPdf = async () => {
+    if (!quotation) return
+    if (!previewRef.current) {
+      toast({
+        title: "Error",
+        description: "Nothing to export yet. Please try again after the preview loads.",
+        variant: "destructive"
+      })
+      return
+    }
+    if (!versionLocked) {
+      toast({
+        title: "Version Locked Required",
+        description: "Lock the current version before generating a PDF.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      setIsGeneratingPdf(true)
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false
+      })
+
+      const imgData = canvas.toDataURL("image/png")
+      const pdf = new jsPDF("p", "mm", "a4")
+      const imgWidth = 210
+      const pageHeight = 297
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let heightLeft = imgHeight
+      let position = 0
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight, "", "FAST")
+      heightLeft -= pageHeight
+
+      while (heightLeft > 0) {
+        position -= pageHeight
+        pdf.addPage()
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight, "", "FAST")
+        heightLeft -= pageHeight
+      }
+
+      const safeTitle =
+        (quotation.title || "quotation")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "quotation"
+      const versionLabel = quotation.currentVersion ? `-v${quotation.currentVersion}` : ""
+
+      pdf.save(`${safeTitle}${versionLabel}.pdf`)
+
+      toast({
+        title: "PDF Ready",
+        description: "Quotation downloaded successfully."
+      })
+    } catch (error) {
+      console.error("Error generating quotation PDF:", error)
+      toast({
+        title: "Error",
+        description: "Failed to generate quotation PDF",
+        variant: "destructive"
+      })
+    } finally {
+      setIsGeneratingPdf(false)
+    }
   }
 
   // Toggle price visibility
@@ -232,8 +309,8 @@ export function QuotationDetail({ id }: { id: string }) {
         currencySettings
       })
 
-      if (updatedQuotation) {
-        setQuotation(updatedQuotation)
+      const syncedQuotation = syncQuotationState(updatedQuotation)
+      if (syncedQuotation) {
         toast({
           title: "Success",
           description: "Currency settings updated successfully",
@@ -274,7 +351,7 @@ export function QuotationDetail({ id }: { id: string }) {
       }
 
       const updatedQuotation = await response.json()
-      setQuotation(updatedQuotation)
+      syncQuotationState(updatedQuotation)
       // Reset version lock since this is a new version
       setVersionLocked(false)
       toast({
@@ -295,6 +372,16 @@ export function QuotationDetail({ id }: { id: string }) {
   const handleLockVersion = async (versionId: string) => {
     if (!quotation) return
 
+    const parsedVersion = Number(versionId)
+    if (Number.isNaN(parsedVersion)) {
+      toast({
+        title: "Error",
+        description: "Invalid version number",
+        variant: "destructive"
+      })
+      return
+    }
+
     try {
       // Lock the specified version
       const response = await fetch(`/api/quotations/${quotation._id}/lock`, {
@@ -302,7 +389,10 @@ export function QuotationDetail({ id }: { id: string }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ versionId }),
+        body: JSON.stringify({
+          versionNumber: parsedVersion,
+          userName: quotation.lastUpdatedBy
+        }),
       })
 
       if (!response.ok) {
@@ -310,7 +400,7 @@ export function QuotationDetail({ id }: { id: string }) {
       }
 
       const updatedQuotation = await response.json()
-      setQuotation(updatedQuotation)
+      syncQuotationState(updatedQuotation)
       setVersionLocked(true)
       toast({
         title: "Success",
@@ -382,18 +472,10 @@ export function QuotationDetail({ id }: { id: string }) {
                 <Button 
                   onClick={async () => {
                     if (!quotation) return;
-                    
-                    // Don't save if the quotation is locked
-                    if (versionLocked) {
-                      toast({
-                        title: "Error",
-                        description: "Cannot save changes to a locked version. Create a new version first.",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
-
                     try {
+                      const previousVersion = quotation.currentVersion || 1
+                      const wasLocked = versionLocked
+
                       // First update the quotation
                       const updatedQuotation = await updateQuotation(quotation._id!, {
                         days: quotation.days,
@@ -408,11 +490,14 @@ export function QuotationDetail({ id }: { id: string }) {
                         description: quotation.description
                       });
 
-                      if (updatedQuotation) {
-                        setQuotation(updatedQuotation);
+                      const syncedQuotation = syncQuotationState(updatedQuotation);
+                      if (syncedQuotation) {
+                        const newVersionCreated = wasLocked && syncedQuotation.currentVersion !== previousVersion
                         toast({
                           title: "Success",
-                          description: "Quotation saved successfully"
+                          description: newVersionCreated
+                            ? `New draft version v${syncedQuotation.currentVersion} created. Continue editing before locking.`
+                            : "Quotation saved successfully"
                         });
                       }
                     } catch (error) {
@@ -452,7 +537,7 @@ export function QuotationDetail({ id }: { id: string }) {
                     <CardTitle>Quotation Preview</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    <div ref={previewRef} className="space-y-4">
                       <div>
                         <h2 className="text-xl font-semibold">{quotation.title}</h2>
                         <p className="text-muted-foreground">{quotation.description}</p>
@@ -586,11 +671,12 @@ export function QuotationDetail({ id }: { id: string }) {
                                                   // Save changes when input loses focus
                                                   try {
                                                     // Send both days and updated pricing options
-                                                    await updateQuotation(quotation._id!, {
+                                                    const serverQuotation = await updateQuotation(quotation._id!, {
                                                       days: quotation.days,
                                                       pricingOptions: quotation.pricingOptions,
                                                       totalPrice: quotation.pricingOptions.finalTotalPrice
                                                     });
+                                                    syncQuotationState(serverQuotation);
                                                   } catch (error) {
                                                     console.error("Error updating price:", error);
                                                     toast({
@@ -654,12 +740,13 @@ export function QuotationDetail({ id }: { id: string }) {
                                       setQuotation(recalculatedQuotation);
                                       
                                       // Also update on server
-                                      await updateQuotation(quotation._id!, {
+                                      const serverQuotation = await updateQuotation(quotation._id!, {
                                         pricingOptions: recalculatedQuotation.pricingOptions,
                                         subtotal: recalculatedQuotation.subtotal,
                                         markup: recalculatedQuotation.markup,
                                         total: recalculatedQuotation.total
                                       });
+                                      syncQuotationState(serverQuotation);
                                     } catch (error) {
                                       console.error("Error updating markup type:", error);
                                       toast({
@@ -709,12 +796,13 @@ export function QuotationDetail({ id }: { id: string }) {
                                     onBlur={async () => {
                                       // Save changes when input loses focus
                                       try {
-                                        await updateQuotation(quotation._id!, {
+                                        const serverQuotation = await updateQuotation(quotation._id!, {
                                           pricingOptions: quotation.pricingOptions,
                                           subtotal: quotation.subtotal,
                                           markup: quotation.markup,
                                           total: quotation.total
                                         });
+                                        syncQuotationState(serverQuotation);
                                       } catch (error) {
                                         console.error("Error updating markup value:", error);
                                         toast({
@@ -825,9 +913,13 @@ export function QuotationDetail({ id }: { id: string }) {
                       <Printer className="mr-2 h-4 w-4" />
                       Print
                     </Button>
-                    <Button variant="outline" disabled={!versionLocked}>
+                    <Button
+                      variant="outline"
+                      onClick={handleDownloadPdf}
+                      disabled={!versionLocked || isGeneratingPdf}
+                    >
                       <Download className="mr-2 h-4 w-4" />
-                      Download PDF
+                      {isGeneratingPdf ? "Generating..." : "Download PDF"}
                     </Button>
                     <Button>
                       <Send className="mr-2 h-4 w-4" />
@@ -872,8 +964,8 @@ export function QuotationDetail({ id }: { id: string }) {
                               validUntil: data.validUntil ? new Date(data.validUntil) : undefined
                             });
                             
-                            if (updatedQuotation) {
-                              setQuotation(updatedQuotation);
+                            const syncedQuotation = syncQuotationState(updatedQuotation);
+                            if (syncedQuotation) {
                               toast({
                                 title: "Success",
                                 description: "Client information updated successfully"
@@ -908,9 +1000,9 @@ export function QuotationDetail({ id }: { id: string }) {
                               }
                             });
                             
-                            if (updatedQuotation) {
-                              setQuotation(updatedQuotation);
-                              setShowPrices(updatedQuotation.pricingOptions.showIndividualPrices);
+                            const syncedQuotation = syncQuotationState(updatedQuotation);
+                            if (syncedQuotation) {
+                              setShowPrices(syncedQuotation.pricingOptions.showIndividualPrices);
                               toast({
                                 title: "Success",
                                 description: "Pricing options updated successfully"
@@ -984,7 +1076,7 @@ export function QuotationDetail({ id }: { id: string }) {
                       onSaveVersion={async () => {
                         try {
                           const updatedQuotation = await saveQuotationVersion(quotation._id!);
-                          setQuotation(updatedQuotation);
+                          syncQuotationState(updatedQuotation);
                           toast({
                             title: "Success",
                             description: "Changes saved successfully",
@@ -1034,8 +1126,8 @@ export function QuotationDetail({ id }: { id: string }) {
                             currency: data.currency
                           });
                           
-                          if (updatedQuotation) {
-                            setQuotation(updatedQuotation);
+                          const syncedQuotation = syncQuotationState(updatedQuotation);
+                          if (syncedQuotation) {
                             toast({
                               title: "Success",
                               description: "Quotation settings updated successfully"

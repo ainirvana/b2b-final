@@ -40,7 +40,7 @@ export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
     isLocked: boolean
     lockedBy?: string
     lockedAt?: Date
-    state: {
+    state?: {
       days: any[]
       pricingOptions: any
       subtotal: number
@@ -48,7 +48,7 @@ export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
       total: number
       currencySettings: any
     }
-    isDraft: boolean
+    isDraft?: boolean
   }>
   // Current version information
   currentVersion?: number
@@ -211,10 +211,20 @@ const QuotationSchema = new mongoose.Schema(
       description: { type: String },
       isLocked: { type: Boolean, default: false },
       lockedBy: { type: String },
-      lockedAt: { type: Date }
+      lockedAt: { type: Date },
+      isDraft: { type: Boolean, default: true },
+      state: {
+        days: { type: [mongoose.Schema.Types.Mixed], default: [] },
+        pricingOptions: { type: mongoose.Schema.Types.Mixed, default: {} },
+        subtotal: { type: Number },
+        markup: { type: Number },
+        total: { type: Number },
+        currencySettings: { type: mongoose.Schema.Types.Mixed, default: {} },
+      },
     }],
     currentVersion: { type: Number, default: 1 },
     isLocked: { type: Boolean, default: false },
+    isDraft: { type: Boolean, default: true },
     validUntil: { type: Date },
     client: {
       name: { type: String, required: true },

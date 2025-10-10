@@ -51,7 +51,8 @@ export async function PUT(
       return NextResponse.json({ error: "Invalid quotation ID format" }, { status: 400 })
     }
 
-    const updateData = await request.json()
+    const payload = await request.json()
+    const { versionDescription, ...updateData } = payload
 
     // Check if quotation exists
     const quotation = await Quotation.findById(id)
@@ -79,27 +80,92 @@ export async function PUT(
     }
 
     // Get the current version
+    // Ensure version history array exists
+    if (!Array.isArray(quotation.versionHistory)) {
+      quotation.versionHistory = []
+    }
+
+    const getSnapshotState = () => {
+      const quotationSnapshot = quotation.toObject()
+      return {
+        days: quotationSnapshot.days,
+        pricingOptions: quotationSnapshot.pricingOptions,
+        subtotal: quotationSnapshot.subtotal,
+        markup: quotationSnapshot.markup,
+        total: quotationSnapshot.total,
+        currencySettings: quotationSnapshot.currencySettings
+      }
+    }
+
     const currentVersion = quotation.currentVersion || 1
-    const versionIndex = quotation.versionHistory?.findIndex(
+    let versionIndex = quotation.versionHistory.findIndex(
       (v: any) => v.versionNumber === currentVersion
     )
 
-    // If this version is locked, prevent updates
-    if (versionIndex !== -1 && quotation.versionHistory[versionIndex].isLocked) {
-      return NextResponse.json({ error: "Cannot update a locked version" }, { status: 400 })
+    const nextVersionNumber = () => {
+      return (
+        quotation.versionHistory.reduce(
+          (max: number, version: any) => Math.max(max, version.versionNumber || 0),
+          0
+        ) + 1
+      )
     }
 
-    // Set the draft flag
-    updateData.isDraft = true
-    if (versionIndex !== -1) {
+    // If there is no entry for the current version, seed one
+    if (versionIndex === -1) {
+      const fallbackVersion = currentVersion || nextVersionNumber()
+      quotation.versionHistory.push({
+        versionNumber: fallbackVersion,
+        createdAt: new Date(),
+        description: versionDescription || "Auto-created draft version",
+        isLocked: false,
+        isDraft: true,
+        state: getSnapshotState()
+      })
+      quotation.currentVersion = fallbackVersion
+      versionIndex = quotation.versionHistory.length - 1
+    }
+
+    // If the current version is locked, create a new draft version that can be edited
+    if (quotation.versionHistory[versionIndex]?.isLocked) {
+      const newVersionNumber = nextVersionNumber()
+      quotation.versionHistory.push({
+        versionNumber: newVersionNumber,
+        createdAt: new Date(),
+        description: versionDescription || "Draft created from locked version",
+        isLocked: false,
+        isDraft: true,
+        state: getSnapshotState()
+      })
+      quotation.currentVersion = newVersionNumber
+      quotation.isLocked = false
+      quotation.isDraft = true
+      versionIndex = quotation.versionHistory.length - 1
+    }
+
+    // Update version metadata
+    if (versionDescription && quotation.versionHistory[versionIndex]) {
+      quotation.versionHistory[versionIndex].description = versionDescription
+    }
+    if (quotation.versionHistory[versionIndex]) {
       quotation.versionHistory[versionIndex].isDraft = true
     }
 
-    // Update quotation
-    const updatedQuotation = await Quotation.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    })
+    // Guard against client attempts to override version meta
+    if ("versionHistory" in updateData) {
+      delete (updateData as any).versionHistory
+    }
+    if ("currentVersion" in updateData) {
+      delete (updateData as any).currentVersion
+    }
+
+    // Update quotation fields
+    quotation.isDraft = true
+    quotation.set(updateData)
+
+    quotation.markModified("versionHistory")
+
+    const updatedQuotation = await quotation.save()
 
     return NextResponse.json(updatedQuotation)
   } catch (error) {
