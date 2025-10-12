@@ -123,6 +123,12 @@ function ItineraryPageContent() {
       }, 0)
       const totalNights = days.reduce((sum, day) => sum + (day.nights || 0), 0)
 
+      if (previewItinerary._id) {
+        const idString = previewItinerary._id.toString()
+        localStorage.setItem("last-preview-itinerary-id", idString)
+        localStorage.setItem("last-preview-itinerary-type", previewItinerary.type || "customized-package")
+      }
+
       const previewData = {
         title: previewItinerary.title || 'Untitled Itinerary',
         description: previewItinerary.description || '',
@@ -139,6 +145,9 @@ function ItineraryPageContent() {
         additionalSections: previewItinerary.additionalSections || {},
         gallery: previewItinerary.gallery || [],
         previewConfig: config,
+        itineraryId: previewItinerary._id ? previewItinerary._id.toString() : null,
+        _id: previewItinerary._id ? previewItinerary._id.toString() : undefined,
+        itineraryType: previewItinerary.type || 'customized-package',
       }
 
       localStorage.setItem('itinerary-preview', JSON.stringify(previewData))

@@ -1,0 +1,20 @@
+          'Multiple Destinations',
+        days,
+        nights: totalNights,
+        branding: previewItinerary.branding || {},
+        totalPrice: totalPriceFromEvents || previewItinerary.totalPrice || 0,
+        generatedAt: formatGeneratedAt(new Date()),
+        additionalSections: previewItinerary.additionalSections || {},
+        gallery: previewItinerary.gallery || [],
+        previewConfig: config,
+        itineraryId: previewItinerary._id ? previewItinerary._id.toString() : null,
+        itineraryType: previewItinerary.type || 'customized-package',
+      }
+
+      localStorage.setItem('itinerary-preview', JSON.stringify(previewData))
+
+      const previewWindow = window.open('/itinerary/preview', '_blank', 'noopener')
+      if (!previewWindow) {
+        router.push('/itinerary/preview')
+      } else {
+        previewWindow.focus()

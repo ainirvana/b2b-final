@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 
 import { Label } from "@/components/ui/label"
 
-import { ArrowLeft, Download, Share2, Eye, EyeOff, Loader2, MapPin, Calendar, Clock, Users, Star, Plane, Hotel, Camera, DollarSign, Globe, Heart, UtensilsCrossed, ChevronDown, ChevronUp, Car, Percent, ShoppingCart, Phone, Check, X } from "lucide-react"
+import { ArrowLeft, Download, Share2, Edit, Eye, EyeOff, Loader2, MapPin, Calendar, Clock, Users, Star, Plane, Hotel, Camera, DollarSign, Globe, Heart, UtensilsCrossed, ChevronDown, ChevronUp, Car, Percent, ShoppingCart, Phone, Check, X } from "lucide-react"
 
 import { useRouter } from "next/navigation"
 
@@ -53,19 +53,15 @@ interface PreviewItinerary {
   gallery?: IGalleryItem[]
 
   previewConfig?: {
-
     adults: number
-
     children: number
-
     withDates: boolean
-
     startDate?: string
-
     template: number
-
   }
-
+  itineraryId?: string | null
+  itineraryType?: string
+  _id?: string
 }
 
 
@@ -542,6 +538,32 @@ export default function ItineraryPreviewPage() {
 
 
 
+  const handleEdit = () => {
+    if (!itinerary) return
+    let type = itinerary.itineraryType || "customized-package"
+    let rawId = itinerary.itineraryId ?? itinerary._id ?? null
+
+    if (!rawId && typeof window !== "undefined") {
+      const fallbackId = window.localStorage.getItem("last-preview-itinerary-id")
+      if (fallbackId) {
+        rawId = fallbackId
+      }
+      const fallbackType = window.localStorage.getItem("last-preview-itinerary-type")
+      if (fallbackType) {
+        type = fallbackType
+      }
+    }
+
+    if (rawId) {
+      const idString = typeof rawId === "string" ? rawId : rawId.toString()
+      router.push(`/itinerary/builder?id=${idString}&mode=edit&type=${type}`)
+    } else {
+      router.push(`/itinerary/builder?mode=edit&type=${type}`)
+    }
+  }
+
+
+
   const getEventIcon = (category: string) => {
 
     const icons = {
@@ -616,38 +638,91 @@ export default function ItineraryPreviewPage() {
       "from-sky-300 to-sky-500",
       "from-rose-300 to-rose-500",
     ]
+    const categoryCounts = itinerary.days.reduce(
+      (counts: { flight: number; hotel: number; transfer: number; activity: number; meal: number }, day: any) => {
+        day.events?.forEach((event: any) => {
+          const category = event?.category
+          switch (category) {
+            case "flight":
+              counts.flight += 1
+              break
+            case "hotel":
+              counts.hotel += 1
+              break
+            case "transfer":
+              counts.transfer += 1
+              break
+            case "activity":
+              counts.activity += 1
+              break
+            case "meal":
+              counts.meal += 1
+              break
+            default:
+              break
+          }
+        })
+        if (day.meals) {
+          if (day.meals.breakfast) counts.meal += 1
+          if (day.meals.lunch) counts.meal += 1
+          if (day.meals.dinner) counts.meal += 1
+        }
+        return counts
+      },
+      { flight: 0, hotel: 0, transfer: 0, activity: 0, meal: 0 },
+    )
+    const mealActive = itinerary.days.some((day: any) => {
+      const hasEventMeal = day.events?.some((event: any) => event.category === "meal")
+      const hasConfiguredMeal =
+        !!day.meals && (day.meals.breakfast || day.meals.lunch || day.meals.dinner)
+      return hasEventMeal || hasConfiguredMeal
+    })
+    const formatLabel = (count: number, singular: string, plural: string) =>
+      count > 0 ? `${count} ${count === 1 ? singular : plural}` : plural
     const highlightItems = [
       {
-        key: "flights",
-        label: "Flights",
+        key: "flight",
         icon: Plane,
-        active: itinerary.days.some((day: any) => day.events?.some((event: any) => event.category === "flight")),
+        singular: "Flight",
+        plural: "Flights",
+        count: categoryCounts.flight,
       },
       {
         key: "hotel",
-        label: "Hotel",
         icon: Hotel,
-        active: itinerary.days.some((day: any) => day.events?.some((event: any) => event.category === "hotel")),
+        singular: "Hotel",
+        plural: "Hotels",
+        count: categoryCounts.hotel,
       },
       {
         key: "transfer",
-        label: "Transfers",
         icon: Car,
-        active: itinerary.days.some((day: any) => day.events?.some((event: any) => event.category === "transfer")),
+        singular: "Transfer",
+        plural: "Transfers",
+        count: categoryCounts.transfer,
       },
       {
         key: "activity",
-        label: "Activities",
         icon: Camera,
-        active: itinerary.days.some((day: any) => day.events?.some((event: any) => event.category === "activity")),
+        singular: "Activity",
+        plural: "Activities",
+        count: categoryCounts.activity,
       },
       {
-        key: "breakfast",
-        label: "Daily Breakfast",
+        key: "meal",
         icon: UtensilsCrossed,
-        active: itinerary.days.some((day: any) => day.meals?.breakfast),
+        singular: "Meal",
+        plural: "Meals",
+        count: categoryCounts.meal,
       },
-    ]
+    ].map((item) => ({
+      ...item,
+      label:
+        item.key === "meal"
+          ? "Meals"
+          : formatLabel(item.count, item.singular, item.plural),
+      active: item.key === "meal" ? mealActive : item.count > 0,
+    }))
     const travellers: string[] = []
     if (itinerary.previewConfig?.adults) {
       travellers.push(`${itinerary.previewConfig.adults} Adult${itinerary.previewConfig.adults > 1 ? "s" : ""}`)
@@ -1263,6 +1338,14 @@ export default function ItineraryPreviewPage() {
               <Switch checked={showTimings} onCheckedChange={setShowTimings} />
 
             </div>
+
+            <Button variant="outline" onClick={handleEdit} className="hover:bg-gray-50">
+
+              <Edit className="h-4 w-4 mr-2" />
+
+              Edit
+
+            </Button>
 
             <Button variant="outline" onClick={handleShare} disabled={isSharing} className="hover:bg-gray-50">
 

@@ -177,6 +177,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const router = useRouter()
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const isNewMode = searchParams.get('mode') === 'new'
+  const itineraryTypeParam = searchParams.get('type') || 'customized-package'
+  const [currentItineraryId, setCurrentItineraryId] = useState<string | null>(itineraryId || null)
 
   // All state declarations in one place
   const [days, setDays] = useState<IItineraryDay[]>([{ ...EMPTY_DAY, events: [] }])
@@ -218,6 +220,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   useEffect(() => {
     const loadItineraryData = async () => {
       if (itineraryId) {
+        setCurrentItineraryId(itineraryId)
         try {
           console.log("[DEBUG] Loading itinerary data for ID:", itineraryId)
           const response = await fetch(`/api/itineraries/${itineraryId}`)
@@ -240,6 +243,9 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
               primaryColor: "#3B82F6",
               secondaryColor: "#10B981",
             })
+            setCurrentItineraryId(
+              itineraryData._id ? itineraryData._id.toString() : itineraryId ?? null,
+            )
 
             console.log("[v0] Loaded itinerary data for editing:", itineraryData)
           } else {
@@ -268,6 +274,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
         // Remove the query parameters
         router.replace('/itinerary/builder')
+        setCurrentItineraryId(null)
       }
     }
 
@@ -422,7 +429,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     console.log("[DEBUG] Drop operation completed")
 
     // Auto-save after dropping if we have an itineraryId
-    if (itineraryId) {
+    if (currentItineraryId) {
       console.log("[DEBUG] Auto-saving after drop")
       try {
         await autoSave(newDays)
@@ -642,6 +649,14 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
       const totalNights = days.reduce((sum, day) => sum + (day.nights || 0), 0)
 
+      const effectiveItineraryId = currentItineraryId || itineraryId || null
+
+      if (effectiveItineraryId) {
+        const idString = effectiveItineraryId.toString()
+        localStorage.setItem("last-preview-itinerary-id", idString)
+        localStorage.setItem("last-preview-itinerary-type", itineraryTypeParam)
+      }
+
       const previewData = {
         title,
         description,
@@ -655,6 +670,9 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         additionalSections,
         gallery,
         previewConfig: config,
+        itineraryId: effectiveItineraryId ? effectiveItineraryId.toString() : null,
+        _id: effectiveItineraryId ? effectiveItineraryId.toString() : undefined,
+        itineraryType: itineraryTypeParam,
       }
 
       localStorage.setItem("itinerary-preview", JSON.stringify(previewData))
@@ -728,8 +746,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       console.log("[v0] Saving itinerary data:", itineraryData)
 
       let result
-      if (itineraryId) {
-        result = await updateItinerary(itineraryId, itineraryData)
+      if (currentItineraryId) {
+        result = await updateItinerary(currentItineraryId, itineraryData)
       } else {
         result = await createItinerary(itineraryData)
       }
@@ -740,8 +758,12 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           description: `"${title}" saved with Product ID: ${productId}`,
         })
 
-        if (!itineraryId && result._id) {
-          window.history.replaceState(null, "", `/itinerary?mode=edit&id=${result._id}`)
+        const savedId = result._id ? result._id.toString() : null
+        if (!currentItineraryId && savedId) {
+          setCurrentItineraryId(savedId)
+          window.history.replaceState(null, "", `/itinerary/builder?id=${savedId}&mode=edit&type=${itineraryTypeParam}`)
+        } else if (savedId && currentItineraryId !== savedId) {
+          setCurrentItineraryId(savedId)
         }
 
         // Call the onSave callback if provided
@@ -763,7 +785,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   }
 
   const autoSave = async (updatedDays?: IItineraryDay[]) => {
-    if (!itineraryId) return
+    if (!currentItineraryId) return
 
     try {
       console.log("[DEBUG] Auto-saving itinerary...")
@@ -809,7 +831,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         branding,
       }
 
-      const result = await updateItinerary(itineraryId, itineraryData)
+      const result = await updateItinerary(currentItineraryId, itineraryData)
       console.log("[DEBUG] Auto-save completed successfully")
       
       if (onSave) {
@@ -891,7 +913,9 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         })
 
         if (result._id) {
-          window.history.replaceState(null, "", `/itinerary?mode=edit&id=${result._id}`)
+          const savedId = result._id.toString()
+          setCurrentItineraryId(savedId)
+          window.history.replaceState(null, "", `/itinerary/builder?id=${savedId}&mode=edit&type=${itineraryTypeParam}`)
         }
       } else {
         throw new Error("Failed to create copy - no result returned")

@@ -98,7 +98,13 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
 
   if (!event) return null
 
+  const isManualSource = !event.componentSource || event.componentSource === "manual"
+
   const validateField = (fieldName: string, value: any): string => {
+    if (isManualSource && fieldName !== "title") {
+      return ""
+    }
+
     switch (fieldName) {
       case "title":
         if (!value || value.trim().length === 0) return "Title is required"
@@ -107,19 +113,20 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
         return ""
 
       case "description":
+        if (!["activity", "transfer", "image"].includes(event.category) || isManualSource) {
+          return ""
+        }
         if (!value || value.trim().length === 0) return "Description is required"
         if (value.trim().length < 5) return "Description must be at least 5 characters"
         if (value.trim().length > 500) return "Description must be less than 500 characters"
         return ""
 
       case "fromCity":
-        if (event.category === "flight" && (!value || value.trim().length === 0)) return "Origin city is required"
         if (value && value.trim().length > 0 && value.trim().length < 2)
           return "City name must be at least 2 characters"
         return ""
 
       case "toCity":
-        if (event.category === "flight" && (!value || value.trim().length === 0)) return "Destination city is required"
         if (value && value.trim().length > 0 && value.trim().length < 2)
           return "City name must be at least 2 characters"
         return ""
@@ -206,21 +213,35 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
     const errors: ValidationErrors = {}
 
     // Validate all fields based on event category
-    const fieldsToValidate = ["title", "description", "price"]
+    const fieldsToValidate = ["title"]
 
-    if (event.category === "flight") {
-      fieldsToValidate.push("fromCity", "toCity")
+    if (!isManualSource && typeof editedEvent.price !== "undefined") {
+      fieldsToValidate.push("price")
     }
 
-    if (event.category === "activity") {
+    if (!isManualSource && ["activity", "transfer", "image"].includes(event.category)) {
+      fieldsToValidate.push("description")
+    }
+
+    if (!isManualSource && event.category === "flight") {
+      // Only validate origin/destination if provided
+      if (editedEvent.fromCity) {
+        fieldsToValidate.push("fromCity")
+      }
+      if (editedEvent.toCity) {
+        fieldsToValidate.push("toCity")
+      }
+    }
+
+    if (!isManualSource && event.category === "activity") {
       fieldsToValidate.push("location", "duration", "capacity")
     }
 
-      if (event.category === "hotel") {
+      if (!isManualSource && event.category === "hotel") {
         fieldsToValidate.push("location", "nights", "hotelName", "roomCategory", "hotelRating", "mealPlan")
       }
 
-    if (event.category === "image") {
+    if (!isManualSource && event.category === "image") {
       fieldsToValidate.push("imageUrl", "imageAlt")
     }
 
@@ -232,7 +253,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
     })
 
     // Additional cross-field validation
-    if (event.category === "hotel" && editedEvent.checkIn && editedEvent.checkOut) {
+    if (!isManualSource && event.category === "hotel" && editedEvent.checkIn && editedEvent.checkOut) {
       const checkInTime = new Date(`2000-01-01T${editedEvent.checkIn}:00`)
       const checkOutTime = new Date(`2000-01-01T${editedEvent.checkOut}:00`)
 
