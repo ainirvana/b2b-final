@@ -36,7 +36,7 @@ export function LibraryView() {
   const [showSelectCategoryModal, setShowSelectCategoryModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
-  const [activeLibraryTab, setActiveLibraryTab] = useState<'personal' | 'institutional' | 'public' | 'shares'>('personal')
+  const [activeLibraryTab, setActiveLibraryTab] = useState<'personal' | 'public' | 'shares'>('personal')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [activeLibraryGroupId, setActiveLibraryGroupId] = useState<string>('')
@@ -50,13 +50,6 @@ export function LibraryView() {
   const [sharesLoading, setSharesLoading] = useState(false)
   
   const { items: dbItems, libraries, loading, librariesLoading, deleteItem, createLibrary } = useLibrary()
-
-  // Fetch itineraries for shares
-  useEffect(() => {
-    if (activeLibraryTab === 'shares') {
-      fetchItineraries()
-    }
-  }, [activeLibraryTab])
 
   const fetchItineraries = async () => {
     try {
@@ -76,6 +69,13 @@ export function LibraryView() {
       setSharesLoading(false)
     }
   }
+  
+  // Fetch itineraries for shares
+  useEffect(() => {
+    if (activeLibraryTab === 'shares') {
+      void fetchItineraries()
+    }
+  }, [activeLibraryTab])
   
   // Transform DB items to component format
   const items: ILibraryItem[] = dbItems.map(item => {
@@ -150,7 +150,7 @@ export function LibraryView() {
     if (ungroupedExists) {
       base.push({
         id: 'ungrouped',
-        name: 'Ungrouped Items',
+        name: 'All Items',
         description: 'Items without a library',
         isVirtual: true,
       })
@@ -271,9 +271,8 @@ export function LibraryView() {
           <div className="flex space-x-1">
             {[
               { id: 'personal', label: 'My Library' },
-              { id: 'institutional', label: 'Shares' },
-              { id: 'public', label: 'Global Library' },
-              { id: 'shares', label: 'MY WEBLINKS' }
+              { id: 'shares', label: 'MY WEBLINKS' },
+              { id: 'public', label: 'Global Library' }
             ].map((library) => (
               <Button
                 key={library.id}
@@ -457,14 +456,6 @@ export function LibraryView() {
                     </Card>
                   ))
                 )}
-              </div>
-            </div>
-          ) : activeLibraryTab === 'institutional' ? (
-            <div className="py-12">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">my live channels</h2>
-              <div className="space-y-2">
-                <a href="#" className="block text-blue-600 hover:text-blue-800">link 1</a>
-                <a href="#" className="block text-blue-600 hover:text-blue-800">link 2</a>
               </div>
             </div>
           ) : activeLibraryTab === 'shares' ? (

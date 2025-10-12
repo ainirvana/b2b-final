@@ -37,13 +37,12 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "library", label: "Library", icon: BookOpen },
-    { id: "shares", label: "Shares", icon: Share2 },
+    { id: "shares", label: "Weblinks", icon: Share2 },
     { id: "rfqs", label: "RFQs", icon: MessageSquare },
     { id: "finance", label: "Finance", icon: DollarSign },
     { id: "quotation-builder", label: "Quotation Builder", icon: FileText },
     { id: "settings", label: "Settings", icon: Settings },
     { id: "cart", label: "Cart", icon: ShoppingCart },
-    { id: "invoice", label: "Invoice", icon: Receipt },
   ]
 
   return (
