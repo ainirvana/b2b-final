@@ -33,6 +33,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { QuotationLeadForm } from "@/components/quotation-lead-form"
 import { QuotationOptions } from "@/components/quotation-options"
 import { QuotationItineraryBuilder } from "@/components/quotation-itinerary-builder"
+import { ItinerarySetupModal, ItinerarySetupResult } from "@/components/itinerary-setup-modal"
 import { ComingSoon } from "@/components/coming-soon"
 import { useQuotations, QuotationData } from "@/hooks/use-quotations"
 import { useToast } from "@/hooks/use-toast"
@@ -66,6 +67,8 @@ export default function QuotationBuilderPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedQuotation, setSelectedQuotation] = useState<QuotationData | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [showItinerarySetupModal, setShowItinerarySetupModal] = useState(false)
+  const [itinerarySetupConfig, setItinerarySetupConfig] = useState<ItinerarySetupResult | null>(null)
   
   const router = useRouter()
   const { fetchQuotations, deleteQuotation, isLoading } = useQuotations()
@@ -83,10 +86,32 @@ export default function QuotationBuilderPage() {
   const handleOptionSelect = (option: string) => {
     console.log("Selected option:", option)
     if (option === "create-blank-itinerary") {
-      setCurrentStep("create-blank-itinerary")
+      setItinerarySetupConfig(null)
+      setShowItinerarySetupModal(true)
     } else {
       setCurrentStep("coming-soon")
     }
+  }
+
+  const handleItinerarySetupComplete = (config: ItinerarySetupResult) => {
+    setItinerarySetupConfig(config)
+    setShowItinerarySetupModal(false)
+    setCurrentStep("create-blank-itinerary")
+  }
+
+  const handleSetupModalClose = () => {
+    setShowItinerarySetupModal(false)
+  }
+
+  const handleSetupCopy = () => {
+    setShowItinerarySetupModal(false)
+    setItinerarySetupConfig(null)
+    setCurrentStep("coming-soon")
+  }
+
+  const handleBuilderBack = () => {
+    setItinerarySetupConfig(null)
+    setCurrentStep("options")
   }
 
   // Fetch quotations
@@ -330,12 +355,22 @@ export default function QuotationBuilderPage() {
       case "options":
         return <QuotationOptions onOptionSelect={handleOptionSelect} />
       case "create-blank-itinerary":
-        return leadData ? (
+        if (!leadData || !itinerarySetupConfig) {
+          return (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center text-sm text-muted-foreground">
+                Select an itinerary setup option to continue.
+              </div>
+            </div>
+          )
+        }
+        return (
           <QuotationItineraryBuilder 
-            leadData={leadData} 
-            onBack={() => setCurrentStep("options")} 
+            leadData={leadData}
+            setupConfig={itinerarySetupConfig}
+            onBack={handleBuilderBack}
           />
-        ) : null
+        )
       case "coming-soon":
         return <ComingSoon />
       default:
@@ -351,6 +386,12 @@ export default function QuotationBuilderPage() {
         <main className="flex-1 overflow-auto animate-fade-in p-6">
           {renderContent()}
         </main>
+        <ItinerarySetupModal
+          isOpen={showItinerarySetupModal}
+          onClose={handleSetupModalClose}
+          onCreate={handleItinerarySetupComplete}
+          onCopy={handleSetupCopy}
+        />
       </div>
     </div>
   )

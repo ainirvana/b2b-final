@@ -16,7 +16,7 @@ import { QuotationClientEditor, ClientInfo } from "@/components/quotation-client
 import { QuotationSettings, QuotationSettingsData } from "@/components/quotation-settings"
 import { useQuotations, QuotationData } from "@/hooks/use-quotations"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, Save, Send, Printer, Download, Eye, EyeOff, Calculator, Percent, DollarSign, Lock } from "lucide-react"
+import { ArrowLeft, Save, Send, Printer, Download, Eye, EyeOff, Calculator, Percent, DollarSign, Lock, Pencil } from "lucide-react"
 import { recalculateQuotationTotals } from "@/lib/pricing-utils"
 import { convertCurrency, convertQuotationPrices, formatCurrencyWithSymbol } from "@/lib/currency-utils"
 import { CurrencyConversion } from "@/components/currency-conversion"
@@ -125,6 +125,11 @@ export function QuotationDetail({ id }: { id: string }) {
 
     loadQuotation()
   }, [id, fetchQuotation])
+
+  const handleEditItinerary = () => {
+    if (!quotation) return
+    router.push(`/quotation-builder/${quotation._id}/edit-itinerary`)
+  }
 
   // Handle pricing options change
   const handlePricingOptionsChange = async (options: any) => {
@@ -468,6 +473,14 @@ export function QuotationDetail({ id }: { id: string }) {
                       Show Prices
                     </>
                   )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleEditItinerary}
+                  disabled={versionLocked || !quotation}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit Components
                 </Button>
                 <Button 
                   onClick={async () => {

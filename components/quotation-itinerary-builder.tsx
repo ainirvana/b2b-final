@@ -1,13 +1,17 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Save } from "lucide-react"
 import { ItineraryBuilder } from "@/components/itinerary-builder"
+import { FixedGroupTourBuilder } from "@/components/fixed-group-tour-builder"
+import { CartComboBuilder } from "@/components/cart-combo-builder"
+import { HtmlEditorBuilder } from "@/components/html-editor-builder"
 import { useItineraries } from "@/hooks/use-itineraries"
 import { useQuotations } from "@/hooks/use-quotations"
 import { useToast } from "@/hooks/use-toast"
+import type { ItinerarySetupResult } from "@/components/itinerary-setup-modal"
 
 interface QuotationItineraryBuilderProps {
   leadData: {
@@ -18,9 +22,10 @@ interface QuotationItineraryBuilderProps {
     contactDetails?: string
   }
   onBack: () => void
+  setupConfig: ItinerarySetupResult
 }
 
-export function QuotationItineraryBuilder({ leadData, onBack }: QuotationItineraryBuilderProps) {
+export function QuotationItineraryBuilder({ leadData, onBack, setupConfig }: QuotationItineraryBuilderProps) {
   const [isCreating, setIsCreating] = useState(false)
   const [createdItineraryId, setCreatedItineraryId] = useState<string | null>(null)
   const { createItinerary } = useItineraries()
@@ -101,26 +106,31 @@ export function QuotationItineraryBuilder({ leadData, onBack }: QuotationItinera
       </div>
 
       <div className="flex-1 overflow-hidden">
-        <QuotationItineraryBuilderContent
-          leadData={leadData}
-          onItineraryCreated={setCreatedItineraryId}
-          onSaveRequested={async () => {
-            // This will be called when the itinerary is saved
-            console.log("[DEBUG] Itinerary saved, ready for quotation conversion")
-          }}
+      <QuotationItineraryBuilderContent
+        leadData={leadData}
+        setupConfig={setupConfig}
+        onItineraryCreated={setCreatedItineraryId}
+        onSaveRequested={async () => {
+          // This will be called when the itinerary is saved
+          console.log("[DEBUG] Itinerary saved, ready for quotation conversion")
+        }}
         />
       </div>
     </div>
   )
 }
 
+type QuotationLeadData = QuotationItineraryBuilderProps["leadData"]
+
 // Internal component that uses the full ItineraryBuilder with quotation-specific setup
 function QuotationItineraryBuilderContent({ 
   leadData,
+  setupConfig,
   onItineraryCreated,
   onSaveRequested
 }: { 
-  leadData: any
+  leadData: QuotationLeadData
+  setupConfig: ItinerarySetupResult
   onItineraryCreated: (id: string) => void
   onSaveRequested?: () => Promise<void>
 }) {
@@ -128,45 +138,126 @@ function QuotationItineraryBuilderContent({
   const { createItinerary } = useItineraries()
   const { toast } = useToast()
 
+  const initialItineraryData = useMemo(() => {
+    const toISODate = (date: Date) => date.toISOString().split("T")[0]
+
+    const createDayEntries = (count: number, startDate?: string) => {
+      const baseDate = startDate ? new Date(startDate) : new Date()
+
+      return Array.from({ length: count }, (_, index) => {
+        const currentDate = new Date(baseDate)
+        currentDate.setDate(baseDate.getDate() + index)
+
+        return {
+          day: index + 1,
+          date: toISODate(currentDate),
+          title: `Day ${index + 1}`,
+          description: "",
+          detailedDescription: "",
+          events: [],
+          nights: index < count - 1 ? 1 : 0,
+          meals: {
+            breakfast: false,
+            lunch: false,
+            dinner: false,
+          },
+        }
+      })
+    }
+
+    const trimmedName = setupConfig.name.trim()
+    const trimmedDescription = setupConfig.description?.trim()
+    const trimmedDestination = setupConfig.destination?.trim()
+    const defaultDestination = (() => {
+      switch (setupConfig.itineraryType) {
+        case "cart-combo":
+          return "Multiple Destinations"
+        case "html-editor":
+          return "Custom"
+        default:
+          return "Enter destination"
+      }
+    })()
+
+    const baseItinerary: Record<string, any> = {
+      productId: setupConfig.productId,
+      title: trimmedName || `${leadData.name}'s Itinerary`,
+      description: trimmedDescription || leadData.remarks || "Itinerary created for quotation",
+      destination: trimmedDestination || defaultDestination,
+      duration: "1 Day",
+      currency: "USD",
+      totalPrice: 0,
+      status: "draft" as const,
+      type: setupConfig.itineraryType,
+      createdBy: "agent-user",
+      countries: [],
+      days: [] as any[],
+      highlights: [],
+      images: [],
+      gallery: [],
+      isQuotationOnly: true,
+      quotationLead: leadData,
+    }
+
+    switch (setupConfig.itineraryType) {
+      case "fixed-group-tour": {
+        const startDate = setupConfig.startDate || toISODate(new Date())
+        const endDate = setupConfig.endDate || startDate
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        const diffMs = end.getTime() - start.getTime()
+        const calculatedDays = isNaN(diffMs) ? 0 : Math.floor(diffMs / (1000 * 60 * 60 * 24))
+        const dayCount = Math.max(1, calculatedDays + 1)
+
+        baseItinerary.duration = `${dayCount} day${dayCount > 1 ? "s" : ""}`
+        baseItinerary.days = createDayEntries(dayCount, startDate)
+        baseItinerary.fixedDates = {
+          startDate,
+          endDate,
+          availableDates: [],
+          currentBookings: 0,
+          ...(setupConfig.maxParticipants && setupConfig.maxParticipants > 0
+            ? { maxParticipants: setupConfig.maxParticipants }
+            : {}),
+        }
+        break
+      }
+      case "cart-combo": {
+        baseItinerary.destination = trimmedDestination || "Multiple Destinations"
+        baseItinerary.duration = "Variable"
+        baseItinerary.days = []
+        baseItinerary.cartItems = []
+        break
+      }
+      case "html-editor": {
+        const durationLabel =
+          setupConfig.days && setupConfig.days > 0 ? `${setupConfig.days} day${setupConfig.days > 1 ? "s" : ""}` : "Variable"
+        baseItinerary.destination = trimmedDestination || "Custom"
+        baseItinerary.duration = durationLabel
+        baseItinerary.days = []
+        baseItinerary.htmlBlocks = []
+        baseItinerary.htmlContent = ""
+        break
+      }
+      case "customized-package":
+      default: {
+        const dayCount = setupConfig.days && setupConfig.days > 0 ? setupConfig.days : 1
+        baseItinerary.duration = `${dayCount} day${dayCount > 1 ? "s" : ""}`
+        baseItinerary.days = createDayEntries(dayCount)
+        break
+      }
+    }
+
+    return baseItinerary
+  }, [leadData, setupConfig])
+
   // Create a temporary itinerary for the builder to work with
   useEffect(() => {
     console.log("[DEBUG] QuotationItineraryBuilderContent useEffect triggered")
     const initializeItinerary = async () => {
       try {
         console.log("[DEBUG] Initializing temporary itinerary for quotation")
-        const initialData = {
-          title: `${leadData.name}'s Itinerary`,
-          description: leadData.remarks || "Itinerary created for quotation",
-          destination: "Enter destination",
-          duration: "5 days",
-          currency: "USD",
-          totalPrice: 0,
-          status: "draft" as const,
-          type: "customized-package" as const,
-          createdBy: "agent-user",
-          countries: [],
-          days: [
-            {
-              day: 1,
-              date: new Date().toISOString().split("T")[0],
-              title: "Day 1",
-              description: "",
-              detailedDescription: "",
-              events: [],
-              nights: 0,
-              meals: {
-                breakfast: false,
-                lunch: false,
-                dinner: false,
-              },
-            }
-          ],
-          highlights: [],
-          images: [],
-          // Mark as quotation-only to prevent showing in main itinerary list
-          isQuotationOnly: true,
-          quotationLead: leadData,
-        }
+        const initialData = initialItineraryData
 
         const result = await createItinerary(initialData)
         if (result && result._id) {
@@ -187,7 +278,7 @@ function QuotationItineraryBuilderContent({
     if (!tempItineraryId) {
       initializeItinerary()
     }
-  }, [leadData, createItinerary, onItineraryCreated, toast, tempItineraryId])
+  }, [createItinerary, initialItineraryData, onItineraryCreated, tempItineraryId, toast])
 
   // Custom onBack handler that doesn't navigate away
   const handleBack = () => {
@@ -207,13 +298,44 @@ function QuotationItineraryBuilderContent({
     )
   }
 
+  const renderBuilderByType = () => {
+    switch (setupConfig.itineraryType) {
+      case "fixed-group-tour":
+        return (
+          <FixedGroupTourBuilder
+            itineraryId={tempItineraryId}
+            onBack={handleBack}
+          />
+        )
+      case "cart-combo":
+        return (
+          <CartComboBuilder
+            itineraryId={tempItineraryId}
+            onBack={handleBack}
+          />
+        )
+      case "html-editor":
+        return (
+          <HtmlEditorBuilder
+            itineraryId={tempItineraryId}
+            onBack={handleBack}
+          />
+        )
+      case "customized-package":
+      default:
+        return (
+          <ItineraryBuilder 
+            itineraryId={tempItineraryId}
+            onBack={handleBack}
+            onSave={onSaveRequested}
+          />
+        )
+    }
+  }
+
   return (
     <div className="h-full">
-      <ItineraryBuilder 
-        itineraryId={tempItineraryId}
-        onBack={handleBack}
-        onSave={onSaveRequested}
-      />
+      {renderBuilderByType()}
     </div>
   )
 }

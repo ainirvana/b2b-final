@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,27 +9,43 @@ import { Textarea } from "@/components/ui/textarea"
 import { Plus, Copy, Calendar, Package, ShoppingCart, FileText, MapPin, Users, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+export type ItineraryType = "fixed-group-tour" | "customized-package" | "cart-combo" | "html-editor"
+
+export interface ItinerarySetupResult {
+  itineraryType: ItineraryType
+  name: string
+  productId: string
+  description?: string
+  destination?: string
+  days?: number
+  startDate?: string
+  endDate?: string
+  maxParticipants?: number
+}
+
 interface ItinerarySetupModalProps {
   isOpen: boolean
   onClose: () => void
+  onCreate?: (result: ItinerarySetupResult) => void
+  onCopy?: () => void
 }
 
-type ItineraryType = "fixed-group-tour" | "customized-package" | "cart-combo" | "html-editor"
+const INITIAL_FORM_STATE = {
+  name: "",
+  days: "",
+  productId: "",
+  description: "",
+  destination: "",
+  maxParticipants: "",
+  startDate: "",
+  endDate: "",
+}
 
-export function ItinerarySetupModal({ isOpen, onClose }: ItinerarySetupModalProps) {
+export function ItinerarySetupModal({ isOpen, onClose, onCreate, onCopy }: ItinerarySetupModalProps) {
   const router = useRouter()
   const [setupType, setSetupType] = useState<"new" | "copy" | null>(null)
   const [itineraryType, setItineraryType] = useState<ItineraryType>("customized-package")
-  const [formData, setFormData] = useState({
-    name: "",
-    days: "",
-    productId: "",
-    description: "",
-    destination: "",
-    maxParticipants: "",
-    startDate: "",
-    endDate: "",
-  })
+  const [formData, setFormData] = useState({ ...INITIAL_FORM_STATE })
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -63,18 +79,35 @@ export function ItinerarySetupModal({ isOpen, onClose }: ItinerarySetupModalProp
       return
     }
 
+    const parsedResult: ItinerarySetupResult = {
+      itineraryType,
+      name: formData.name.trim(),
+      productId: formData.productId.trim(),
+      description: formData.description.trim() || undefined,
+      destination: formData.destination.trim() || undefined,
+      days: formData.days ? Number(formData.days) : undefined,
+      startDate: formData.startDate || undefined,
+      endDate: formData.endDate || undefined,
+      maxParticipants: formData.maxParticipants ? Number(formData.maxParticipants) : undefined,
+    }
+
+    if (onCreate) {
+      onCreate(parsedResult)
+      return
+    }
+
     // Navigate to the appropriate builder based on type
     const queryParams = new URLSearchParams({
-      name: formData.name,
-      productId: formData.productId,
+      name: parsedResult.name,
+      productId: parsedResult.productId,
       type: itineraryType,
       mode: "new",
-      ...(formData.description && { description: formData.description }),
-      ...(formData.destination && { destination: formData.destination }),
-      ...(formData.days && { days: formData.days }),
-      ...(formData.startDate && { startDate: formData.startDate }),
-      ...(formData.endDate && { endDate: formData.endDate }),
-      ...(formData.maxParticipants && { maxParticipants: formData.maxParticipants }),
+      ...(parsedResult.description && { description: parsedResult.description }),
+      ...(parsedResult.destination && { destination: parsedResult.destination }),
+      ...(parsedResult.days && { days: String(parsedResult.days) }),
+      ...(parsedResult.startDate && { startDate: parsedResult.startDate }),
+      ...(parsedResult.endDate && { endDate: parsedResult.endDate }),
+      ...(parsedResult.maxParticipants && { maxParticipants: String(parsedResult.maxParticipants) }),
     })
 
     router.push(`/itinerary/builder?${queryParams.toString()}`)
@@ -82,9 +115,22 @@ export function ItinerarySetupModal({ isOpen, onClose }: ItinerarySetupModalProp
   }
 
   const handleCopyExisting = () => {
+    if (onCopy) {
+      onCopy()
+      return
+    }
+
     // Will implement copy functionality later
     router.push("/itinerary/builder")
   }
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSetupType(null)
+      setItineraryType("customized-package")
+      setFormData({ ...INITIAL_FORM_STATE })
+    }
+  }, [isOpen])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
