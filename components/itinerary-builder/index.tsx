@@ -39,6 +39,7 @@ import { ComponentSourceModal } from "./component-source-modal"
 import { BrandingSettings } from "./branding-settings"
 import { GalleryUpload } from "./gallery-upload"
 import { PreviewConfigModal, PreviewConfig } from "../preview-config-modal"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import type { IItineraryDay, IItineraryEvent, IGalleryItem } from "@/models/Itinerary"
 import { LibraryToItineraryConverter } from "@/lib/library-converter"
 import { useLibrary } from "@/hooks/use-library"
@@ -192,6 +193,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     eventIndex: number
   } | null>(null)
   const [productId, setProductId] = useState(`ITN-${Date.now().toString(36).toUpperCase()}`)
+  const [productReferenceCode, setProductReferenceCode] = useState("")
   const [branding, setBranding] = useState<{
     headerLogo?: string
     headerText?: string
@@ -211,6 +213,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [countryError, setCountryError] = useState<string>("")
   const [gallery, setGallery] = useState<IGalleryItem[]>([])
   const [collapsedDays, setCollapsedDays] = useState<Set<number>>(new Set())
+
+  // Duplicate name dialog
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false)
+  const [duplicateDialogMessage, setDuplicateDialogMessage] = useState("")
 
   const [highlightOptions, setHighlightOptions] = useState<string[]>([])
   const [newHighlight, setNewHighlight] = useState<string>("")
@@ -232,6 +238,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             setTitle(itineraryData.title || "")
             setDescription(itineraryData.description || "")
             setProductId(itineraryData.productId || "")
+            setProductReferenceCode(itineraryData.productReferenceCode || "")
             setDays(itineraryData.days || [{ ...EMPTY_DAY, events: [] }])
             setCountries(itineraryData.countries || [])
             setGallery(itineraryData.gallery || [])
@@ -271,6 +278,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         setDays(initialDays)
         setTitle(itineraryName)
         setProductId(newProductId)
+        const refCode = searchParams.get('productReferenceCode') || ''
+        setProductReferenceCode(refCode)
 
         // Remove the query parameters
         router.replace('/itinerary/builder')
@@ -709,21 +718,21 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       )
 
       const itineraryData = {
-        productId: productId.trim() || `ITN-${Date.now().toString(36).toUpperCase()}`,
+        productId: productId.trim() || ("ITN-" + Date.now().toString(36).toUpperCase()),
+        productReferenceCode: productReferenceCode.trim() || undefined,
         title: title.trim(),
         description: description.trim(),
         destination: extractDestination() || "Multiple Destinations",
-        duration: `${days.length} ${days.length === 1 ? "day" : "days"}`,
+        duration: daysToSave.length + (daysToSave.length === 1 ? " day" : " days"),
         totalPrice,
         currency: "USD",
-        status: "draft" as const,
         createdBy: "agent-user",
         countries,
         days: days.map((day) => ({
           ...day,
           events: day.events.map((event) => ({
             ...event,
-            title: event.title || `New ${event.category}`,
+            title: event.title || ("New " + event.category),
             description: event.description || "No description provided",
             highlights: event.highlights || [],
             listItems: event.listItems || [],
@@ -763,9 +772,11 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             if (matches.length > 0) {
               toast({
                 title: "Duplicate Name",
-                description: `An itinerary named "${itineraryData.title}" already exists. Please use a different name or edit the existing itinerary.",
+                description: `An itinerary named "${itineraryData.title}" already exists. Please use a different name or edit the existing itinerary.`,
                 variant: "destructive",
               })
+              setDuplicateDialogMessage(`An itinerary named "${itineraryData.title}" already exists. Please use a different name or edit the existing itinerary.`)
+              setDuplicateDialogOpen(true)
               setIsSaving(false)
               return
             }
@@ -783,13 +794,13 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       if (result) {
         toast({
           title: "Itinerary Saved Successfully",
-          description: `"${title}" saved with Product ID: ${productId}`,
+          description: title + " saved with Product ID: " + productId,
         })
 
         const savedId = result._id ? result._id.toString() : null
         if (!currentItineraryId && savedId) {
           setCurrentItineraryId(savedId)
-          window.history.replaceState(null, "", `/itinerary/builder?id=${savedId}&mode=edit&type=${itineraryTypeParam}`)
+          window.history.replaceState(null, "", "/itinerary/builder?id=" + savedId + "&mode=edit&type=" + itineraryTypeParam)
         } else if (savedId && currentItineraryId !== savedId) {
           setCurrentItineraryId(savedId)
         }
@@ -825,14 +836,14 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       )
 
       const itineraryData = {
-        productId: productId.trim() || `ITN-${Date.now().toString(36).toUpperCase()}`,
+        productId: productId.trim() || ("ITN-" + Date.now().toString(36).toUpperCase()),
+        productReferenceCode: productReferenceCode.trim() || undefined,
         title: title.trim(),
         description: description.trim(),
         destination: extractDestination() || "Multiple Destinations",
-        duration: `${daysToSave.length} ${daysToSave.length === 1 ? "day" : "days"}`,
+        duration: daysToSave.length + (daysToSave.length === 1 ? " day" : " days"),
         totalPrice,
         currency: "USD",
-        status: "draft" as const,
         createdBy: "agent-user",
         countries,
         days: daysToSave.map((day) => ({
@@ -1016,6 +1027,13 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             placeholder="Enter itinerary title..."
             className="text-lg font-semibold border-none p-0 h-auto bg-transparent focus:ring-0 focus:border-transparent"
             aria-label="Itinerary title"
+          />
+          <Input
+            value={productReferenceCode}
+            onChange={(e) => setProductReferenceCode(e.target.value)}
+            placeholder="Product Reference Code (Optional)"
+            className="text-sm border rounded-md px-3 py-2"
+            aria-label="Product Reference Code"
           />
           <Textarea
             value={description}
@@ -1447,6 +1465,17 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         onClose={() => setShowPreviewConfig(false)}
         onConfirm={handlePreviewConfirm}
       />
+      <Dialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Duplicate Itinerary Name</DialogTitle>
+            <DialogDescription>{duplicateDialogMessage}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDuplicateDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -187,7 +187,7 @@ function QuotationItineraryBuilderContent({
       duration: "1 Day",
       currency: "USD",
       totalPrice: 0,
-      status: "draft" as const,
+
       type: setupConfig.itineraryType,
       createdBy: "agent-user",
       countries: [],

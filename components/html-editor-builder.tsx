@@ -239,7 +239,7 @@ export function HtmlEditorBuilder({ itineraryId, onBack }: HtmlEditorBuilderProp
         duration: "Variable",
         totalPrice: 0,
         currency: "USD",
-        status: "draft",
+
         createdBy: "agent-user",
         lastUpdatedBy: "agent-user",
         countries: [],

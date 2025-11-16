@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
       ...data,
       totalPrice: Number(data.totalPrice) || 0,
       currency: data.currency || "USD",
-      status: data.status || "draft",
+
       highlights: Array.isArray(data.highlights) ? data.highlights : [],
       images: Array.isArray(data.images) ? data.images : [],
       days: Array.isArray(data.days) ? data.days : [],
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
         if (duplicate) {
           return createErrorResponse(
             "Duplicate Entry",
-            `An itinerary with the title \"${titleToCheck}\" already exists for this user. Please choose a different name.",
+            `An itinerary with the title "${titleToCheck}" already exists for this user. Please choose a different name.`,
             "DUPLICATE_KEY_ERROR",
             409,
             { duplicateId: duplicate._id, duplicateTitle: duplicate.title },

@@ -227,7 +227,7 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
         duration: "Variable",
         totalPrice: cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
         currency: "USD",
-        status: "draft",
+
         createdBy: "agent-user",
         lastUpdatedBy: "agent-user",
         countries: [],

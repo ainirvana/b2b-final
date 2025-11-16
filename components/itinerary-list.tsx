@@ -271,12 +271,6 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
                         {itinerary.destination}
                       </CardDescription>
                     </div>
-                    <Badge 
-                      variant={itinerary.status === "published" ? "default" : "secondary"}
-                      className="text-xs"
-                    >
-                      {itinerary.status}
-                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -294,6 +288,13 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
                         </div>
                       )}
                     </div>
+
+                    {/* Product Reference Code if available */}
+                    {itinerary.productReferenceCode && (
+                      <div className="text-xs text-gray-500">
+                        <span className="font-semibold">Ref Code:</span> {itinerary.productReferenceCode}
+                      </div>
+                    )}
 
                     {/* Type-specific information */}
                     {itinerary.type === "fixed-group-tour" && itinerary.fixedDates && (

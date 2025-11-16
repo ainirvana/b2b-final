@@ -3,6 +3,7 @@ import mongoose from "mongoose"
 export interface IItinerary {
   _id?: string
   productId: string
+  productReferenceCode?: string // Optional product reference code
   title: string
   description: string
   destination: string
@@ -10,7 +11,7 @@ export interface IItinerary {
   duration: string
   totalPrice: number
   currency: string
-  status: "draft" | "published" | "archived"
+  status?: "published" | "archived"
   type: "fixed-group-tour" | "customized-package" | "cart-combo" | "html-editor" // NEW: Itinerary types
   createdBy: string
   lastUpdatedBy?: string // NEW: Track who last updated
@@ -250,6 +251,7 @@ const ItineraryDaySchema = new mongoose.Schema({
 const ItinerarySchema = new mongoose.Schema(
   {
     productId: { type: String },
+    productReferenceCode: { type: String },
     title: { type: String },
     description: { type: String },
     destination: { type: String },
@@ -257,11 +259,7 @@ const ItinerarySchema = new mongoose.Schema(
     duration: { type: String },
     totalPrice: { type: Number, default: 0 },
     currency: { type: String, default: "USD" },
-    status: {
-      type: String,
-      enum: ["draft", "published", "archived"],
-      default: "draft",
-    },
+
     type: {
       type: String,
       enum: ["fixed-group-tour", "customized-package", "cart-combo", "html-editor"],

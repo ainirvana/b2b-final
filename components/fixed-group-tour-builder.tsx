@@ -178,7 +178,7 @@ export function FixedGroupTourBuilder({ itineraryId, onBack }: FixedGroupTourBui
         duration,
         totalPrice: basePrice,
         currency: "USD",
-        status: "draft",
+
         type: "fixed-group-tour",
         createdBy: "agent-user",
         lastUpdatedBy: "agent-user",
