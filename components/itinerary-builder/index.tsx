@@ -218,6 +218,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false)
   const [duplicateDialogMessage, setDuplicateDialogMessage] = useState("")
 
+  // Validation error dialog
+  const [validationErrorOpen, setValidationErrorOpen] = useState(false)
+  const [validationErrorMessage, setValidationErrorMessage] = useState("")
+
   const [highlightOptions, setHighlightOptions] = useState<string[]>([])
   const [newHighlight, setNewHighlight] = useState<string>("")
   const [viewMode, setViewMode] = useState<'itinerary' | 'all-inclusions'>('itinerary')
@@ -705,13 +709,37 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   }
 
   const handleSave = async () => {
+    // VALIDATION FIRST - before setting any state
+    const descriptionValue = description ? description.trim() : ""
+    const destinationValue = countries && countries.length > 0 ? (countries[0] ? countries[0].trim() : "") : ""
+
+    console.log("[VALIDATION] Checking fields before save")
+    console.log("[VALIDATION] descriptionValue length:", descriptionValue.length)
+    console.log("[VALIDATION] destinationValue length:", destinationValue.length)
+
+    // Check if description is empty
+    if (!descriptionValue || descriptionValue.length === 0) {
+      console.log("[VALIDATION] BLOCKED - Description is empty")
+      setValidationErrorMessage("Please enter an itinerary description before saving.")
+      setValidationErrorOpen(true)
+      return
+    }
+
+    // Check if destination is empty
+    if (!destinationValue || destinationValue.length === 0) {
+      console.log("[VALIDATION] BLOCKED - Destination is empty")
+      setValidationErrorMessage("Please enter a destination before saving.")
+      setValidationErrorOpen(true)
+      return
+    }
+
+    console.log("[VALIDATION] Validation PASSED - All fields are filled")
+
+    // NOW we can proceed with saving
     setIsSaving(true)
     setCountryError("")
+    
     try {
-      // Removed countries validation
-      // Removed title validation
-      // Removed description validation
-
       const totalPrice = days.reduce(
         (sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0),
         0,
@@ -722,8 +750,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         productReferenceCode: productReferenceCode.trim() || undefined,
         title: title.trim(),
         description: description.trim(),
-        destination: extractDestination() || "Multiple Destinations",
-        duration: daysToSave.length + (daysToSave.length === 1 ? " day" : " days"),
+        destination: countries[0] && countries[0].trim() ? countries[0].trim() : (extractDestination() || "Multiple Destinations"),
+        duration: days.length + (days.length === 1 ? " day" : " days"),
         totalPrice,
         currency: "USD",
         createdBy: "agent-user",
@@ -840,7 +868,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         productReferenceCode: productReferenceCode.trim() || undefined,
         title: title.trim(),
         description: description.trim(),
-        destination: extractDestination() || "Multiple Destinations",
+        destination: countries[0] && countries[0].trim() ? countries[0].trim() : (extractDestination() || "Multiple Destinations"),
         duration: daysToSave.length + (daysToSave.length === 1 ? " day" : " days"),
         totalPrice,
         currency: "USD",
@@ -1008,15 +1036,22 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       <div className="flex-1 p-6 overflow-y-auto h-full">
         {/* Header Card */}
         <div className="bg-white rounded-xl shadow-sm border mb-8 p-6 flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-gray-500" />
-            <Input
-              value={countries[0] || ""}
-              onChange={(e) => setCountries([e.target.value])}
-              className="max-w-[200px] h-8 text-gray-700"
-              placeholder="Enter destination..."
-              autoComplete="off"
-            />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Destination <span className="text-red-500">*</span>
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-gray-500" />
+              <Input
+                value={countries[0] || ""}
+                onChange={(e) => setCountries([e.target.value])}
+                className={`max-w-[200px] h-8 text-gray-700 ${!countries[0]?.trim() ? 'border-red-500' : ''}`}
+                placeholder="Enter destination..."
+                autoComplete="off"
+              />
+            </div>
           </div>
           <div className="bg-[#E8F3FF] text-[#2D7CEA] border-[#2D7CEA] border rounded-md flex items-center px-3 py-1 text-sm font-semibold select-none w-max">
             {days.length} Days &nbsp;•&nbsp; {days.length > 0 ? days.length - 1 : 0} Nights
@@ -1035,13 +1070,18 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             className="text-sm border rounded-md px-3 py-2"
             aria-label="Product Reference Code"
           />
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter itinerary description..."
-            className="min-h-[60px] border-none resize-none p-0"
-            aria-label="Itinerary description"
-          />
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Itinerary Description <span className="text-red-500">*</span>
+            </label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter itinerary description..."
+              className={`min-h-[60px] border-none resize-none p-0 ${!description?.trim() ? 'border-red-500 border' : ''}`}
+              aria-label="Itinerary description"
+            />
+          </div>
           <div>
             <h3 className="font-semibold mb-2">Highlights</h3>
             <div className="flex flex-wrap gap-2 mb-2" aria-label="Highlights">
@@ -1473,6 +1513,18 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDuplicateDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={validationErrorOpen} onOpenChange={setValidationErrorOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Required Fields Missing</DialogTitle>
+            <DialogDescription className="text-base pt-4">{validationErrorMessage}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setValidationErrorOpen(false)}>OK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

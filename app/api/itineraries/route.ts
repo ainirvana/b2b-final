@@ -158,9 +158,18 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] API received itinerary data:", JSON.stringify(data, null, 2))
 
-    // Removed required field validations
-
+    // Validation: destination and description are MANDATORY for all itineraries
     const validationErrors: string[] = []
+
+    // Check description is not empty
+    if (!data.description || typeof data.description !== 'string' || data.description.trim().length === 0) {
+      validationErrors.push("description is required and cannot be empty")
+    }
+
+    // Check destination is not empty
+    if (!data.destination || typeof data.destination !== 'string' || data.destination.trim().length === 0 || data.destination === "Multiple Destinations") {
+      validationErrors.push("destination is required and cannot be empty")
+    }
 
     if (data.totalPrice && (isNaN(Number(data.totalPrice)) || Number(data.totalPrice) < 0)) {
       validationErrors.push("totalPrice must be a non-negative number")
