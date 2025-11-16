@@ -7,6 +7,8 @@ import { TopHeader } from "@/components/top-header"
 import { Sidebar } from "@/components/sidebar"
 import { ItinerarySetupModal } from "@/components/itinerary-setup-modal"
 import { PreviewConfigModal, PreviewConfig } from "@/components/preview-config-modal"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import type { IItinerary } from "@/models/Itinerary"
@@ -216,6 +218,17 @@ function ItineraryPageContent() {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopHeader />
+
+        {/* Back to libraries when navigated from library */}
+        {searchParams.get('from') === 'library' && (
+          <div className="px-6 py-3 bg-white border-b">
+            <Button variant="ghost" onClick={() => router.push('/library')} className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Libraries
+            </Button>
+          </div>
+        )}
+
         <main className="flex-1 overflow-auto animate-fade-in">{renderContent()}</main>
       </div>
       <PreviewConfigModal

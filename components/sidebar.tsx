@@ -42,7 +42,6 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
     { id: "finance", label: "Finance", icon: DollarSign },
     { id: "quotation-builder", label: "Quotation Builder", icon: FileText },
     { id: "settings", label: "Settings", icon: Settings },
-    { id: "cart", label: "Cart", icon: ShoppingCart },
   ]
 
   return (

@@ -507,7 +507,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
               </SelectTrigger>
               <SelectContent>
                 {libraries.length === 0 ? (
-                  <SelectItem value="" disabled>No libraries available</SelectItem>
+                  <SelectItem value="__none" disabled>No libraries available</SelectItem>
                 ) : (
                   libraries.map((library) => (
                     <SelectItem key={library._id} value={library._id}>

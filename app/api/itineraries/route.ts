@@ -71,13 +71,28 @@ export async function GET(request: NextRequest) {
 
   try {
     await connectWithRetry()
+    const url = new URL(request.url)
+    const title = url.searchParams.get("title")
+    const createdBy = url.searchParams.get("createdBy")
 
-    const itineraries = await Itinerary.find({ 
+    // Build a flexible query: optionally filter by title (case-insensitive) and/or createdBy
+    const query: any = {
       $or: [
         { isQuotationOnly: { $ne: true } },
-        { isQuotationOnly: { $exists: false } }
-      ]
-    }).sort({ createdAt: -1 })
+        { isQuotationOnly: { $exists: false } },
+      ],
+    }
+
+    if (title && title.trim()) {
+      // Case-insensitive exact match for title
+      query.title = { $regex: `^${title.trim().replace(/[.*+?^${}()|[\\]\\]/g, "\\\\$&")}$`, $options: "i" }
+    }
+
+    if (createdBy && createdBy.trim()) {
+      query.createdBy = createdBy.trim()
+    }
+
+    const itineraries = await Itinerary.find(query).sort({ createdAt: -1 })
 
     return NextResponse.json({
       data: itineraries,
@@ -183,6 +198,29 @@ export async function POST(request: NextRequest) {
       days: Array.isArray(data.days) ? data.days : [],
       createdAt: new Date(),
       updatedAt: new Date(),
+    }
+
+    // Prevent duplicate itinerary names for the same creator (case-insensitive)
+    try {
+      const titleToCheck = (processedData.title || "").toString().trim()
+      if (titleToCheck) {
+        const escaped = titleToCheck.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")
+        const titleRegex = { $regex: `^${escaped}$`, $options: "i" }
+        const duplicate = await Itinerary.findOne({ title: titleRegex, createdBy: processedData.createdBy })
+        if (duplicate) {
+          return createErrorResponse(
+            "Duplicate Entry",
+            `An itinerary with the title \"${titleToCheck}\" already exists for this user. Please choose a different name.",
+            "DUPLICATE_KEY_ERROR",
+            409,
+            { duplicateId: duplicate._id, duplicateTitle: duplicate.title },
+            requestId,
+          )
+        }
+      }
+    } catch (dupErr) {
+      console.warn("[v0] Duplicate check failed:", dupErr)
+      // proceed - duplicate check is best-effort; fall through to normal save which may still fail
     }
 
     const itinerary = new Itinerary(processedData)

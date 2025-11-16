@@ -746,6 +746,34 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       console.log("[v0] Saving itinerary data:", itineraryData)
 
       let result
+      // Pre-check duplicate title on client to avoid unnecessary save attempts
+      if (!currentItineraryId && itineraryData.title) {
+        try {
+          const dupResp = await fetch(`/api/itineraries?title=${encodeURIComponent(
+            itineraryData.title,
+          )}&createdBy=${encodeURIComponent(itineraryData.createdBy || "agent-user")}`, {
+            headers: {
+              "x-request-id": `dup-${Date.now()}`,
+            },
+          })
+
+          if (dupResp.ok) {
+            const dupData = await dupResp.json()
+            const matches = Array.isArray(dupData.data) ? dupData.data : []
+            if (matches.length > 0) {
+              toast({
+                title: "Duplicate Name",
+                description: `An itinerary named "${itineraryData.title}" already exists. Please use a different name or edit the existing itinerary.",
+                variant: "destructive",
+              })
+              setIsSaving(false)
+              return
+            }
+          }
+        } catch (error) {
+          console.warn("[v0] Duplicate check failed (client-side):", error)
+        }
+      }
       if (currentItineraryId) {
         result = await updateItinerary(currentItineraryId, itineraryData)
       } else {

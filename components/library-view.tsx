@@ -14,8 +14,7 @@ import { Label } from "@/components/ui/label"
 import { SelectCategoryModal } from "@/components/select-category-modal"
 import { Sidebar } from "@/components/sidebar"
 import { toast } from "sonner"
-import ShareManagement from "@/components/share-management"
-import { IItinerary } from "@/models/Itinerary"
+// (no additional types required here)
 
 interface ILibraryItem {
   id: string
@@ -36,7 +35,7 @@ export function LibraryView() {
   const [showSelectCategoryModal, setShowSelectCategoryModal] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
-  const [activeLibraryTab, setActiveLibraryTab] = useState<'personal' | 'public' | 'shares'>('personal')
+  const [activeLibraryTab, setActiveLibraryTab] = useState<'personal' | 'public'>('personal')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [activeLibraryGroupId, setActiveLibraryGroupId] = useState<string>('')
@@ -44,38 +43,13 @@ export function LibraryView() {
   const [newLibraryName, setNewLibraryName] = useState('')
   const [newLibraryDescription, setNewLibraryDescription] = useState('')
   const [creatingLibrary, setCreatingLibrary] = useState(false)
+  const [showEditLibraryModal, setShowEditLibraryModal] = useState(false)
+  const [editLibraryId, setEditLibraryId] = useState<string | null>(null)
+  const [editLibraryName, setEditLibraryName] = useState('')
+  const [editLibraryDescription, setEditLibraryDescription] = useState('')
+  const [editingLibrary, setEditingLibrary] = useState(false)
   
-  // Shares related state
-  const [itineraries, setItineraries] = useState<IItinerary[]>([])
-  const [sharesLoading, setSharesLoading] = useState(false)
-  
-  const { items: dbItems, libraries, loading, librariesLoading, deleteItem, createLibrary } = useLibrary()
-
-  const fetchItineraries = async () => {
-    try {
-      setSharesLoading(true)
-      const response = await fetch("/api/itineraries")
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch itineraries")
-      }
-
-      const data = await response.json()
-      setItineraries(Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [])
-    } catch (error) {
-      console.error("Error fetching itineraries:", error)
-      setItineraries([])
-    } finally {
-      setSharesLoading(false)
-    }
-  }
-  
-  // Fetch itineraries for shares
-  useEffect(() => {
-    if (activeLibraryTab === 'shares') {
-      void fetchItineraries()
-    }
-  }, [activeLibraryTab])
+  const { items: dbItems, libraries, loading, librariesLoading, deleteItem, createLibrary, updateLibrary, deleteLibrary, fetchLibraries } = useLibrary()
   
   // Transform DB items to component format
   const items: ILibraryItem[] = dbItems.map(item => {
@@ -111,6 +85,7 @@ export function LibraryView() {
   useEffect(() => {
     const hasUngroupedItems = dbItems.some((item) => !item.libraryCollection)
 
+    // No libraries at all
     if (libraries.length === 0) {
       setActiveLibraryGroupId((current) => {
         if (hasUngroupedItems) {
@@ -121,17 +96,29 @@ export function LibraryView() {
       return
     }
 
+    // If 'ungrouped' was selected but there are no ungrouped items anymore, switch to 'all'
     if (activeLibraryGroupId === 'ungrouped') {
       if (hasUngroupedItems) {
         return
       }
-      setActiveLibraryGroupId(libraries[0]._id)
+      setActiveLibraryGroupId('all')
       return
     }
 
-    const isActiveValid = libraries.some((library) => library._id === activeLibraryGroupId)
+    // If nothing selected, default to 'all' so users see everything
+    if (!activeLibraryGroupId) {
+      setActiveLibraryGroupId('all')
+      return
+    }
+
+    // Validate current selection: allow 'all', 'ungrouped', or a real library id
+    const isActiveValid =
+      activeLibraryGroupId === 'all' ||
+      activeLibraryGroupId === 'ungrouped' ||
+      libraries.some((library) => library._id === activeLibraryGroupId)
+
     if (!isActiveValid) {
-      setActiveLibraryGroupId(libraries[0]._id)
+      setActiveLibraryGroupId('all')
     }
   }, [libraries, dbItems, activeLibraryGroupId])
 
@@ -140,17 +127,29 @@ export function LibraryView() {
   const ungroupedExists = items.some(item => !item.libraryId)
 
   const libraryOptions = useMemo(() => {
-    const base = libraries.map((library) => ({
+    const base: Array<{id:string,name:string,description?:string,isVirtual:boolean}> = []
+
+    // Add an "All Items" option to show items across all libraries
+    base.push({
+      id: 'all',
+      name: 'All Items',
+      description: 'Items from all libraries',
+      isVirtual: true,
+    })
+
+    // Then add actual libraries
+    base.push(...libraries.map((library) => ({
       id: library._id,
       name: library.name,
       description: library.description,
       isVirtual: false,
-    }))
+    })))
 
+    // Keep a separate entry for items without a library (ungrouped)
     if (ungroupedExists) {
       base.push({
         id: 'ungrouped',
-        name: 'All Items',
+        name: 'Without Library',
         description: 'Items without a library',
         isVirtual: true,
       })
@@ -164,7 +163,9 @@ export function LibraryView() {
       const matchesLibrary = activeLibraryGroupId
         ? activeLibraryGroupId === 'ungrouped'
           ? !item.libraryId
-          : item.libraryId === activeLibraryGroupId
+          : activeLibraryGroupId === 'all'
+            ? true
+            : item.libraryId === activeLibraryGroupId
         : true
       const normalizedCategory = item.type.toLowerCase()
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -220,10 +221,9 @@ export function LibraryView() {
   }
 
   const handleOpenCreateItem = () => {
-    if (!activeLibraryGroupId || activeLibraryGroupId === 'ungrouped') {
-      toast.error('Create or select a library before adding items')
-      return
-    }
+    // Always open the Add Item modal so users can create or select a library there.
+    // Previously we blocked opening when no real library was selected which made the
+    // button appear unresponsive. Open the modal and let the user pick or create a library.
     setShowSelectCategoryModal(true)
   }
 
@@ -252,6 +252,51 @@ export function LibraryView() {
     }
   }
 
+    // Edit Library
+    const openEditLibrary = (lib: { id: string; name: string; description?: string }) => {
+      setEditLibraryId(lib.id)
+      setEditLibraryName(lib.name)
+      setEditLibraryDescription(lib.description || '')
+      setShowEditLibraryModal(true)
+    }
+
+    const handleEditLibrarySubmit = async () => {
+      if (!editLibraryId) return
+      const name = editLibraryName.trim()
+      if (!name) {
+        toast.error('Library name is required')
+        return
+      }
+
+      setEditingLibrary(true)
+      try {
+        await updateLibrary(editLibraryId, { name, description: editLibraryDescription.trim() || undefined })
+        toast.success('Library updated')
+        setShowEditLibraryModal(false)
+        setEditLibraryId(null)
+        await fetchLibraries()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to update library'
+        toast.error(message)
+      } finally {
+        setEditingLibrary(false)
+      }
+    }
+
+    const handleDeleteLibrary = async (id: string) => {
+      if (!confirm('Are you sure you want to delete this library? Items inside will become ungrouped.')) return
+      try {
+        await deleteLibrary(id)
+        toast.success('Library deleted')
+        if (activeLibraryGroupId === id) {
+          setActiveLibraryGroupId('all')
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to delete library'
+        toast.error(message)
+      }
+    }
+
   useEffect(() => {
     if (!showCreateLibraryModal) {
       setNewLibraryName('')
@@ -266,12 +311,42 @@ export function LibraryView() {
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Library Type Tabs */}
+        {/* Top-level Tabs: Products / Itineraries */}
+        <div className="bg-white border-b border-gray-200 px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => {
+                  // Products shows the existing library tabs
+                  setActiveLibraryTab((prev) => prev || 'personal')
+                  // keep users on the same page
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  /* products is default view inside LibraryView */
+                  'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                }`}
+              >
+                Products
+              </Button>
+
+              <Button
+                onClick={() => {
+                  // navigate to the itineraries page and indicate origin so itinerary page can show a back button
+                  router.push('/itinerary?from=library')
+                }}
+                className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Itineraries
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Library Type Tabs (Products view) */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex space-x-1">
             {[
               { id: 'personal', label: 'My Library' },
-              { id: 'shares', label: 'MY WEBLINKS' },
               { id: 'public', label: 'Global Library' }
             ].map((library) => (
               <Button
@@ -303,7 +378,7 @@ export function LibraryView() {
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => router.push("/itinerary")}
+                      onClick={() => router.push('/itinerary?from=library')}
                       className="border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
                       <Package className="h-4 w-4" />
@@ -318,7 +393,7 @@ export function LibraryView() {
                       }}
                       className="border-gray-300 text-gray-700 hover:bg-gray-100"
                     >
-                      + New Library
+                      New Playlist
                     </Button>
                     <Button
                       onClick={handleOpenCreateItem}
@@ -335,16 +410,42 @@ export function LibraryView() {
                   ) : libraryOptions.length === 0 ? (
                     <p className="text-sm text-gray-500">Create a library to start adding items.</p>
                   ) : (
-                    libraryOptions.map((library) => (
-                      <Button
-                        key={library.id}
-                        variant={library.id === activeLibraryGroupId ? 'default' : 'outline'}
-                        onClick={() => setActiveLibraryGroupId(library.id)}
-                        className={library.id === activeLibraryGroupId ? 'bg-black text-white hover:bg-black/90' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}
-                      >
-                        {library.name}
-                      </Button>
-                    ))
+                    libraryOptions.map((library) => {
+                      const isActive = library.id === activeLibraryGroupId
+                      const btnClass = isActive ? 'bg-black text-white hover:bg-black/90' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+
+                      if (library.isVirtual) {
+                        return (
+                          <Button
+                            key={library.id}
+                            variant={isActive ? 'default' : 'outline'}
+                            onClick={() => setActiveLibraryGroupId(library.id)}
+                            className={btnClass}
+                          >
+                            {library.name}
+                          </Button>
+                        )
+                      }
+
+                      // Real library: show edit/delete controls
+                      return (
+                        <div key={library.id} className="flex items-center space-x-2">
+                          <Button
+                            variant={isActive ? 'default' : 'outline'}
+                            onClick={() => setActiveLibraryGroupId(library.id)}
+                            className={btnClass}
+                          >
+                            {library.name}
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => openEditLibrary({ id: library.id, name: library.name, description: library.description })} className="p-1">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteLibrary(library.id)} className="p-1 text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )
+                    })
                   )}
                 </div>
 
@@ -458,18 +559,6 @@ export function LibraryView() {
                 )}
               </div>
             </div>
-          ) : activeLibraryTab === 'shares' ? (
-            <div>
-              {sharesLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-center">
-                    <p className="text-lg font-medium">Loading...</p>
-                  </div>
-                </div>
-              ) : (
-                <ShareManagement availableItineraries={itineraries} />
-              )}
-            </div>
           ) : (
             <div className="text-center py-12">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Global Library</h2>
@@ -487,7 +576,7 @@ export function LibraryView() {
           setShowSelectCategoryModal(false)
           toast.success('Library item created successfully')
         }}
-        defaultLibraryId={activeLibraryGroupId && activeLibraryGroupId !== 'ungrouped' ? activeLibraryGroupId : undefined}
+        defaultLibraryId={libraries.some(lib => lib._id === activeLibraryGroupId) ? activeLibraryGroupId : undefined}
       />
 
       {/* Add/Edit Modal */}
@@ -545,6 +634,47 @@ export function LibraryView() {
               className="bg-yellow-500 hover:bg-yellow-600 text-white"
             >
               {creatingLibrary ? 'Creating...' : 'Create Library'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showEditLibraryModal} onOpenChange={(v) => { if (!v) { setShowEditLibraryModal(false); setEditLibraryId(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Library</DialogTitle>
+            <DialogDescription>Update library name and description.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="editLibraryName" className="text-sm font-medium text-gray-700">Library Name</Label>
+              <Input
+                id="editLibraryName"
+                value={editLibraryName}
+                onChange={(e) => setEditLibraryName(e.target.value)}
+                placeholder="E.g. Bali Activities"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editLibraryDescription" className="text-sm font-medium text-gray-700">Description (optional)</Label>
+              <Textarea
+                id="editLibraryDescription"
+                value={editLibraryDescription}
+                onChange={(e) => setEditLibraryDescription(e.target.value)}
+                placeholder="Tell your team what belongs in this library"
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEditLibraryModal(false); setEditLibraryId(null); }}>Cancel</Button>
+            <Button
+              onClick={handleEditLibrarySubmit}
+              disabled={editingLibrary || !editLibraryName.trim()}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              {editingLibrary ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
