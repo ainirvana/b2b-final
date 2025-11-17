@@ -114,6 +114,8 @@ export function PrintableItinerary({
                     <EventCard
                       key={event.id}
                       event={event}
+                      nightIndex={event.hotelNightIndex}
+                      totalNights={event.hotelTotalNights}
                     />
                   ))}
                 </div>

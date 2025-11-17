@@ -8,11 +8,13 @@ import { EventSourceBadge } from "./source-badge"
 interface HotelEventProps {
   event: IItineraryEvent
   isDetailedView?: boolean
+  nightIndex?: number // Current night (1, 2, 3, etc.)
+  totalNights?: number // Total nights for the stay
   onEdit?: () => void
   onDelete?: () => void
 }
 
-export function HotelEvent({ event, isDetailedView = true, onEdit, onDelete }: HotelEventProps) {
+export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNights, onEdit, onDelete }: HotelEventProps) {
   const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
       case "wifi":
@@ -28,16 +30,26 @@ export function HotelEvent({ event, isDetailedView = true, onEdit, onDelete }: H
     }
   }
 
+  // Determine night display
+  const nightDisplay = nightIndex && totalNights ? `${nightIndex}/${totalNights}N` : (event.nights ? `${event.nights}N` : null)
+
   if (!isDetailedView) {
-    // Summary view: show only hotel name
+    // Summary view: show only hotel name with night indicator
     return (
       <div className="bg-white p-4 rounded-lg border border-gray-200 relative">
         <EventSourceBadge event={event} />
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Hotel className="h-5 w-5 text-blue-600" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Hotel className="h-5 w-5 text-blue-600" />
+            </div>
+            <h4 className="text-lg font-semibold text-gray-800">{event.title || "Hotel Name"}</h4>
           </div>
-          <h4 className="text-lg font-semibold text-gray-800">{event.title || "Hotel Name"}</h4>
+          {nightDisplay && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300 flex-shrink-0">
+              {nightDisplay}
+            </Badge>
+          )}
         </div>
       </div>
     )
@@ -55,6 +67,11 @@ export function HotelEvent({ event, isDetailedView = true, onEdit, onDelete }: H
             <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
               Hotel
             </Badge>
+            {nightDisplay && (
+              <Badge className="text-xs bg-blue-600 text-white">
+                Night {nightDisplay}
+              </Badge>
+            )}
             {event.time && (
               <div className="flex items-center text-xs text-gray-500">
                 <Clock className="h-3 w-3 mr-1" />
@@ -98,15 +115,15 @@ export function HotelEvent({ event, isDetailedView = true, onEdit, onDelete }: H
       <div className="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
         <div className="flex items-center justify-between">
           <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">Check In</p>
+            <p className="text-xs text-gray-500 mb-1">{nightIndex === 1 ? "Check In" : "Stay"}</p>
             <p className="text-sm font-semibold text-gray-800">{event.checkIn || "14:00"}</p>
           </div>
 
           <div className="flex-1 flex items-center justify-center">
             <div className="flex-grow border-t border-dashed border-blue-300"></div>
-            {(event.nights || event.nights === 0) && (
+            {nightDisplay && (
               <div className="flex items-center gap-1 mx-3 px-2 py-1 bg-white rounded-full shadow-sm">
-                <span className="text-xs font-semibold text-blue-600">{event.nights}N</span>
+                <span className="text-xs font-semibold text-blue-600">{nightDisplay}</span>
                 <Moon className="h-3 w-3 text-blue-500" />
               </div>
             )}
@@ -114,7 +131,7 @@ export function HotelEvent({ event, isDetailedView = true, onEdit, onDelete }: H
           </div>
 
           <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">Check Out</p>
+            <p className="text-xs text-gray-500 mb-1">{nightIndex === totalNights ? "Check Out" : "Stay"}</p>
             <p className="text-sm font-semibold text-gray-800">{event.checkOut || "12:00"}</p>
           </div>
         </div>

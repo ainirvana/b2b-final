@@ -9,7 +9,7 @@ interface EventSourceTagsProps {
 
 export function EventSourceTags({ source, isEdited }: EventSourceTagsProps) {
   return (
-    <div className="absolute -top-1 -right-1 flex flex-col gap-1 z-10">
+    <div className="absolute top-2 right-10 flex flex-col gap-1 z-10">
       {source === "library" && (
         <div className="flex items-center px-2 py-1 bg-blue-500 text-white text-xs font-medium shadow-md transform -skew-x-12 rounded-tr-md rounded-bl-md border-r-2 border-blue-600">
           <Library className="w-3 h-3 mr-1 transform skew-x-12" />

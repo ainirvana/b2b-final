@@ -173,6 +173,10 @@ export interface IItineraryEvent {
     heading: string
     content: string
   }[]
+  // Multi-night hotel tracking
+  hotelGroupId?: string // Unique ID to group related hotel instances across days
+  hotelNightIndex?: number // Which night this is (1, 2, 3, etc. for 3-night stays)
+  hotelTotalNights?: number // Total nights for the stay
 }
 
 const ItineraryEventSchema = new mongoose.Schema({
@@ -231,6 +235,9 @@ const ItineraryEventSchema = new mongoose.Schema({
   imageAlt: String,
   listItems: [String],
   subtitle: String,
+  hotelGroupId: String, // Unique ID to group related hotel instances across days
+  hotelNightIndex: Number, // Which night this is (1, 2, 3, etc.)
+  hotelTotalNights: Number, // Total nights for the stay
 })
 
 const ItineraryDaySchema = new mongoose.Schema({

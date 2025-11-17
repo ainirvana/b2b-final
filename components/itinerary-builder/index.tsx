@@ -27,6 +27,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from "lucide-react"
 import { EventCard } from "../event-card"
 import { AdditionalSections } from "../additional-sections"
@@ -222,6 +223,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [validationErrorOpen, setValidationErrorOpen] = useState(false)
   const [validationErrorMessage, setValidationErrorMessage] = useState("")
 
+  // Delete day confirmation dialog
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false)
+  const [deletingDayIndex, setDeletingDayIndex] = useState<number | null>(null)
+
   const [highlightOptions, setHighlightOptions] = useState<string[]>([])
   const [newHighlight, setNewHighlight] = useState<string>("")
   const [viewMode, setViewMode] = useState<'itinerary' | 'all-inclusions'>('itinerary')
@@ -382,6 +387,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
   const convertLibraryItemToEvent = (libraryItem: any): IItineraryEvent => {
     const convertedEvent = LibraryToItineraryConverter.convertToItineraryEvent(libraryItem)
+    
+    // Generate hotel group ID if it's a hotel
+    const hotelGroupId = convertedEvent.category === "hotel" ? `hotel-${Date.now()}` : undefined
+    
     return {
       ...convertedEvent,
       libraryItemId: libraryItem.id,
@@ -396,6 +405,11 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       ],
       highlights: convertedEvent.highlights ? [...convertedEvent.highlights] : [],
       listItems: convertedEvent.listItems ? [...convertedEvent.listItems] : [],
+      ...(convertedEvent.category === "hotel" && {
+        hotelGroupId,
+        hotelNightIndex: 1,
+        hotelTotalNights: convertedEvent.nights || 1,
+      }),
     }
   }
 
@@ -424,6 +438,53 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       const newEvent = convertLibraryItemToEvent(draggedItem.item)
       console.log("[DEBUG] New event created:", newEvent)
       newDays[dayIndex].events.splice(position, 0, newEvent)
+
+      // Handle multi-night hotels: duplicate event across nights
+      if (newEvent.category === "hotel" && newEvent.nights && newEvent.nights > 1) {
+        const hotelGroupId = newEvent.hotelGroupId || `hotel-${Date.now()}`
+        
+        // Update the original event with night tracking
+        newDays[dayIndex].events[position] = {
+          ...newEvent,
+          hotelGroupId,
+          hotelNightIndex: 1,
+          hotelTotalNights: newEvent.nights,
+        }
+
+        // Add hotel events to subsequent days
+        for (let i = 1; i < newEvent.nights; i++) {
+          const nextDayIndex = dayIndex + i
+          
+          // Extend days array if needed
+          if (nextDayIndex >= newDays.length) {
+            const lastDay = newDays[newDays.length - 1]
+            newDays.push({
+              ...lastDay,
+              day: newDays.length + 1,
+              title: `Day ${newDays.length + 1}`,
+              date: new Date(
+                new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000
+              )
+                .toISOString()
+                .split("T")[0],
+              events: [],
+            })
+          }
+
+          // Create duplicate event for this night
+          const nightEvent: IItineraryEvent = {
+            ...newEvent,
+            id: `event-${Date.now()}-night-${i}`,
+            hotelGroupId,
+            hotelNightIndex: i + 1,
+            hotelTotalNights: newEvent.nights,
+          }
+
+          // Add to the next day
+          newDays[nextDayIndex].events.push(nightEvent)
+        }
+      }
+
       console.log("[DEBUG] Updated days array:", newDays)
     } else if (
       draggedItem.type === "event" &&
@@ -526,6 +587,53 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       return day
     })
 
+    // Handle multi-night hotels: duplicate event across nights
+    if (updatedEvent.category === "hotel" && updatedEvent.nights && updatedEvent.nights > 1) {
+      const originalEvent = newDays[editingEvent.dayIndex].events[editingEvent.eventIndex]
+      const hotelGroupId = originalEvent.hotelGroupId || `hotel-${Date.now()}`
+      
+      // Update the original event with night tracking
+      newDays[editingEvent.dayIndex].events[editingEvent.eventIndex] = {
+        ...originalEvent,
+        hotelGroupId,
+        hotelNightIndex: 1,
+        hotelTotalNights: updatedEvent.nights,
+      }
+
+      // Add hotel events to subsequent days
+      for (let i = 1; i < updatedEvent.nights; i++) {
+        const nextDayIndex = editingEvent.dayIndex + i
+        
+        // Extend days array if needed
+        if (nextDayIndex >= newDays.length) {
+          const lastDay = newDays[newDays.length - 1]
+          newDays.push({
+            ...lastDay,
+            day: newDays.length + 1,
+            title: `Day ${newDays.length + 1}`,
+            date: new Date(
+              new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000
+            )
+              .toISOString()
+              .split("T")[0],
+            events: [],
+          })
+        }
+
+        // Create duplicate event for this night
+        const nightEvent: IItineraryEvent = {
+          ...originalEvent,
+          id: `event-${Date.now()}-night-${i}`,
+          hotelGroupId,
+          hotelNightIndex: i + 1,
+          hotelTotalNights: updatedEvent.nights,
+        }
+
+        // Add to the next day
+        newDays[nextDayIndex].events.push(nightEvent)
+      }
+    }
+
     setDays(newDays)
     setEditingEvent(null)
   }
@@ -548,12 +656,42 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     setDays([...days, newDay])
   }
 
+  const deleteDay = (dayIndex: number) => {
+    if (days.length === 1) {
+      // Prevent deletion if only one day remains
+      return
+    }
+
+    // Remove the day at the specified index
+    const updatedDays = days.filter((_, index) => index !== dayIndex)
+
+    // Renumber remaining days
+    const renumberedDays = updatedDays.map((day, index) => ({
+      ...day,
+      day: index + 1,
+      title: day.title.includes("Day ") ? `Day ${index + 1}` : day.title,
+    }))
+
+    setDays(renumberedDays)
+    setDeleteConfirmationOpen(false)
+    setDeletingDayIndex(null)
+
+    // Show toast notification
+    toast({
+      title: "Day Deleted",
+      description: `Day ${dayIndex + 1} has been removed from the itinerary.`,
+    })
+  }
+
   const handleSelectManualComponent = () => {
     if (!componentSourceModal.dropTarget || !componentSourceModal.component) return
 
     const { dayIndex, position } = componentSourceModal.dropTarget
     const component = componentSourceModal.component
     const newDays = [...days]
+
+    // Generate a unique group ID for multi-night hotels
+    const hotelGroupId = component.category === "hotel" ? `hotel-${Date.now()}` : undefined
 
     const newEvent: IItineraryEvent = {
       id: `event-${Date.now()}`,
@@ -582,6 +720,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         checkIn: "14:00",
         checkOut: "12:00",
         amenities: [],
+        nights: 1,
+        hotelGroupId,
+        hotelNightIndex: 1,
+        hotelTotalNights: 1,
       }),
       ...(component.category === "transfer" && {
         fromLocation: "Pick-up location",
@@ -633,6 +775,53 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     const newEvent = convertLibraryItemToEvent(libraryItem)
 
     newDays[dayIndex].events.splice(position, 0, newEvent)
+
+    // Handle multi-night hotels: duplicate event across nights
+    if (newEvent.category === "hotel" && newEvent.nights && newEvent.nights > 1) {
+      const hotelGroupId = newEvent.hotelGroupId || `hotel-${Date.now()}`
+      
+      // Update the original event with night tracking
+      newDays[dayIndex].events[position] = {
+        ...newEvent,
+        hotelGroupId,
+        hotelNightIndex: 1,
+        hotelTotalNights: newEvent.nights,
+      }
+
+      // Add hotel events to subsequent days
+      for (let i = 1; i < newEvent.nights; i++) {
+        const nextDayIndex = dayIndex + i
+        
+        // Extend days array if needed
+        if (nextDayIndex >= newDays.length) {
+          const lastDay = newDays[newDays.length - 1]
+          newDays.push({
+            ...lastDay,
+            day: newDays.length + 1,
+            title: `Day ${newDays.length + 1}`,
+            date: new Date(
+              new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000
+            )
+              .toISOString()
+              .split("T")[0],
+            events: [],
+          })
+        }
+
+        // Create duplicate event for this night
+        const nightEvent: IItineraryEvent = {
+          ...newEvent,
+          id: `event-${Date.now()}-night-${i}`,
+          hotelGroupId,
+          hotelNightIndex: i + 1,
+          hotelTotalNights: newEvent.nights,
+        }
+
+        // Add to the next day
+        newDays[nextDayIndex].events.push(nightEvent)
+      }
+    }
+
     setDays(newDays)
     setDraggedItem(null)
     setDropTarget(null)
@@ -1271,6 +1460,19 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                       <Button variant="ghost" size="sm" onClick={() => setIsDetailedView(!isDetailedView)} className="p-2">
                         <Eye className="h-4 w-4" />
                       </Button>
+                      {days.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDeletingDayIndex(dayIndex)
+                            setDeleteConfirmationOpen(true)
+                          }}
+                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -1282,6 +1484,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                               key={`${event.id}-${dayIndex}-${eventIndex}`}
                               event={event}
                               isDetailedView={isDetailedView}
+                              nightIndex={event.hotelNightIndex}
+                              totalNights={event.hotelTotalNights}
                               onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
                               onEdit={() => handleEditEvent(dayIndex, eventIndex)}
                               onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
@@ -1336,6 +1540,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           key={`${event.id}-${index}`}
                           event={event}
                           isDetailedView={isDetailedView}
+                          nightIndex={event.hotelNightIndex}
+                          totalNights={event.hotelTotalNights}
                           onDragStart={() => handleDragStart("event", event)}
                           onEdit={() => {
                             const dayIndex = days.findIndex((day) =>
@@ -1528,6 +1734,36 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={deleteConfirmationOpen} onOpenChange={setDeleteConfirmationOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Day?</DialogTitle>
+            <DialogDescription className="text-base pt-4">
+              Are you sure you want to delete Day {deletingDayIndex !== null ? deletingDayIndex + 1 : ""}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-3">
+            <Button variant="outline" onClick={() => {
+              setDeleteConfirmationOpen(false)
+              setDeletingDayIndex(null)
+            }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (deletingDayIndex !== null) {
+                  deleteDay(deletingDayIndex)
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+

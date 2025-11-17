@@ -23,6 +23,8 @@ interface EventCardProps {
   onDragEnd?: () => void
   onEdit?: (updatedEvent: IItineraryEvent) => void
   onDelete?: () => void
+  nightIndex?: number // Current night for multi-night hotels (1, 2, 3, etc.)
+  totalNights?: number // Total nights for the hotel stay
 }
 
 export function EventCard({
@@ -32,13 +34,15 @@ export function EventCard({
   onDragEnd,
   onEdit,
   onDelete,
+  nightIndex,
+  totalNights,
 }: EventCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const renderEventContent = () => {
     switch (event.category) {
       case 'hotel':
-        return <HotelEvent event={event} />
+        return <HotelEvent event={event} nightIndex={nightIndex} totalNights={totalNights} />
       case 'transfer':
         return <TransferEvent event={event} />
       case 'activity':

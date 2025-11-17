@@ -18,7 +18,7 @@ export function EventSourceBadge({ event }: { event: IItineraryEvent }) {
   if (!config) return null
 
   return (
-    <Badge variant="outline" className={`absolute bottom-2 right-2 text-xs z-10 ${config.className}`}>
+    <Badge variant="outline" className={`absolute top-2 right-10 text-xs z-10 ${config.className}`}>
       {config.label}
     </Badge>
   )

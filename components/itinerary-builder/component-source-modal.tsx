@@ -360,7 +360,7 @@ export function ComponentSourceModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Add {componentTitle} Component</DialogTitle>
         </DialogHeader>
@@ -462,7 +462,7 @@ export function ComponentSourceModal({
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto p-4">
+            <div className="flex-1 overflow-y-auto min-h-0 border border-gray-200 rounded p-4 pr-3">
               {filteredTemplates.length === 0 ? (
                 <div className="text-center py-12">
                   <Copy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -531,7 +531,7 @@ export function ComponentSourceModal({
 
         {selectedSource === "library" && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b">
+            <div className="p-4 border-b flex-shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Choose {componentTitle} from Library</h3>
                 <Button variant="ghost" onClick={() => setSelectedSource(null)}>
@@ -551,9 +551,9 @@ export function ComponentSourceModal({
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="my-libraries" className="mt-0">
+                <TabsContent value="my-libraries" className="mt-0 flex flex-col overflow-hidden h-[400px]">
                   {/* Search and Filters */}
-                  <div className="flex gap-4 mb-4">
+                  <div className="flex gap-4 mb-4 flex-shrink-0">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <Input
@@ -587,7 +587,7 @@ export function ComponentSourceModal({
                     </Select>
                   </div>
 
-                  <div className="flex-1 overflow-auto">
+                  <div className="flex-1 overflow-y-auto min-h-0 border border-gray-200 rounded library-scrollbar pr-2">
                     {filteredLibraryItems.length === 0 ? (
                       <div className="text-center py-12">
                         <Library className="h-12 w-12 text-gray-400 mx-auto mb-4" />
