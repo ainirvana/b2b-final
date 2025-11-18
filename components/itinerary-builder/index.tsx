@@ -15,7 +15,6 @@ import {
   Calendar,
   GripVertical,
   Plane,
-  Library,
   UtensilsCrossed,
   Car,
   MapPin,
@@ -33,9 +32,7 @@ import { EventCard } from "../event-card"
 import { AdditionalSections } from "../additional-sections"
 import { DayTitle } from "./day-title"
 import { EditEventModal } from "./edit-event-modal"
-import { LibrarySidebar } from "./library-sidebar"
-import { LibraryIntegrationPanel } from "./library-integration-panel"
-import { LibraryUsageStats } from "./library-usage-stats"
+// Library sidebar, integration panel and usage stats removed from builder
 import { ComponentSourceModal } from "./component-source-modal"
 import { BrandingSettings } from "./branding-settings"
 import { GalleryUpload } from "./gallery-upload"
@@ -43,7 +40,7 @@ import { PreviewConfigModal, PreviewConfig } from "../preview-config-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import type { IItineraryDay, IItineraryEvent, IGalleryItem } from "@/models/Itinerary"
 import { LibraryToItineraryConverter } from "@/lib/library-converter"
-import { useLibrary } from "@/hooks/use-library"
+// library hook removed for builder
 import { useItineraries } from "@/hooks/use-itineraries"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
@@ -173,7 +170,7 @@ const COMPONENT_TEMPLATES = [
 ]
 
 export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuilderProps) {
-  const { items: libraryItems } = useLibrary()
+  // library items disabled in this builder
   const { createItinerary, updateItinerary } = useItineraries()
   const { toast } = useToast()
   const router = useRouter()
@@ -320,14 +317,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     dropTarget: null,
   })
 
-  const totalEvents = days.reduce((sum, day) => sum + day.events.length, 0)
-  const libraryBasedEvents = days.reduce(
-    (sum, day) => sum + day.events.filter((event) => event.libraryItemId).length,
-    0,
-  )
-  const usedLibraryItems = new Set(
-    days.flatMap((day) => day.events.filter((event) => event.libraryItemId).map((event) => event.libraryItemId)),
-  ).size
+  // library statistics removed
 
   const toggleHighlight = (highlight: string) => {
     if (highlightOptions.includes(highlight)) {
@@ -381,9 +371,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     setDropTarget({ dayIndex, position })
   }
 
-  const handleLibraryDragStart = (item: any, type: string) => {
-    handleDragStart("library-item", item)
-  }
+  // library drag start handler removed
 
   const convertLibraryItemToEvent = (libraryItem: any): IItineraryEvent => {
     const convertedEvent = LibraryToItineraryConverter.convertToItineraryEvent(libraryItem)
@@ -767,66 +755,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
   }
 
-  const handleSelectLibraryComponent = (libraryItem: any) => {
-    if (!componentSourceModal.dropTarget) return
-
-    const { dayIndex, position } = componentSourceModal.dropTarget
-    const newDays = [...days]
-    const newEvent = convertLibraryItemToEvent(libraryItem)
-
-    newDays[dayIndex].events.splice(position, 0, newEvent)
-
-    // Handle multi-night hotels: duplicate event across nights
-    if (newEvent.category === "hotel" && newEvent.nights && newEvent.nights > 1) {
-      const hotelGroupId = newEvent.hotelGroupId || `hotel-${Date.now()}`
-      
-      // Update the original event with night tracking
-      newDays[dayIndex].events[position] = {
-        ...newEvent,
-        hotelGroupId,
-        hotelNightIndex: 1,
-        hotelTotalNights: newEvent.nights,
-      }
-
-      // Add hotel events to subsequent days
-      for (let i = 1; i < newEvent.nights; i++) {
-        const nextDayIndex = dayIndex + i
-        
-        // Extend days array if needed
-        if (nextDayIndex >= newDays.length) {
-          const lastDay = newDays[newDays.length - 1]
-          newDays.push({
-            ...lastDay,
-            day: newDays.length + 1,
-            title: `Day ${newDays.length + 1}`,
-            date: new Date(
-              new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000
-            )
-              .toISOString()
-              .split("T")[0],
-            events: [],
-          })
-        }
-
-        // Create duplicate event for this night
-        const nightEvent: IItineraryEvent = {
-          ...newEvent,
-          id: `event-${Date.now()}-night-${i}`,
-          hotelGroupId,
-          hotelNightIndex: i + 1,
-          hotelTotalNights: newEvent.nights,
-        }
-
-        // Add to the next day
-        newDays[nextDayIndex].events.push(nightEvent)
-      }
-    }
-
-    setDays(newDays)
-    setDraggedItem(null)
-    setDropTarget(null)
-    setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
-  }
+  // library selection handler removed
 
   const formatDate = (date: Date) => {
     const day = date.getDate().toString().padStart(2, "0")
@@ -1591,32 +1520,15 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           <AdditionalSections sections={additionalSections} onUpdate={setAdditionalSections} />
         </div>
 
-        <div className="mt-8">
-          <LibraryIntegrationPanel
-            itinerary={{ days, title, description }}
-            onRemoveLibraryItem={(eventId) => {
-              const newDays = [...days]
-              newDays.forEach((day, dayIndex) => {
-                const eventIndex = day.events.findIndex((event) => event.id === eventId)
-                if (eventIndex !== -1) {
-                  newDays[dayIndex].events.splice(eventIndex, 1)
-                }
-              })
-              setDays(newDays)
-            }}
-            onViewLibraryItem={(itemId) => {
-              console.log("View library item:", itemId)
-            }}
-          />
-        </div>
+        {/* Library integration panel removed from builder view */}
       </div>
 
       <div className="w-80 border-l bg-white flex flex-col h-screen">
         <div className="border-b bg-gray-50 p-4 flex-shrink-0">
-          <div className="flex space-x-1">
+          <div>
             <Button
               onClick={() => setActiveSidebar("components")}
-              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                 activeSidebar === "components"
                   ? "bg-blue-500 text-white"
                   : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
@@ -1624,69 +1536,38 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             >
               Components
             </Button>
-            <Button
-              onClick={() => setActiveSidebar("library")}
-              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeSidebar === "library"
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-              }`}
-            >
-              <Library className="h-4 w-4 mr-1" />
-              Library
-            </Button>
           </div>
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          {activeSidebar === "components" ? (
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="p-4 border-b flex-shrink-0">
-                <h3 className="font-semibold text-lg">Components</h3>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 min-h-0">
-                <div className="space-y-3">
-                  {COMPONENT_TEMPLATES.map((component) => {
-                    const Icon = component.icon
-                    return (
-                      <Card
-                        key={component.category}
-                        className={`${component.color} cursor-move hover:shadow-md transition-shadow`}
-                        draggable
-                        onDragStart={() => handleDragStart("component", component)}
-                      >
-                        <CardContent className="p-3">
-                          <div className="flex items-center space-x-2">
-                            <GripVertical className="h-4 w-4 text-gray-400" />
-                            <Icon className="h-4 w-4" />
-                            <span className="font-medium">{component.title}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
-                </div>
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="p-4 border-b flex-shrink-0">
+              <h3 className="font-semibold text-lg">Components</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 min-h-0">
+              <div className="space-y-3">
+                {COMPONENT_TEMPLATES.map((component) => {
+                  const Icon = component.icon
+                  return (
+                    <Card
+                      key={component.category}
+                      className={`${component.color} cursor-move hover:shadow-md transition-shadow`}
+                      draggable
+                      onDragStart={() => handleDragStart("component", component)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-center space-x-2">
+                          <GripVertical className="h-4 w-4 text-gray-400" />
+                          <Icon className="h-4 w-4" />
+                          <span className="font-medium">{component.title}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </div>
-          ) : (
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="p-4 border-b flex-shrink-0">
-                <h3 className="font-semibold text-lg">Library Items</h3>
-                <div className="mt-2">
-                  <LibraryUsageStats
-                    totalLibraryItems={libraryItems.length}
-                    usedLibraryItems={usedLibraryItems}
-                    itineraryEventCount={totalEvents}
-                    libraryBasedEventCount={libraryBasedEvents}
-                  />
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4 min-h-0">
-                <LibrarySidebar onDragStart={handleLibraryDragStart} />
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -1696,7 +1577,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         componentType={componentSourceModal.component?.category || ""}
         componentTitle={componentSourceModal.component?.title || ""}
         onSelectManual={handleSelectManualComponent}
-        onSelectLibrary={handleSelectLibraryComponent}
       />
 
       <EditEventModal

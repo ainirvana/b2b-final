@@ -48,6 +48,9 @@ export function LibraryView() {
   const [editLibraryName, setEditLibraryName] = useState('')
   const [editLibraryDescription, setEditLibraryDescription] = useState('')
   const [editingLibrary, setEditingLibrary] = useState(false)
+  const [showManageLibraryModal, setShowManageLibraryModal] = useState(false)
+  const [manageAction, setManageAction] = useState<'edit' | 'delete' | null>(null)
+  const [selectedManageLibraryId, setSelectedManageLibraryId] = useState<string | null>(null)
   
   const { items: dbItems, libraries, loading, librariesLoading, deleteItem, createLibrary, updateLibrary, deleteLibrary, fetchLibraries } = useLibrary()
   
@@ -311,6 +314,28 @@ export function LibraryView() {
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Library Type Tabs (Products view) */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex space-x-1">
+            {[
+              { id: 'personal', label: 'My Library' },
+              { id: 'public', label: 'Global Library' }
+            ].map((library) => (
+              <Button
+                key={library.id}
+                onClick={() => setActiveLibraryTab(library.id as any)}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeLibraryTab === library.id
+                    ? 'bg-yellow-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {library.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
         {/* Top-level Tabs: Products / Itineraries */}
         <div className="bg-white border-b border-gray-200 px-6 py-3">
           <div className="flex items-center justify-between">
@@ -339,28 +364,6 @@ export function LibraryView() {
                 Itineraries
               </Button>
             </div>
-          </div>
-        </div>
-
-        {/* Library Type Tabs (Products view) */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex space-x-1">
-            {[
-              { id: 'personal', label: 'My Library' },
-              { id: 'public', label: 'Global Library' }
-            ].map((library) => (
-              <Button
-                key={library.id}
-                onClick={() => setActiveLibraryTab(library.id as any)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeLibraryTab === library.id
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {library.label}
-              </Button>
-            ))}
           </div>
         </div>
 
@@ -404,17 +407,19 @@ export function LibraryView() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 mb-6">
-                  {librariesLoading ? (
-                    <p className="text-sm text-gray-500">Loading libraries...</p>
-                  ) : libraryOptions.length === 0 ? (
-                    <p className="text-sm text-gray-500">Create a library to start adding items.</p>
-                  ) : (
-                    libraryOptions.map((library) => {
-                      const isActive = library.id === activeLibraryGroupId
-                      const btnClass = isActive ? 'bg-black text-white hover:bg-black/90' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                <div className="flex items-center justify-between gap-2 mb-6">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {librariesLoading ? (
+                      <p className="text-sm text-gray-500">Loading libraries...</p>
+                    ) : libraryOptions.length === 0 ? (
+                      <p className="text-sm text-gray-500">Create a library to start adding items.</p>
+                    ) : (
+                      libraryOptions.map((library) => {
+                        const isActive = library.id === activeLibraryGroupId
+                        const btnClass = isActive ? 'bg-black text-white hover:bg-black/90' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
 
-                      if (library.isVirtual) {
+                        // Render only the library selector button here. The edit/delete controls
+                        // are shown once for the currently selected (real) library below.
                         return (
                           <Button
                             key={library.id}
@@ -425,28 +430,35 @@ export function LibraryView() {
                             {library.name}
                           </Button>
                         )
-                      }
+                      })
+                    )}
+                  </div>
 
-                      // Real library: show edit/delete controls
-                      return (
-                        <div key={library.id} className="flex items-center space-x-2">
-                          <Button
-                            variant={isActive ? 'default' : 'outline'}
-                            onClick={() => setActiveLibraryGroupId(library.id)}
-                            className={btnClass}
-                          >
-                            {library.name}
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => openEditLibrary({ id: library.id, name: library.name, description: library.description })} className="p-1">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDeleteLibrary(library.id)} className="p-1 text-red-600">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )
-                    })
-                  )}
+                  {/* Single edit/delete controls for the selected real library */}
+                  <div className="flex items-center gap-2">
+                    {libraries.length > 0 ? (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setManageAction('edit')
+                          // default selection to currently active real library if present
+                          const defaultLib = libraries.some(l => l._id === activeLibraryGroupId) ? activeLibraryGroupId : (libraries[0]?._id ?? null)
+                          setSelectedManageLibraryId(defaultLib)
+                          setShowManageLibraryModal(true)
+                        }} className="p-1">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setManageAction('delete')
+                          const defaultLib = libraries.some(l => l._id === activeLibraryGroupId) ? activeLibraryGroupId : (libraries[0]?._id ?? null)
+                          setSelectedManageLibraryId(defaultLib)
+                          setShowManageLibraryModal(true)
+                        }} className="p-1 text-red-600">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
 
                 {/* Filters */}
@@ -634,6 +646,63 @@ export function LibraryView() {
               className="bg-yellow-500 hover:bg-yellow-600 text-white"
             >
               {creatingLibrary ? 'Creating...' : 'Create Library'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Library Modal: choose a library to edit or delete */}
+      <Dialog open={showManageLibraryModal} onOpenChange={setShowManageLibraryModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{manageAction === 'delete' ? 'Delete Library' : 'Edit Library'}</DialogTitle>
+            <DialogDescription>
+              {manageAction === 'delete'
+                ? 'Choose a library to delete. Items inside will become ungrouped.'
+                : 'Choose a library to edit.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-2">
+            {libraries.length === 0 ? (
+              <p className="text-sm text-gray-500">No libraries available.</p>
+            ) : (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Library</label>
+                <select
+                  value={selectedManageLibraryId ?? ''}
+                  onChange={(e) => setSelectedManageLibraryId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  {libraries.map(lib => (
+                    <option key={lib._id} value={lib._id}>{lib.name}</option>
+                  ))}
+                </select>
+                {manageAction === 'delete' && (
+                  <p className="text-xs text-gray-500">This action will remove the selected library. Items will not be deleted but become ungrouped.</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowManageLibraryModal(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (!selectedManageLibraryId) return
+                if (manageAction === 'edit') {
+                  const lib = libraries.find(l => l._id === selectedManageLibraryId)
+                  if (lib) openEditLibrary({ id: lib._id, name: lib.name, description: lib.description })
+                  setShowManageLibraryModal(false)
+                } else if (manageAction === 'delete') {
+                  // handleDeleteLibrary will prompt a confirmation
+                  handleDeleteLibrary(selectedManageLibraryId)
+                  setShowManageLibraryModal(false)
+                }
+              }}
+              className={manageAction === 'delete' ? 'text-white bg-red-600 hover:bg-red-700' : 'bg-yellow-500 hover:bg-yellow-600 text-white'}
+            >
+              {manageAction === 'delete' ? 'Delete' : 'Edit'}
             </Button>
           </DialogFooter>
         </DialogContent>
