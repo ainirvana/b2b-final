@@ -1153,41 +1153,27 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     <div className="flex h-screen">
       <div className="flex-1 p-6 overflow-y-auto h-full">
         {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-sm border mb-8 p-6 flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">
-                Destination <span className="text-red-500">*</span>
-              </label>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-gray-500" />
-              <Input
-                value={countries[0] || ""}
-                onChange={(e) => setCountries([e.target.value])}
-                className={`max-w-[200px] h-8 text-gray-700 ${!countries[0]?.trim() ? 'border-red-500' : ''}`}
-                placeholder="Enter destination..."
-                autoComplete="off"
-              />
+        <div className="bg-white rounded-xl shadow-sm border mb-8 p-6 flex flex-col gap-1">
+          {/* Itinerary Title - Biggest Font Size */}
+          <div className="flex flex-col gap-1">
+            <textarea
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter itinerary title..."
+              className="text-5xl font-black border-none p-0 bg-transparent resize-none focus:outline-none focus:ring-0 leading-tight"
+              style={{ fontWeight: 900, lineHeight: '1.05', minHeight: '56px' }}
+              aria-label="Itinerary title"
+            />
+          </div>
+
+          {/* Days and Nights */}
+          <div className="flex items-center gap-2">
+            <div className="bg-[#E8F3FF] text-[#2D7CEA] border-[#2D7CEA] border rounded-md flex items-center px-3 py-1 text-sm font-semibold select-none w-max">
+              {days.length} Days &nbsp;•&nbsp; {days.length > 0 ? days.length - 1 : 0} Nights
             </div>
           </div>
-          <div className="bg-[#E8F3FF] text-[#2D7CEA] border-[#2D7CEA] border rounded-md flex items-center px-3 py-1 text-sm font-semibold select-none w-max">
-            {days.length} Days &nbsp;•&nbsp; {days.length > 0 ? days.length - 1 : 0} Nights
-          </div>
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter itinerary title..."
-            className="text-lg font-semibold border-none p-0 h-auto bg-transparent focus:ring-0 focus:border-transparent"
-            aria-label="Itinerary title"
-          />
-          <Input
-            value={productReferenceCode}
-            onChange={(e) => setProductReferenceCode(e.target.value)}
-            placeholder="Product Reference Code (Optional)"
-            className="text-sm border rounded-md px-3 py-2"
-            aria-label="Product Reference Code"
-          />
+
+          {/* Itinerary Description */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-700">
               Itinerary Description <span className="text-red-500">*</span>
@@ -1196,10 +1182,29 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter itinerary description..."
-              className={`min-h-[60px] border-none resize-none p-0 ${!description?.trim() ? 'border-red-500 border' : ''}`}
+              className={`min-h-[80px] border-none resize-none p-0 text-base ${!description?.trim() ? 'border-red-500 border' : ''}`}
               aria-label="Itinerary description"
             />
           </div>
+
+          {/* Destination */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Destination <span className="text-red-500">*</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-gray-500" />
+              <Input
+                value={countries[0] || ""}
+                onChange={(e) => setCountries([e.target.value])}
+                className={`flex-1 border-none p-0 text-base font-semibold ${!countries[0]?.trim() ? 'border-red-500 border' : ''}`}
+                placeholder="Enter destination..."
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          {/* Highlights */}
           <div>
             <h3 className="font-semibold mb-2">Highlights</h3>
             <div className="flex flex-wrap gap-2 mb-2" aria-label="Highlights">
@@ -1253,6 +1258,16 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
               </Button>
             </div>
           </div>
+
+          {/* Product Reference Code */}
+          <Input
+            value={productReferenceCode}
+            onChange={(e) => setProductReferenceCode(e.target.value)}
+            placeholder="Product Reference Code (Optional)"
+            className="text-sm border rounded-md px-3 py-2"
+            aria-label="Product Reference Code"
+          />
+
           {/* Detailed View Toggle */}
           <div className="flex items-center gap-2 mt-4">
             <Switch checked={isDetailedView} onCheckedChange={setIsDetailedView} />
