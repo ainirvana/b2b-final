@@ -19,7 +19,7 @@ interface ComponentSourceModalProps {
   onClose: () => void
   componentType: string
   componentTitle: string
-  onSelectManual: () => void
+  onSelectManual: (data?: any) => void
   onSelectLibrary: (libraryItem: any) => void
 }
 
@@ -203,10 +203,53 @@ export function ComponentSourceModal({
     }
   }, [])
 
-  // Filter library items by component type
+  // Filter library items by component type. For the Additional Information
+  // component we accept multiple category name forms (e.g. "additionalInformation",
+  // "additional-info", "additional info") and also include items that have
+  // `extraFields.additionalInfo` populated so they appear automatically.
   const filteredLibraryItems = items
     .filter((item) => {
-      const matchesCategory = item.category.toLowerCase() === componentType.toLowerCase()
+      const itemCategory = (item.category || "").toString().toLowerCase()
+      const compType = (componentType || "").toString().toLowerCase()
+
+      const isAdditionalComponent = compType.includes("additional") || compType.includes("additionalinformation")
+      const isAncillaryComponent = compType.includes("ancill") || compType.includes("ancillary")
+
+      let matchesCategory = false
+      if (isAdditionalComponent) {
+        // Match if item's category name suggests additional info
+        matchesCategory = itemCategory.includes("additional") || itemCategory.includes("information") || itemCategory.includes("info")
+
+        // Also accept if the library item contains extraFields.additionalInfo
+        if (!matchesCategory && item.extraFields) {
+          const ai = item.extraFields.additionalInfo
+          if (Array.isArray(ai) && ai.length > 0) matchesCategory = true
+          if (typeof ai === "string" && ai.trim().length > 0) matchesCategory = true
+        }
+
+        // Also accept if subCategory hints at additional information
+        if (!matchesCategory && item.subCategory) {
+          const sc = item.subCategory.toString().toLowerCase()
+          if (sc.includes("additional") || sc.includes("info") || sc.includes("information")) matchesCategory = true
+        }
+      } else if (isAncillaryComponent) {
+        // Match items whose category indicates ancillaries or have ancillaries data
+        matchesCategory = itemCategory.includes("ancill") || itemCategory.includes("ancillary") || itemCategory.includes("ancillaries")
+
+        if (!matchesCategory && item.extraFields) {
+          const ef = item.extraFields
+          if (Array.isArray(ef.ancillaries) && ef.ancillaries.length) matchesCategory = true
+          if (typeof ef.ancillaries === 'string' && ef.ancillaries.trim()) matchesCategory = true
+        }
+
+        if (!matchesCategory && item.subCategory) {
+          const sc = item.subCategory.toString().toLowerCase()
+          if (sc.includes("ancill") || sc.includes("ancillary")) matchesCategory = true
+        }
+      } else {
+        matchesCategory = itemCategory === compType
+      }
+
       const matchesSearch =
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -256,10 +299,35 @@ export function ComponentSourceModal({
     return matchesCategory && matchesSearch && matchesFilter
   })
 
+  // When the user chooses Manual from the options, show a manual editor
+  // for additionalInformation. For other component types we simply call the
+  // onSelectManual callback.
   const handleSelectManual = () => {
-    onSelectManual()
+    setSelectedSource("manual")
+  }
+
+  const [manualTitle, setManualTitle] = useState("")
+  const [manualBullets, setManualBullets] = useState<string[]>([""])
+
+  const handleManualBulletChange = (index: number, value: string) => {
+    const copy = [...manualBullets]
+    copy[index] = value
+    setManualBullets(copy)
+  }
+
+  const handleAddManualBullet = () => setManualBullets([...manualBullets, ""]) 
+  const handleRemoveManualBullet = (index: number) => {
+    const copy = manualBullets.filter((_, i) => i !== index)
+    setManualBullets(copy.length ? copy : [""])
+  }
+
+  const handleSubmitManual = () => {
+    const cleaned = manualBullets.map(b => (b || "").toString()).map(s => s.trim()).filter(Boolean)
+    onSelectManual({ title: manualTitle || "Additional Information", bullets: cleaned })
     onClose()
     setSelectedSource(null)
+    setManualTitle("")
+    setManualBullets([""])
   }
 
   const handleSelectTemplate = (template: ComponentTemplate) => {
@@ -424,6 +492,49 @@ export function ComponentSourceModal({
                   </Button>
                 </CardContent>
               </Card>
+            </div>
+          </div>
+        )}
+
+        {selectedSource === "manual" && (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Create {componentTitle} Manually</h3>
+              <Button variant="ghost" onClick={() => setSelectedSource(null)}>Back</Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {componentType.toLowerCase() === "additionalinformation" ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Title</label>
+                    <Input value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder="Section title e.g. Terms and Conditions" />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Additional Information (bullet points)</label>
+                    <div className="space-y-2 mt-2">
+                      {manualBullets.map((b, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-sm">•</span>
+                          <Input value={b} onChange={(e) => handleManualBulletChange(idx, e.target.value)} className="flex-1" />
+                          <Button variant="ghost" onClick={() => handleRemoveManualBullet(idx)}>Remove</Button>
+                        </div>
+                      ))}
+                      <div>
+                        <Button size="sm" onClick={handleAddManualBullet}>Add Bullet</Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4">Create manual component for {componentTitle}.</div>
+              )}
+            </div>
+
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => { setSelectedSource(null); setManualBullets([""]); setManualTitle("") }}>Cancel</Button>
+              <Button onClick={handleSubmitManual}>Create</Button>
             </div>
           </div>
         )}

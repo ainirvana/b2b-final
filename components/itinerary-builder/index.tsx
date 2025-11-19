@@ -27,9 +27,9 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
+  Briefcase,
 } from "lucide-react"
 import { EventCard } from "../event-card"
-import { AdditionalSections } from "../additional-sections"
 import { DayTitle } from "./day-title"
 import { EditEventModal } from "./edit-event-modal"
 // Library sidebar, integration panel and usage stats removed from builder
@@ -150,6 +150,18 @@ const COMPONENT_TEMPLATES = [
     color: "bg-pink-50 border-pink-200",
   },
   {
+    category: "additionalInformation",
+    title: "Additional Information",
+    icon: Briefcase,
+    color: "bg-indigo-100 border-indigo-300",
+  },
+  {
+    category: "ancillaries",
+    title: "Ancillaries",
+    icon: Briefcase,
+    color: "bg-amber-50 border-amber-200",
+  },
+  {
     category: "rental",
     title: "Car Rental",
     icon: Car,
@@ -184,7 +196,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [title, setTitle] = useState("New Itinerary")
   const [description, setDescription] = useState("")
   const [isDetailedView, setIsDetailedView] = useState(true)
-  const [additionalSections, setAdditionalSections] = useState<Record<string, string>>({})
+  const [serviceSlots, setServiceSlots] = useState<Array<{ id: string; title: string; events: IItineraryEvent[] }>>([])
+  const [ancillarySlots, setAncillarySlots] = useState<Array<{ id: string; title: string; events: IItineraryEvent[] }>>([])
   const [editingEvent, setEditingEvent] = useState<{
     event: IItineraryEvent
     dayIndex: number
@@ -410,12 +423,39 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     console.log("[DEBUG] Dropping item:", draggedItem, "to day:", dayIndex, "position:", position)
 
     if (draggedItem.type === "component") {
+      // If it's Additional Information or Ancillaries component, open the source modal
+      // so user can choose Manual or From Library. We'll create the appropriate slot
+      // from the modal selection handlers.
+      if (draggedItem.item.category === "additionalInformation") {
+        console.log("[DEBUG] Opening component source modal for Additional Information")
+        setComponentSourceModal({ isOpen: true, component: draggedItem.item, dropTarget: null })
+        return
+      }
+
+      if (draggedItem.item.category === "ancillaries") {
+        console.log("[DEBUG] Opening component source modal for Ancillaries")
+        setComponentSourceModal({ isOpen: true, component: draggedItem.item, dropTarget: null })
+        return
+      }
+
+      // Skip modal for drops in Additional Information section (dayIndex === -1)
+      if (dayIndex === -1) {
+        console.log("[DEBUG] Dropped in Additional Information section but not Additional Information component")
+        setDraggedItem(null)
+        setDropTarget(null)
+        return
+      }
+
+      // Skip modal for drops in Ancillaries section (dayIndex === -2)
+      if (dayIndex === -2) {
+        console.log("[DEBUG] Dropped in Ancillaries section but not Ancillaries component")
+        setDraggedItem(null)
+        setDropTarget(null)
+        return
+      }
+
       console.log("[DEBUG] Opening component source modal")
-      setComponentSourceModal({
-        isOpen: true,
-        component: draggedItem.item,
-        dropTarget: { dayIndex, position },
-      })
+      setComponentSourceModal({ isOpen: true, component: draggedItem.item, dropTarget: { dayIndex, position } })
       return
     }
 
@@ -671,11 +711,82 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     })
   }
 
-  const handleSelectManualComponent = () => {
-    if (!componentSourceModal.dropTarget || !componentSourceModal.component) return
+  const handleSelectManualComponent = (manualData?: any) => {
+    // For manual selection, either create a service slot (for Additional Information)
+    // or create a normal manual event in the target day. Accepts optional manualData
+    // that contains { title, bullets } when creating Additional Information.
+    if (!componentSourceModal.component) return
+
+    const component = componentSourceModal.component
+
+    if (component.category === "additionalInformation") {
+      console.log("[DEBUG] Creating service slot (manual) for Additional Information from modal")
+      const title = (manualData && manualData.title) || `Additional Information ${serviceSlots.length + 1}`
+      const bullets: string[] = (manualData && Array.isArray(manualData.bullets)) ? manualData.bullets : []
+
+      const listEvent: IItineraryEvent = {
+        id: `event-${Date.now()}`,
+        category: "list",
+        title,
+        description: "",
+        listItems: bullets,
+        componentSource: "manual",
+        highlights: [],
+        time: "",
+      } as unknown as IItineraryEvent
+
+      const newSlot = {
+        id: `service-slot-${Date.now()}`,
+        title,
+        events: bullets.length ? [listEvent] : [] as IItineraryEvent[],
+      }
+
+      setServiceSlots([...serviceSlots, newSlot])
+      setDraggedItem(null)
+      setDropTarget(null)
+      setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
+      return
+    }
+
+    if (component.category === "ancillaries") {
+      console.log("[DEBUG] Creating ancillary slot (manual) from modal")
+      const title = (manualData && manualData.title) || `Ancillaries ${ancillarySlots.length + 1}`
+      const bullets: string[] = (manualData && Array.isArray(manualData.bullets)) ? manualData.bullets : []
+
+      const listEvent: IItineraryEvent = {
+        id: `event-${Date.now()}`,
+        category: "list",
+        title,
+        description: "",
+        listItems: bullets,
+        componentSource: "manual",
+        versionHistory: [],
+        highlights: [],
+        time: "",
+      } as unknown as IItineraryEvent
+
+      const newSlot = {
+        id: `ancillary-slot-${Date.now()}`,
+        title,
+        events: bullets.length ? [listEvent] : [] as IItineraryEvent[],
+      }
+
+      setAncillarySlots([...ancillarySlots, newSlot])
+      setDraggedItem(null)
+      setDropTarget(null)
+      setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
+      return
+    }
+
+    // Fallback: create a manual event in days if a drop target exists
+    if (!componentSourceModal.dropTarget) {
+      setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
+      setDraggedItem(null)
+      setDropTarget(null)
+      return
+    }
 
     const { dayIndex, position } = componentSourceModal.dropTarget
-    const component = componentSourceModal.component
     const newDays = [...days]
 
     // Generate a unique group ID for multi-night hotels
@@ -755,6 +866,106 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
   }
 
+  const handleSelectLibraryComponent = (libraryItem: any) => {
+    // This handles selection of a library item from the ComponentSourceModal.
+    if (!componentSourceModal.component) return
+
+    const component = componentSourceModal.component
+    if (component.category === "additionalInformation") {
+      console.log("[DEBUG] Creating service slot from library item for Additional Information")
+      const bullets: string[] = Array.isArray(libraryItem.extraFields?.additionalInfo)
+        ? libraryItem.extraFields.additionalInfo.map((s: any) => (typeof s === 'string' ? s : String(s)))
+        : (typeof libraryItem.extraFields?.additionalInfo === 'string' ? [libraryItem.extraFields.additionalInfo] : [])
+
+      const listEvent: IItineraryEvent = {
+        id: `event-${Date.now()}`,
+        category: "list",
+        title: libraryItem.title || "Additional Information",
+        description: libraryItem.notes || "",
+        listItems: bullets,
+        componentSource: "my-library",
+        libraryItemId: libraryItem._id,
+        highlights: [],
+        time: "",
+      } as unknown as IItineraryEvent
+
+      const newSlot = {
+        id: `service-slot-${Date.now()}`,
+        title: libraryItem.title || `Additional Information ${serviceSlots.length + 1}`,
+        events: [listEvent],
+      }
+
+      setServiceSlots([...serviceSlots, newSlot])
+      setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
+      setDraggedItem(null)
+      setDropTarget(null)
+      return
+    }
+
+    if (component.category === "ancillaries") {
+      console.log("[DEBUG] Creating ancillary slot from library item")
+      // Try to extract relevant bullets from extraFields for ancillaries
+      const maybeBullets = () => {
+        const ef = libraryItem.extraFields || {}
+        if (Array.isArray(ef.ancillaries) && ef.ancillaries.length) return ef.ancillaries.map((s: any) => String(s))
+        if (Array.isArray(ef.ancillary) && ef.ancillary.length) return ef.ancillary.map((s: any) => String(s))
+        if (Array.isArray(ef.additionalInfo) && ef.additionalInfo.length) return ef.additionalInfo.map((s: any) => String(s))
+        if (typeof ef.ancillaries === 'string' && ef.ancillaries.trim()) return [ef.ancillaries.trim()]
+        if (typeof ef.additionalInfo === 'string' && ef.additionalInfo.trim()) return [ef.additionalInfo.trim()]
+        // Fall back to notes split by lines
+        if (libraryItem.notes && typeof libraryItem.notes === 'string') return libraryItem.notes.split('\n').map((s: string) => s.trim()).filter(Boolean)
+        return []
+      }
+
+      const bullets = maybeBullets()
+      const listEvent: IItineraryEvent = {
+        id: `event-${Date.now()}`,
+        category: "list",
+        title: libraryItem.title || "Ancillary",
+        description: libraryItem.notes || "",
+        listItems: bullets,
+        componentSource: "my-library",
+        libraryItemId: libraryItem._id,
+        highlights: [],
+        time: "",
+      } as unknown as IItineraryEvent
+
+      const newSlot = {
+        id: `ancillary-slot-${Date.now()}`,
+        title: libraryItem.title || `Ancillaries ${ancillarySlots.length + 1}`,
+        events: [listEvent],
+      }
+
+      setAncillarySlots([...ancillarySlots, newSlot])
+      setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
+      setDraggedItem(null)
+      setDropTarget(null)
+      return
+    }
+
+    // Non-additionalInformation: convert and insert into days if a dropTarget is present
+    const dropTargetLocal = componentSourceModal.dropTarget
+    let targetDay = 0
+    let position = 0
+    if (dropTargetLocal) {
+      targetDay = dropTargetLocal.dayIndex
+      position = dropTargetLocal.position
+    } else {
+      targetDay = days.length - 1
+      position = days[targetDay].events.length
+    }
+
+    const converted = convertLibraryItemToEvent(libraryItem)
+    const newDays = [...days]
+    newDays[targetDay].events.splice(position, 0, converted)
+    setDays(newDays)
+    setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
+    setDraggedItem(null)
+    setDropTarget(null)
+  }
+
+  
+
   // library selection handler removed
 
   const formatDate = (date: Date) => {
@@ -798,7 +1009,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         branding,
         totalPrice,
         generatedAt: formatDate(new Date()),
-        additionalSections,
+        serviceSlots,
+        ancillarySlots,
         gallery,
         previewConfig: config,
         itineraryId: effectiveItineraryId ? effectiveItineraryId.toString() : null,
@@ -896,6 +1108,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         images: extractImages(),
         gallery, // Include gallery in save data
         branding,
+        serviceSlots,
+        ancillarySlots,
       }
 
       console.log("[v0] Saving itinerary data:", itineraryData)
@@ -1531,8 +1745,104 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </Button>
         </div>
 
-        <div className="mt-8">
-          <AdditionalSections sections={additionalSections} onUpdate={setAdditionalSections} />
+        <div className="mt-8" onDragOver={(e) => { e.preventDefault(); handleDragOver(-1, 0) }} onDrop={() => handleDrop(-1, 0)}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold">Additional Information</h3>
+          </div>
+
+          <div className="space-y-4">
+            {serviceSlots.length === 0 && (
+              <div className="text-sm text-gray-500 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Additional Information component here to add a section</div>
+            )}
+
+            {serviceSlots.map((slot, slotIndex) => (
+              <Card key={slot.id} className="border-2 border-dashed border-gray-200">
+                <CardContent className="p-4 pt-3">
+                  <div className="space-y-3">
+                    {slot.events.map((event, eventIndex) => (
+                      <div key={event.id}>
+                        <EventCard
+                          event={event}
+                          isDetailedView={isDetailedView}
+                          onDragStart={() => handleDragStart("event", event)}
+                          onEdit={() => {
+                            const dayIndex = days.findIndex((day) =>
+                              day.events.some((e) => e.id === event.id),
+                            )
+                            const eventIndex = days[dayIndex]?.events.findIndex((e) => e.id === event.id) ?? -1
+                            if (eventIndex >= 0) {
+                              handleEditEvent(dayIndex, eventIndex)
+                            }
+                          }}
+                          onDelete={() => {
+                            const newSlots = [...serviceSlots]
+                            newSlots[slotIndex].events.splice(eventIndex, 1)
+                            setServiceSlots(newSlots)
+                          }}
+                          onMealChange={() => {}}
+                          onUpdate={(updatedEvent) => {
+                            const newSlots = [...serviceSlots]
+                            newSlots[slotIndex].events[eventIndex] = updatedEvent
+                            setServiceSlots(newSlots)
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-8" onDragOver={(e) => { e.preventDefault(); handleDragOver(-2, 0) }} onDrop={() => handleDrop(-2, 0)}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold">Ancillaries</h3>
+          </div>
+
+          <div className="space-y-4">
+            {ancillarySlots.length === 0 && (
+              <div className="text-sm text-gray-500 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Ancillaries component here to add a section</div>
+            )}
+
+            {ancillarySlots.map((slot, slotIndex) => (
+              <Card key={slot.id} className="border-2 border-dashed border-gray-200">
+                <CardContent className="p-4 pt-3">
+                  <div className="space-y-3">
+                    {slot.events.map((event, eventIndex) => (
+                      <div key={event.id}>
+                        <EventCard
+                          event={event}
+                          isDetailedView={isDetailedView}
+                          onDragStart={() => handleDragStart("event", event)}
+                          onEdit={() => {
+                            const dayIndex = days.findIndex((day) =>
+                              day.events.some((e) => e.id === event.id),
+                            )
+                            const eventIndex = days[dayIndex]?.events.findIndex((e) => e.id === event.id) ?? -1
+                            if (eventIndex >= 0) {
+                              handleEditEvent(dayIndex, eventIndex)
+                            }
+                          }}
+                          onDelete={() => {
+                            const newSlots = [...ancillarySlots]
+                            newSlots[slotIndex].events.splice(eventIndex, 1)
+                            setAncillarySlots(newSlots)
+                          }}
+                          onMealChange={() => {}}
+                          onUpdate={(updatedEvent) => {
+                            const newSlots = [...ancillarySlots]
+                            newSlots[slotIndex].events[eventIndex] = updatedEvent
+                            setAncillarySlots(newSlots)
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         {/* Library integration panel removed from builder view */}
@@ -1561,7 +1871,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             </div>
             <div className="flex-1 overflow-y-auto p-4 min-h-0">
               <div className="space-y-3">
-                {COMPONENT_TEMPLATES.map((component) => {
+                {COMPONENT_TEMPLATES.filter(c => c.category !== 'visa' && c.category !== 'insurance').map((component) => {
                   const Icon = component.icon
                   return (
                     <Card
@@ -1588,10 +1898,13 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
       <ComponentSourceModal
         isOpen={componentSourceModal.isOpen}
-        onClose={() => setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })}
+        onClose={() => {
+          setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
+        }}
         componentType={componentSourceModal.component?.category || ""}
         componentTitle={componentSourceModal.component?.title || ""}
         onSelectManual={handleSelectManualComponent}
+        onSelectLibrary={handleSelectLibraryComponent}
       />
 
       <EditEventModal
