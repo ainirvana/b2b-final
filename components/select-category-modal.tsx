@@ -43,6 +43,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
   const [selectedTransferOptions, setSelectedTransferOptions] = useState<string[]>(["any"])
   const [formData, setFormData] = useState({
     title: "",
+    additionalInfo: [] as string[],
     city: "Bangkok",
     country: "Thailand",
     startDate: "",
@@ -74,8 +75,14 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
   // Initialize form with editing data
   React.useEffect(() => {
     if (editingItem) {
+      const rawAdditional = editingItem.extraFields && editingItem.extraFields.additionalInfo !== undefined ? editingItem.extraFields.additionalInfo : undefined
+      const additionalArray = Array.isArray(rawAdditional)
+        ? rawAdditional
+        : (rawAdditional ? [String(rawAdditional)] : [])
+
       setFormData({
         title: editingItem.title || "",
+        additionalInfo: additionalArray,
         city: editingItem.city || "Bangkok",
         country: editingItem.country || "Thailand",
         startDate: editingItem.startDate || "",
@@ -147,6 +154,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
     { id: "Flight", label: "Flight", icon: Plane },
     { id: "Hotel", label: "Hotel", icon: Hotel },
     { id: "Activity", label: "Activity & Experiences", icon: Activity },
+    { id: "AdditionalInfo", label: "Additional Information", icon: Badge },
     { id: "Transfer", label: "Transfer", icon: Car },
     { id: "Ancillaries", label: "Ancillaries", icon: MoreHorizontal },
     { id: "Package", label: "Packages", icon: Navigation },
@@ -276,6 +284,22 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
     }
   }
 
+  // Additional Information handlers (bulleted list)
+  const handleAdditionalInfoChange = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      additionalInfo: prev.additionalInfo.map((item: string, i: number) => i === index ? value : item)
+    }))
+  }
+
+  const handleAddAdditionalInfo = () => {
+    setFormData(prev => ({ ...prev, additionalInfo: [...prev.additionalInfo, ""] }))
+  }
+
+  const handleRemoveAdditionalInfo = (index: number) => {
+    setFormData(prev => ({ ...prev, additionalInfo: prev.additionalInfo.filter((_, i) => i !== index) }))
+  }
+
   const handleCitySelect = (cityData: CityData) => {
     setFormData(prev => ({
       ...prev,
@@ -393,7 +417,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
 
     setSaving(true)
     try {
-      const itemData = {
+      let itemData: any = {
         title: formData.title,
         category: selectedCategory,
         libraryCollection: selectedLibraryId,
@@ -420,6 +444,16 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
         } : undefined
       }
 
+      // If AdditionalInfo category, only save minimal fields and store additionalInfo under extraFields
+      if (selectedCategory === "AdditionalInfo") {
+        itemData = {
+          title: formData.title,
+          category: selectedCategory,
+          libraryCollection: selectedLibraryId,
+          extraFields: { ...(editingItem?.extraFields || {}), additionalInfo: formData.additionalInfo }
+        }
+      }
+
       if (isEditing && editingItem?._id) {
         await updateItem(editingItem._id, itemData)
       } else {
@@ -430,6 +464,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
       // Reset form
       setFormData({
         title: "",
+        additionalInfo: [],
         city: "Bangkok",
         country: "Thailand",
         startDate: "",
@@ -563,7 +598,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
           </div>
 
           {/* Sub Categories */}
-          {selectedCategory && (
+          {selectedCategory && selectedCategory !== "AdditionalInfo" && (
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-3">Sub-Category</h3>
               <div className="grid grid-cols-3 gap-2 mb-4">
@@ -590,7 +625,7 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
           )}
 
           {/* Transfer Options */}
-          {selectedCategory === "Transfer" && (
+          {selectedCategory === "Transfer" && selectedCategory !== "AdditionalInfo" && (
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-3">Transfer Options</h3>
               <div className="grid grid-cols-3 gap-3">
@@ -630,271 +665,311 @@ export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingIte
               />
             </div>
 
-            {/* City and Country */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Additional Information category: show only Additional Information input */}
+            {selectedCategory === "AdditionalInfo" ? (
               <div>
-                <Label className="text-sm font-medium text-gray-700">City</Label>
-                <div className="relative">
-                  <Input
-                    value={formData.city}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                    autoComplete="off"
-                    placeholder="Start typing a city name..."
-                  />
-                  {citySuggestions.length > 0 && (
-                    <div className="absolute z-10 bg-white border border-gray-300 rounded-lg mt-1 w-full max-h-60 overflow-y-auto shadow-lg">
-                      {citySuggestions.map((city) => (
-                        <div
-                          key={city.key}
-                          className="px-3 py-2 cursor-pointer hover:bg-yellow-100 flex flex-col"
-                          onClick={() => handleCitySelect(city)}
+                <Label className="text-sm font-medium text-gray-700">Additional Information</Label>
+                <div className="space-y-2 mt-2">
+                  {Array.isArray(formData.additionalInfo) && formData.additionalInfo.length > 0 ? (
+                    formData.additionalInfo.map((item: string, idx: number) => (
+                      <div key={idx} className="flex items-center space-x-2">
+                        <span className="text-gray-600">•</span>
+                        <Input
+                          value={item}
+                          onChange={(e) => handleAdditionalInfoChange(idx, e.target.value)}
+                          className="flex-1 mt-0 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                        />
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleRemoveAdditionalInfo(idx)}
+                          className="text-red-500 hover:text-red-700"
                         >
-                          <span className="font-medium">{city.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {city.countryName}
-                            {city.stateCode ? `, ${city.stateCode}` : ''}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Country</Label>
-                <Input
-                  value={formData.country}
-                  onChange={(e) => handleInputChange("country", e.target.value)}
-                  className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                />
-              </div>
-            </div>
-
-            {/* Dates */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Start Date</Label>
-                <div className="relative mt-1">
-                  <Input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => handleInputChange("startDate", e.target.value)}
-                    className="border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700">End Date</Label>
-                <div className="relative mt-1">
-                  <Input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => handleInputChange("endDate", e.target.value)}
-                    className="border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Labels */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Labels</Label>
-              <Input
-                placeholder="Type"
-                value={formData.labels}
-                onChange={(e) => handleInputChange("labels", e.target.value)}
-                className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-              />
-            </div>
-
-            {/* Notes */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Notes</Label>
-              <Textarea
-                placeholder="Add any extra details."
-                value={formData.notes}
-                onChange={(e) => handleInputChange("notes", e.target.value)}
-                rows={3}
-                className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 resize-none"
-              />
-            </div>
-
-            {/* Price */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-3 block">Price</Label>
-              
-              {/* Advanced Pricing Toggle for Activity */}
-              {selectedCategory === "Activity" && (
-                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Advanced Pricing</Label>
-                      <p className="text-xs text-gray-500">Set different prices for different group sizes (0-20 pax)</p>
-                    </div>
-                    <Switch
-                      checked={advancedPricing.enabled}
-                      onCheckedChange={handleAdvancedPricingToggle}
-                    />
-                  </div>
-                  
-                  {advancedPricing.enabled && (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-                        {advancedPricing.paxPricing.map((item) => (
-                          <div key={item.paxCount} className="flex items-center space-x-2">
-                            <Label className="text-xs text-gray-600 w-12">{item.paxCount} pax:</Label>
-                            <div className="relative flex-1">
-                              <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
-                              <Input
-                                placeholder="0.00"
-                                value={item.price}
-                                onChange={(e) => handlePaxPriceChange(item.paxCount, e.target.value)}
-                                className="pl-6 text-xs h-8 border border-gray-300 rounded focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400"
-                              />
-                            </div>
-                          </div>
-                        ))}
+                          Remove
+                        </Button>
                       </div>
-                    </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-500">No items yet. Add one below.</p>
                   )}
+
+                  <div>
+                    <Button onClick={handleAddAdditionalInfo} className="mt-1">
+                      Add Bullet Point
+                    </Button>
+                  </div>
                 </div>
-              )}
-              
-              {/* Regular Price Fields */}
-              {(!advancedPricing.enabled || selectedCategory !== "Activity") && (
+                <p className="text-xs text-gray-500 mt-1">Only title and additional information are saved for this category.</p>
+              </div>
+            ) : (
+              // Existing full form for other categories
+              <>
+                {/* City and Country */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-xs text-gray-600">Base Price</Label>
-                    <div className="relative mt-1">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Label className="text-sm font-medium text-gray-700">City</Label>
+                    <div className="relative">
                       <Input
-                        placeholder="0.00"
-                        value={formData.basePrice}
-                        onChange={(e) => handleInputChange("basePrice", e.target.value)}
-                        className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                        value={formData.city}
+                        onChange={(e) => handleInputChange("city", e.target.value)}
+                        className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                        autoComplete="off"
+                        placeholder="Start typing a city name..."
                       />
+                      {citySuggestions.length > 0 && (
+                        <div className="absolute z-10 bg-white border border-gray-300 rounded-lg mt-1 w-full max-h-60 overflow-y-auto shadow-lg">
+                          {citySuggestions.map((city) => (
+                            <div
+                              key={city.key}
+                              className="px-3 py-2 cursor-pointer hover:bg-yellow-100 flex flex-col"
+                              onClick={() => handleCitySelect(city)}
+                            >
+                              <span className="font-medium">{city.name}</span>
+                              <span className="text-sm text-gray-500">
+                                {city.countryName}
+                                {city.stateCode ? `, ${city.stateCode}` : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-600">Currency</Label>
+                    <Label className="text-sm font-medium text-gray-700">Country</Label>
                     <Input
-                      placeholder="USD"
-                      value={formData.currency}
-                      onChange={(e) => handleInputChange("currency", e.target.value)}
+                      value={formData.country}
+                      onChange={(e) => handleInputChange("country", e.target.value)}
                       className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
                     />
                   </div>
                 </div>
-              )}
-              
-              {/* Currency field for advanced pricing */}
-              {advancedPricing.enabled && selectedCategory === "Activity" && (
-                <div className="mt-3">
-                  <Label className="text-xs text-gray-600">Currency</Label>
+
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Start Date</Label>
+                    <div className="relative mt-1">
+                      <Input
+                        type="date"
+                        value={formData.startDate}
+                        onChange={(e) => handleInputChange("startDate", e.target.value)}
+                        className="border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">End Date</Label>
+                    <div className="relative mt-1">
+                      <Input
+                        type="date"
+                        value={formData.endDate}
+                        onChange={(e) => handleInputChange("endDate", e.target.value)}
+                        className="border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Labels */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Labels</Label>
                   <Input
-                    placeholder="USD"
-                    value={formData.currency}
-                    onChange={(e) => handleInputChange("currency", e.target.value)}
-                    className="mt-1 w-32 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                    placeholder="Type"
+                    value={formData.labels}
+                    onChange={(e) => handleInputChange("labels", e.target.value)}
+                    className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
                   />
                 </div>
-              )}
-            </div>
 
-            {/* Availability */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-3 block">Availability</Label>
-              <div className="grid grid-cols-2 gap-4">
+                {/* Notes */}
                 <div>
-                  <Label className="text-xs text-gray-600">Available From</Label>
-                  <div className="relative mt-1">
-                    <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="date"
-                      placeholder="Select date"
-                      value={formData.availableFrom}
-                      onChange={(e) => handleInputChange("availableFrom", e.target.value)}
-                      className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                  <Label className="text-sm font-medium text-gray-700">Notes</Label>
+                  <Textarea
+                      placeholder="Add any extra details."
+                      value={formData.notes}
+                      onChange={(e) => handleInputChange("notes", e.target.value)}
+                      rows={3}
+                      className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 resize-none"
                     />
-                  </div>
                 </div>
+
+                {/* Price */}
                 <div>
-                  <Label className="text-xs text-gray-600">Available Until</Label>
-                  <div className="relative mt-1">
-                    <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="date"
-                      placeholder="Select date"
-                      value={formData.availableUntil}
-                      onChange={(e) => handleInputChange("availableUntil", e.target.value)}
-                      className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Variants */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-3 block">Variants</Label>
-              <Textarea
-                placeholder="Enter variant details..."
-                value={formData.variants}
-                onChange={(e) => handleInputChange("variants", e.target.value)}
-                rows={3}
-                className="border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 resize-none"
-              />
-            </div>
-
-            {/* Multimedia */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Multimedia (Max 5 files, 7MB each)</Label>
-              <div className="mt-1">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,video/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="file-upload"
-                  disabled={uploading || uploadedFiles.length >= 5}
-                />
-                <label
-                  htmlFor="file-upload"
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer block ${
-                    uploading || uploadedFiles.length >= 5
-                      ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                      : 'border-gray-300 hover:border-yellow-400'
-                  }`}
-                >
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">
-                    {uploading ? 'Uploading...' : uploadedFiles.length >= 5 ? 'Maximum files reached' : 'Click to upload files'}
-                  </p>
-                </label>
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {uploadedFiles.map((file, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={file}
-                          alt={`Upload ${index + 1}`}
-                          className="w-full h-16 object-cover rounded border"
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Price</Label>
+                  
+                  {/* Advanced Pricing Toggle for Activity */}
+                  {selectedCategory === "Activity" && (
+                    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">Advanced Pricing</Label>
+                          <p className="text-xs text-gray-500">Set different prices for different group sizes (0-20 pax)</p>
+                        </div>
+                        <Switch
+                          checked={advancedPricing.enabled}
+                          onCheckedChange={handleAdvancedPricingToggle}
                         />
-                        <button
-                          type="button"
-                          onClick={() => removeFile(index)}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                        >
-                          Ãƒâ€”
-                        </button>
                       </div>
-                    ))}
+                      
+                      {advancedPricing.enabled && (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                            {advancedPricing.paxPricing.map((item) => (
+                              <div key={item.paxCount} className="flex items-center space-x-2">
+                                <Label className="text-xs text-gray-600 w-12">{item.paxCount} pax:</Label>
+                                <div className="relative flex-1">
+                                  <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+                                  <Input
+                                    placeholder="0.00"
+                                    value={item.price}
+                                    onChange={(e) => handlePaxPriceChange(item.paxCount, e.target.value)}
+                                    className="pl-6 text-xs h-8 border border-gray-300 rounded focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Regular Price Fields */}
+                  {(!advancedPricing.enabled || selectedCategory !== "Activity") && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs text-gray-600">Base Price</Label>
+                        <div className="relative mt-1">
+                          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <Input
+                            placeholder="0.00"
+                            value={formData.basePrice}
+                            onChange={(e) => handleInputChange("basePrice", e.target.value)}
+                            className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600">Currency</Label>
+                        <Input
+                          placeholder="USD"
+                          value={formData.currency}
+                          onChange={(e) => handleInputChange("currency", e.target.value)}
+                          className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Currency field for advanced pricing */}
+                  {advancedPricing.enabled && selectedCategory === "Activity" && (
+                    <div className="mt-3">
+                      <Label className="text-xs text-gray-600">Currency</Label>
+                      <Input
+                        placeholder="USD"
+                        value={formData.currency}
+                        onChange={(e) => handleInputChange("currency", e.target.value)}
+                        className="mt-1 w-32 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Availability */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Availability</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-gray-600">Available From</Label>
+                      <div className="relative mt-1">
+                        <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="date"
+                          placeholder="Select date"
+                          value={formData.availableFrom}
+                          onChange={(e) => handleInputChange("availableFrom", e.target.value)}
+                          className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-600">Available Until</Label>
+                      <div className="relative mt-1">
+                        <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="date"
+                          placeholder="Select date"
+                          value={formData.availableUntil}
+                          onChange={(e) => handleInputChange("availableUntil", e.target.value)}
+                          className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                        />
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+
+                {/* Variants */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Variants</Label>
+                  <Textarea
+                    placeholder="Enter variant details..."
+                    value={formData.variants}
+                    onChange={(e) => handleInputChange("variants", e.target.value)}
+                    rows={3}
+                    className="border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 resize-none"
+                  />
+                </div>
+
+                {/* Multimedia */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Multimedia (Max 5 files, 7MB each)</Label>
+                  <div className="mt-1">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                      disabled={uploading || uploadedFiles.length >= 5}
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer block ${
+                        uploading || uploadedFiles.length >= 5
+                          ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                          : 'border-gray-300 hover:border-yellow-400'
+                      }`}
+                    >
+                      <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">
+                        {uploading ? 'Uploading...' : uploadedFiles.length >= 5 ? 'Maximum files reached' : 'Click to upload files'}
+                      </p>
+                    </label>
+                    {uploadedFiles.length > 0 && (
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {uploadedFiles.map((file, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={file}
+                              alt={`Upload ${index + 1}`}
+                              className="w-full h-16 object-cover rounded border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeFile(index)}
+                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                            >
+                              Ãƒâ€”
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Action Buttons */}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { EventCard } from "@/components/itinerary-builder/event-card"
 import { DayMeals } from "@/components/itinerary-builder/day-meals"
-import { AdditionalSections } from "@/components/itinerary-builder/additional-sections"
+import { useLibrary } from "@/hooks/use-library"
 import { ItineraryHeader } from "@/components/itinerary-builder/itinerary-header"
 import type { IItineraryDay, IItineraryEvent } from "@/models/Itinerary"
 import { ArrowLeft, Plus, Sun, Clock, Calendar, GripVertical, Plane, UtensilsCrossed } from "lucide-react"
@@ -68,6 +68,8 @@ export function EnhancedDragDropBuilder({ itineraryId, onBack }: EnhancedDragDro
   const [description, setDescription] = useState("")
   const [isDetailedView, setIsDetailedView] = useState(true)
   const [additionalSections, setAdditionalSections] = useState<Record<string, string>>({})
+  const { items: libraryItems } = useLibrary()
+  const [serviceSlots, setServiceSlots] = useState<Array<{ id: string; title: string; events: IItineraryEvent[] }>>([])
   const [version, setVersion] = useState(0)
   const [highlights, setHighlights] = useState<string[]>(["Daily Breakfast", "Hotel", "Sightseeing"])
   const [hasBeenSaved, setHasBeenSaved] = useState(false)
@@ -83,15 +85,87 @@ export function EnhancedDragDropBuilder({ itineraryId, onBack }: EnhancedDragDro
 
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState<{
-    type: "component" | "event"
+    type: "component" | "event" | "libraryItem"
     item: any
     sourceDay?: number
     sourceIndex?: number
+    sourceSlot?: number
   } | null>(null)
   const [dropTarget, setDropTarget] = useState<{ dayIndex: number; position: number } | null>(null)
 
-  const handleDragStart = (type: "component" | "event", item: any, dayIndex?: number, eventIndex?: number) => {
-    setDraggedItem({ type, item, sourceDay: dayIndex, sourceIndex: eventIndex })
+  const handleDragStart = (
+    type: "component" | "event" | "libraryItem",
+    item: any,
+    dayIndex?: number,
+    eventIndex?: number,
+    slotIndex?: number
+  ) => {
+    setDraggedItem({ type, item, sourceDay: dayIndex, sourceIndex: eventIndex, sourceSlot: slotIndex })
+  }
+
+  const handleLibraryDragStart = (item: any) => {
+    setDraggedItem({ type: 'libraryItem', item })
+  }
+
+  const addServiceSlot = () => {
+    const newSlot = { id: generateUniqueId(), title: `Service Slot ${serviceSlots.length + 1}`, events: [] as IItineraryEvent[] }
+    setServiceSlots(prev => [...prev, newSlot])
+  }
+
+  const handleDropToService = (slotIndex: number, position: number) => {
+    if (!draggedItem) return
+
+    const newSlots = [...serviceSlots]
+
+    // Dropping a component template onto a service slot -> create a new event
+    if (draggedItem.type === 'component') {
+      const tpl = draggedItem.item
+      const newEvent: IItineraryEvent = {
+        id: generateUniqueId(),
+        category: tpl.type,
+        title: 'New ' + tpl.title,
+        description: '',
+        mainPoint: '',
+        highlights: []
+      }
+      newSlots[slotIndex].events.splice(position, 0, newEvent)
+    }
+
+    // Moving an existing event from a day into a slot
+    if (draggedItem.type === 'event' && draggedItem.sourceDay !== undefined && draggedItem.sourceIndex !== undefined) {
+      const newDays = [...days]
+      const [movedEvent] = newDays[draggedItem.sourceDay].events.splice(draggedItem.sourceIndex, 1)
+      newSlots[slotIndex].events.splice(position, 0, movedEvent)
+      setDays(newDays)
+    }
+
+    // Moving an event from another slot into this slot
+    if (draggedItem.type === 'event' && draggedItem.sourceSlot !== undefined && draggedItem.sourceIndex !== undefined) {
+      const source = [...serviceSlots]
+      const [movedEvent] = source[draggedItem.sourceSlot].events.splice(draggedItem.sourceIndex, 1)
+      newSlots[slotIndex].events.splice(position, 0, movedEvent)
+      // write back source modifications
+      newSlots[draggedItem.sourceSlot] = source[draggedItem.sourceSlot]
+    }
+
+    // Dropping a library item into a slot
+    if (draggedItem.type === 'libraryItem') {
+      const lib = draggedItem.item
+      const newEvent: IItineraryEvent = {
+        id: generateUniqueId(),
+        category: lib.category || 'activity',
+        title: lib.title || 'Library Item',
+        description: lib.notes || '',
+        mainPoint: '',
+        highlights: [],
+        libraryItemId: lib._id,
+      }
+      newSlots[slotIndex].events.splice(position, 0, newEvent)
+    }
+
+    setServiceSlots(newSlots)
+    setDraggedItem(null)
+    setDropTarget(null)
   }
 
   const handleDragOver = (dayIndex: number, position: number) => {
@@ -152,6 +226,22 @@ export function EnhancedDragDropBuilder({ itineraryId, onBack }: EnhancedDragDro
       // Move existing event
       const [movedEvent] = newDays[draggedItem.sourceDay].events.splice(draggedItem.sourceIndex, 1)
       newDays[dayIndex].events.splice(position, 0, movedEvent)
+    }
+
+    // Dropping a library item into a day
+    if (draggedItem.type === 'libraryItem') {
+      const lib = draggedItem.item
+      const newEvent: IItineraryEvent = {
+        id: generateUniqueId(),
+        category: lib.category || 'activity',
+        title: lib.title || 'Library Item',
+        description: lib.notes || '',
+        mainPoint: '',
+        highlights: [],
+        libraryItemId: lib._id,
+      }
+
+      newDays[dayIndex].events.splice(position, 0, newEvent)
     }
 
     setDays(newDays)
@@ -285,9 +375,71 @@ export function EnhancedDragDropBuilder({ itineraryId, onBack }: EnhancedDragDro
           </Button>
         </div>
 
-        {/* Additional Sections */}
+        {/* Additional Services (blank service slots) */}
         <div className="mt-8">
-          <AdditionalSections sections={additionalSections} onUpdate={setAdditionalSections} />
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold">Additional Services</h3>
+            <div className="space-x-2">
+              <Button variant="outline" onClick={addServiceSlot}>Add Service Slot</Button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {serviceSlots.length === 0 && (
+              <div className="text-sm text-gray-500">No additional service slots. Add one to enable drag & drop from Library.</div>
+            )}
+
+            {serviceSlots.map((slot, slotIndex) => (
+              <Card
+                key={slot.id}
+                className={"border-2 border-dashed " + (dropTarget?.dayIndex === slotIndex ? "border-blue-400" : "border-gray-200")}
+                onDragOver={(e) => { e.preventDefault(); setDropTarget({ dayIndex: slotIndex, position: slot.events.length }) }}
+                onDrop={() => handleDropToService(slotIndex, slot.events.length)}
+              >
+                <CardHeader className="p-4">
+                  <CardTitle className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-[#9CA3AF] px-3 py-1 rounded-full">
+                      <span className="font-semibold">{slot.title}</span>
+                    </div>
+                    <Input
+                      value={slot.title}
+                      onChange={(e) => {
+                        const newSlots = [...serviceSlots]
+                        newSlots[slotIndex].title = e.target.value
+                        setServiceSlots(newSlots)
+                      }}
+                      className="max-w-[200px] h-9"
+                    />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    {slot.events.map((event, eventIndex) => (
+                      <div key={event.id}
+                        onDragOver={(e) => { e.preventDefault(); setDropTarget({ dayIndex: slotIndex, position: eventIndex }) }}
+                        onDrop={() => handleDropToService(slotIndex, eventIndex)}
+                      >
+                        <EventCard
+                          event={event}
+                          onDragStart={() => handleDragStart("event", event, undefined, eventIndex, slotIndex)}
+                          onEdit={(updatedEvent) => {
+                            const newSlots = [...serviceSlots]
+                            newSlots[slotIndex].events[eventIndex] = updatedEvent
+                            setServiceSlots(newSlots)
+                          }}
+                          onDelete={() => {
+                            const newSlots = [...serviceSlots]
+                            newSlots[slotIndex].events.splice(eventIndex, 1)
+                            setServiceSlots(newSlots)
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
 
