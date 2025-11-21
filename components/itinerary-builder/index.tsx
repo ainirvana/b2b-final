@@ -28,6 +28,9 @@ import {
   ChevronUp,
   Trash2,
   Briefcase,
+  Copy,
+  Share2,
+  Download,
 } from "lucide-react"
 import { EventCard } from "../event-card"
 import { DayTitle } from "./day-title"
@@ -795,13 +798,13 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     const newEvent: IItineraryEvent = {
       id: `event-${Date.now()}`,
       category: component.category,
-      title: `New ${component.title}`,
-      description: "",
-      time: "09:00",
-      location: "",
-      highlights: [],
-      listItems: [],
-      price: 0,
+      title: (manualData && manualData.title) || `New ${component.title}`,
+      description: (manualData && manualData.description) || "",
+      time: (manualData && manualData.time) || "09:00",
+      location: (manualData && manualData.location) || "",
+      highlights: (manualData && manualData.highlights) || [],
+      listItems: (manualData && manualData.listItems) || [],
+      price: (manualData && manualData.price) || 0,
       componentSource: "manual",
       versionHistory: [
         {
@@ -811,51 +814,52 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         },
       ],
       ...(component.category === "flight" && {
-        fromCity: "Enter origin",
-        toCity: "Enter destination",
-        mainPoint: "Enter flight details",
+        fromCity: (manualData && manualData.fromCity) || (manualData && manualData.from) || "Enter origin",
+        toCity: (manualData && manualData.toCity) || (manualData && manualData.to) || "Enter destination",
+        mainPoint: (manualData && manualData.mainPoint) || (manualData && manualData.main) || "Enter flight details",
+        time: (manualData && manualData.time) || "09:00",
       }),
       ...(component.category === "hotel" && {
-        checkIn: "14:00",
-        checkOut: "12:00",
-        amenities: [],
-        nights: 1,
+        checkIn: (manualData && manualData.checkIn) || "14:00",
+        checkOut: (manualData && manualData.checkOut) || "12:00",
+        amenities: (manualData && manualData.amenities) || [],
+        nights: (manualData && manualData.nights) || 1,
         hotelGroupId,
         hotelNightIndex: 1,
-        hotelTotalNights: 1,
+        hotelTotalNights: (manualData && manualData.nights) || 1,
       }),
       ...(component.category === "transfer" && {
-        fromLocation: "Pick-up location",
-        toLocation: "Drop-off location",
-        vehicleType: "Private Car",
-        capacity: 4,
+        fromLocation: (manualData && manualData.fromLocation) || (manualData && manualData.from) || "Pick-up location",
+        toLocation: (manualData && manualData.toLocation) || (manualData && manualData.to) || "Drop-off location",
+        vehicleType: (manualData && manualData.vehicleType) || "Private Car",
+        capacity: (manualData && manualData.capacity) || 4,
       }),
       ...(component.category === "activity" && {
-        duration: "2 hours",
-        difficulty: "Easy",
-        capacity: 20,
-        highlights: [],
+        duration: (manualData && manualData.duration) || "2 hours",
+        difficulty: (manualData && manualData.difficulty) || "Easy",
+        capacity: (manualData && manualData.capacity) || 20,
+        highlights: (manualData && manualData.highlights) || [],
       }),
       ...(component.category === "meal" && {
       }),
       ...(component.category === "heading" && {
-        title: "Enter heading text",
-        description: "Optional subtitle",
+        title: (manualData && manualData.title) || "Enter heading text",
+        description: (manualData && manualData.description) || "Optional subtitle",
       }),
       ...(component.category === "paragraph" && {
-        title: "Paragraph",
-        description: "Enter your paragraph text here...",
+        title: (manualData && manualData.title) || "Paragraph",
+        description: (manualData && manualData.description) || "Enter your paragraph text here...",
       }),
       ...(component.category === "list" && {
-        title: "List Title",
-        listItems: ["Item 1", "Item 2", "Item 3"],
+        title: (manualData && manualData.title) || "List Title",
+        listItems: (manualData && manualData.listItems) || ["Item 1", "Item 2", "Item 3"],
       }),
       ...(component.category === "image" && {
-        title: "New Image",
-        description: "Add image description...",
-        imageUrl: "",
-        imageCaption: "",
-        imageAlt: "",
+        title: (manualData && manualData.title) || "New Image",
+        description: (manualData && manualData.description) || "Add image description...",
+        imageUrl: (manualData && manualData.imageUrl) || "",
+        imageCaption: (manualData && manualData.imageCaption) || "",
+        imageAlt: (manualData && manualData.imageAlt) || "",
       }),
     }
 
@@ -1275,15 +1279,34 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       }))
 
       const totalPrice = copiedDays.reduce(
-        (sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0),
+        (sum, day) =>
+          sum +
+          day.events.reduce((daySum, event) => {
+            const p = Number((event as any).price)
+            const pn = isNaN(p) ? 0 : p
+            return daySum + pn
+          }, 0),
         0,
       )
+
+      // Determine destination: prefer explicit country input, otherwise try to extract
+      const destinationFromInput = countries[0] && countries[0].trim() ? countries[0].trim() : ""
+      const destinationResolved = destinationFromInput || extractDestination()
+
+      if (!destinationResolved || destinationResolved === "Multiple Destinations") {
+        toast({
+          title: "Copy Failed",
+          description: "Please set a destination before creating a copy.",
+          variant: "destructive",
+        })
+        return
+      }
 
       const copyData = {
         productId: newProductId,
         title: newTitle,
         description: description ? `${description} (Copy)` : "Copy of itinerary",
-        destination: extractDestination() || "Multiple Destinations",
+        destination: destinationResolved,
         duration: `${copiedDays.length} ${copiedDays.length === 1 ? "day" : "days"}`,
         totalPrice,
         currency: "USD",
@@ -1365,18 +1388,20 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
   return (
     <div className="flex h-screen">
-      <div className="flex-1 p-6 overflow-y-auto h-full">
+      <div className="flex-1 p-3 overflow-y-auto h-full">
         {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-sm border mb-8 p-6 flex flex-col gap-1">
+        <div className="bg-white rounded-xl shadow-sm border mb-4 p-3 flex flex-col gap-0">
           {/* Itinerary Title - Biggest Font Size */}
-          <div className="flex flex-col gap-1">
-            <textarea
+          <div className="flex items-center">
+            <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter itinerary title..."
-              className="text-5xl font-black border-none p-0 bg-transparent resize-none focus:outline-none focus:ring-0 leading-tight"
-              style={{ fontWeight: 900, lineHeight: '1.05', minHeight: '56px' }}
+              className="text-5xl font-black border-none p-0 bg-transparent focus:outline-none focus:ring-0 leading-tight truncate"
+              style={{ fontWeight: 900, lineHeight: '1.05', height: '48px' }}
               aria-label="Itinerary title"
+              type="text"
+              spellCheck={false}
             />
           </div>
 
@@ -1388,17 +1413,25 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </div>
 
           {/* Itinerary Description */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1 mt-1">
             <label className="text-sm font-medium text-gray-700">
               Itinerary Description <span className="text-red-500">*</span>
             </label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter itinerary description..."
-              className={`min-h-[80px] border-none resize-none p-0 text-base ${!description?.trim() ? 'border-red-500 border' : ''}`}
-              aria-label="Itinerary description"
-            />
+            {/* Keep description as a single row until user inserts a newline. Rows are computed from value. */}
+            {(() => {
+              const lines = description ? description.split('\n').length : 1
+              const rows = Math.min(Math.max(lines, 1), 6)
+              return (
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Enter itinerary description..."
+                  rows={rows}
+                  className={`min-h-[40px] border-none resize-none p-0 text-base ${!description?.trim() ? 'border-red-500 border' : ''}`}
+                  aria-label="Itinerary description"
+                />
+              )
+            })()}
           </div>
 
           {/* Destination */}
@@ -1478,19 +1511,19 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             value={productReferenceCode}
             onChange={(e) => setProductReferenceCode(e.target.value)}
             placeholder="Product Reference Code (Optional)"
-            className="text-sm border rounded-md px-3 py-2"
+            className="text-sm border rounded-md px-2 py-1"
             aria-label="Product Reference Code"
           />
 
           {/* Detailed View Toggle */}
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex items-center gap-2 mt-3">
             <Switch checked={isDetailedView} onCheckedChange={setIsDetailedView} />
             <span className="text-sm font-medium text-gray-700">{isDetailedView ? "Detailed View" : "Summary View"}</span>
           </div>
         </div>
 
         {/* Action Buttons Block */}
-        <div className="bg-white rounded-xl shadow-sm border mb-8 p-6">
+        <div className="bg-white rounded-xl shadow-sm border mb-4 p-3">
           <div className="flex flex-wrap justify-between items-center gap-2">
             {/* Left Buttons */}
             <div className="flex space-x-2 flex-wrap">
@@ -1511,71 +1544,24 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             </div>
             {/* Right Buttons */}
             <div className="flex space-x-2 flex-wrap">
-              <Button variant="outline" onClick={handleCreateCopy} disabled={isSaving} className="whitespace-nowrap">
-                Create Copy
+              <Button variant="outline" size="icon" onClick={handleCreateCopy} disabled={isSaving} title="Copy" aria-label="Copy">
+                <Copy className="h-4 w-4" />
               </Button>
-              <Button variant="outline" onClick={handlePreview} disabled={isGeneratingPreview} className="whitespace-nowrap">
+              <Button variant="outline" size="icon" onClick={handlePreview} disabled={isGeneratingPreview} title="Preview" aria-label="Preview">
                 {isGeneratingPreview ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Eye className="mr-2 h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                 )}
-                Preview
               </Button>
-              <Button onClick={handleSave} disabled={isSaving} className="whitespace-nowrap">
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save
+              <Button size="icon" onClick={handleSave} disabled={isSaving} title="Save" aria-label="Save">
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               </Button>
-              <Button variant="outline" className="flex items-center space-x-1 whitespace-nowrap">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                <span>Modify</span>
+              <Button variant="outline" size="icon" title="Share" aria-label="Share" onClick={() => { /* preserve share behavior if needed */ }}>
+                <Share2 className="h-4 w-4" />
               </Button>
-              <Button variant="outline" className="flex items-center space-x-1 whitespace-nowrap">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 12h.01M12 12h.01M9 12h.01M12 16v-4m0 0l-3 3m3-3l3 3"
-                  />
-                </svg>
-                <span>Share</span>
-              </Button>
-              <Button variant="outline" className="flex items-center space-x-1 whitespace-nowrap">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v6m0 0l-3-3m3 3l3-3"
-                  />
-                </svg>
-                <span>Download</span>
+              <Button variant="outline" size="icon" title="Download" aria-label="Download" onClick={() => { /* preserve download behavior if needed */ }}>
+                <Download className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -1584,12 +1570,12 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         <BrandingSettings branding={branding} onUpdate={branding => setBranding(branding)} />
 
         {/* Gallery Upload Section */}
-        <div className="mb-6">
+        <div className="mb-4">
           <GalleryUpload gallery={gallery} onGalleryUpdate={setGallery} />
         </div>
 
         {viewMode === 'itinerary' ? (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {days.map((day, dayIndex) => (
               <Card
                 key={`day-${dayIndex}-${day.day}`}
@@ -1668,7 +1654,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             ))}
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {Object.entries(
               days.reduce((acc, day) => {
                 day.events.forEach((event) => {
@@ -1738,26 +1724,26 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </div>
         )}
 
-        <div className="mt-6 text-center">
+        <div className="mt-4 text-center">
           <Button onClick={addDay} variant="outline" className="border-dashed border-2 bg-transparent">
             <Plus className="mr-2 h-4 w-4" />
             Add Day
           </Button>
         </div>
 
-        <div className="mt-8" onDragOver={(e) => { e.preventDefault(); handleDragOver(-1, 0) }} onDrop={() => handleDrop(-1, 0)}>
+        <div className="mt-4" onDragOver={(e) => { e.preventDefault(); handleDragOver(-1, 0) }} onDrop={() => handleDrop(-1, 0)}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold">Additional Information</h3>
           </div>
 
           <div className="space-y-4">
             {serviceSlots.length === 0 && (
-              <div className="text-sm text-gray-500 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Additional Information component here to add a section</div>
+              <div className="text-sm text-gray-500 p-2 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Additional Information component here to add a section</div>
             )}
 
             {serviceSlots.map((slot, slotIndex) => (
               <Card key={slot.id} className="border-2 border-dashed border-gray-200">
-                <CardContent className="p-4 pt-3">
+                <CardContent className="p-2 pt-2">
                   <div className="space-y-3">
                     {slot.events.map((event, eventIndex) => (
                       <div key={event.id}>
@@ -1795,19 +1781,20 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </div>
         </div>
 
-        <div className="mt-8" onDragOver={(e) => { e.preventDefault(); handleDragOver(-2, 0) }} onDrop={() => handleDrop(-2, 0)}>
+
+        <div className="mt-4" onDragOver={(e) => { e.preventDefault(); handleDragOver(-2, 0) }} onDrop={() => handleDrop(-2, 0)}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold">Ancillaries</h3>
           </div>
 
           <div className="space-y-4">
             {ancillarySlots.length === 0 && (
-              <div className="text-sm text-gray-500 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Ancillaries component here to add a section</div>
+              <div className="text-sm text-gray-500 p-2 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Ancillaries component here to add a section</div>
             )}
 
             {ancillarySlots.map((slot, slotIndex) => (
               <Card key={slot.id} className="border-2 border-dashed border-gray-200">
-                <CardContent className="p-4 pt-3">
+                <CardContent className="p-2 pt-2">
                   <div className="space-y-3">
                     {slot.events.map((event, eventIndex) => (
                       <div key={event.id}>

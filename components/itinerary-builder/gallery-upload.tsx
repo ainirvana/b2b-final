@@ -163,9 +163,9 @@ export function GalleryUpload({ gallery, onGalleryUpdate }: GalleryUploadProps) 
           Upload images and videos to showcase in your itinerary preview. These will appear above the day-wise itinerary.
         </p>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2">
         {/* Upload Area */}
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center">
           <input
             ref={fileInputRef}
             type="file"

@@ -15,9 +15,9 @@ interface DayMealsProps {
 
 export function DayMeals({ meals, onChange, className }: DayMealsProps) {
   return (
-    <div className={cn("bg-[#FFF8E7] p-4 rounded-md flex items-center justify-between min-h-[80px]", className)}>
+    <div className={cn("bg-[#FFF8E7] p-2 rounded-md flex items-center justify-between min-h-[56px]", className)}>
       {/* Breakfast */}
-      <div className="flex items-center gap-3 flex-1 border-r border-[#E5DBC4] px-6 cursor-pointer hover:bg-[#FFF3D9] transition-colors" onClick={() => onChange?.('breakfast', !meals.breakfast)}>
+      <div className="flex items-center gap-3 flex-1 border-r border-[#E5DBC4] px-3 cursor-pointer hover:bg-[#FFF3D9] transition-colors" onClick={() => onChange?.('breakfast', !meals.breakfast)}>
         <Coffee className="h-5 w-5" />
         <span className="text-sm font-medium">Breakfast</span>
         <div className="flex-1" />
@@ -30,7 +30,7 @@ export function DayMeals({ meals, onChange, className }: DayMealsProps) {
       </div>
 
       {/* Lunch */}
-      <div className="flex items-center gap-3 flex-1 border-r border-[#E5DBC4] px-6 cursor-pointer hover:bg-[#FFF3D9] transition-colors" onClick={() => onChange?.('lunch', !meals.lunch)}>
+      <div className="flex items-center gap-3 flex-1 border-r border-[#E5DBC4] px-3 cursor-pointer hover:bg-[#FFF3D9] transition-colors" onClick={() => onChange?.('lunch', !meals.lunch)}>
         <UtensilsCrossed className="h-5 w-5" />
         <span className="text-sm font-medium">Lunch</span>
         <div className="flex-1" />
@@ -43,7 +43,7 @@ export function DayMeals({ meals, onChange, className }: DayMealsProps) {
       </div>
 
       {/* Dinner */}
-      <div className="flex items-center gap-3 flex-1 px-6 cursor-pointer hover:bg-[#FFF3D9] transition-colors" onClick={() => onChange?.('dinner', !meals.dinner)}>
+      <div className="flex items-center gap-3 flex-1 px-3 cursor-pointer hover:bg-[#FFF3D9] transition-colors" onClick={() => onChange?.('dinner', !meals.dinner)}>
         <Wine className="h-5 w-5" />
         <span className="text-sm font-medium">Dinner</span>
         <div className="flex-1" />

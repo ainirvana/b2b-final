@@ -49,7 +49,7 @@ export function BrandingSettings({ branding, onUpdate }: BrandingSettingsProps) 
   }
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-4">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Brand Settings</span>
@@ -58,7 +58,7 @@ export function BrandingSettings({ branding, onUpdate }: BrandingSettingsProps) 
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-3">
         {/* Header Branding */}
         <div className="space-y-4">
           <h4 className="font-medium">Header Branding</h4>

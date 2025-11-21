@@ -70,7 +70,7 @@ export function ImageEvent({ event, isDetailedView, onClick, onUpdate }: ImageEv
 
   return (
     <Card className="border-l-4 border-l-pink-400 hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
-      <CardContent className="p-4">
+      <CardContent className="p-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-pink-100 rounded-lg">
@@ -112,7 +112,7 @@ export function ImageEvent({ event, isDetailedView, onClick, onUpdate }: ImageEv
               <img
                 src={event.imageUrl || "/placeholder.svg"}
                 alt={event.imageAlt || event.title}
-                className="w-full h-48 object-cover rounded-lg"
+                className="w-full h-28 object-cover rounded-lg"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.src = "/placeholder.svg?height=192&width=400&text=Image+Not+Found"
@@ -139,7 +139,7 @@ export function ImageEvent({ event, isDetailedView, onClick, onUpdate }: ImageEv
               </div>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-pink-400 transition-colors">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-400 transition-colors">
               <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 mb-4">Click to add image</p>
               <Button

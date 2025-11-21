@@ -308,6 +308,12 @@ export function ComponentSourceModal({
 
   const [manualTitle, setManualTitle] = useState("")
   const [manualBullets, setManualBullets] = useState<string[]>([""])
+  const [manualDescription, setManualDescription] = useState("")
+  const [manualFromCity, setManualFromCity] = useState("")
+  const [manualToCity, setManualToCity] = useState("")
+  const [manualTime, setManualTime] = useState("")
+  const [manualLocation, setManualLocation] = useState("")
+  const [manualNights, setManualNights] = useState<number | "">("")
 
   const handleManualBulletChange = (index: number, value: string) => {
     const copy = [...manualBullets]
@@ -322,12 +328,38 @@ export function ComponentSourceModal({
   }
 
   const handleSubmitManual = () => {
-    const cleaned = manualBullets.map(b => (b || "").toString()).map(s => s.trim()).filter(Boolean)
-    onSelectManual({ title: manualTitle || "Additional Information", bullets: cleaned })
+    const cleaned = manualBullets.map((b) => (b || "").toString()).map((s) => s.trim()).filter(Boolean)
+
+    const payload: any = {
+      title: manualTitle || componentTitle || "Untitled",
+      description: manualDescription || "",
+      bullets: cleaned,
+      componentType,
+    }
+
+    // Add some type-specific fields where provided
+    if (manualFromCity || manualToCity || manualTime) {
+      payload.fromCity = manualFromCity
+      payload.toCity = manualToCity
+      payload.time = manualTime
+    }
+
+    if (manualLocation || manualNights) {
+      payload.location = manualLocation
+      if (manualNights) payload.nights = manualNights
+    }
+
+    onSelectManual(payload)
     onClose()
     setSelectedSource(null)
     setManualTitle("")
     setManualBullets([""])
+    setManualDescription("")
+    setManualFromCity("")
+    setManualToCity("")
+    setManualTime("")
+    setManualLocation("")
+    setManualNights("")
   }
 
   const handleSelectTemplate = (template: ComponentTemplate) => {
@@ -351,7 +383,7 @@ export function ComponentSourceModal({
     setRecentComponents(updatedRecent)
     localStorage.setItem("recent-components", JSON.stringify(updatedRecent))
 
-    onSelectManual() // This will create the component, we'll need to modify this to accept template data
+    onSelectManual(templateEvent)
     onClose()
     setSelectedSource(null)
   }
@@ -434,18 +466,18 @@ export function ComponentSourceModal({
         </DialogHeader>
 
         {!selectedSource && (
-          <div className="flex-1 flex flex-col space-y-6 p-6">
+          <div className="flex-1 flex flex-col space-y-3 p-3">
             <p className="text-gray-600 text-center">
               How would you like to add this {componentTitle.toLowerCase()} component?
             </p>
 
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-4">
               {/* Manual Option */}
               <Card
                 className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-400"
                 onClick={handleSelectManual}
               >
-                <CardContent className="p-6 text-center">
+                <CardContent className="p-3 text-center">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Plus className="h-8 w-8 text-blue-600" />
                   </div>
@@ -464,7 +496,7 @@ export function ComponentSourceModal({
                 className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-purple-400"
                 onClick={() => setSelectedSource("templates")}
               >
-                <CardContent className="p-6 text-center">
+                <CardContent className="p-3 text-center">
                   <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Copy className="h-8 w-8 text-purple-600" />
                   </div>
@@ -481,7 +513,7 @@ export function ComponentSourceModal({
                 className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-green-400"
                 onClick={() => setSelectedSource("library")}
               >
-                <CardContent className="p-6 text-center">
+                <CardContent className="p-3 text-center">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Library className="h-8 w-8 text-green-600" />
                   </div>
@@ -498,12 +530,12 @@ export function ComponentSourceModal({
 
         {selectedSource === "manual" && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b flex items-center justify-between">
+            <div className="p-2 border-b flex items-center justify-between">
               <h3 className="text-lg font-semibold">Create {componentTitle} Manually</h3>
               <Button variant="ghost" onClick={() => setSelectedSource(null)}>Back</Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-2">
               {componentType.toLowerCase() === "additionalinformation" ? (
                 <div className="space-y-4">
                   <div>
@@ -528,11 +560,84 @@ export function ComponentSourceModal({
                   </div>
                 </div>
               ) : (
-                <div className="p-4">Create manual component for {componentTitle}.</div>
+                <div className="space-y-4">
+                  {/* Generic title/description fields for all manual components */}
+                  <div>
+                    <label className="text-sm font-medium">Title</label>
+                    <Input value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder={`Title for ${componentTitle}`} />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Description</label>
+                    <Input value={manualDescription} onChange={(e) => setManualDescription(e.target.value)} placeholder="Short description (optional)" />
+                  </div>
+
+                  {/* Type-specific fields */}
+                  {componentType.toLowerCase() === "flight" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-sm font-medium">From</label>
+                        <Input value={manualFromCity} onChange={(e) => setManualFromCity(e.target.value)} placeholder="From city / airport" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">To</label>
+                        <Input value={manualToCity} onChange={(e) => setManualToCity(e.target.value)} placeholder="To city / airport" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Time</label>
+                        <Input value={manualTime} onChange={(e) => setManualTime(e.target.value)} placeholder="09:00 or 2025-12-01T09:00" />
+                      </div>
+                    </div>
+                  )}
+
+                  {componentType.toLowerCase() === "hotel" && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-sm font-medium">Location</label>
+                        <Input value={manualLocation} onChange={(e) => setManualLocation(e.target.value)} placeholder="Hotel name / location" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Nights</label>
+                        <Input value={manualNights as any} onChange={(e) => setManualNights(Number(e.target.value) || "")} placeholder="Number of nights" />
+                      </div>
+                    </div>
+                  )}
+
+                  {componentType.toLowerCase() === "activity" && (
+                    <div>
+                      <label className="text-sm font-medium">Location / Time</label>
+                      <Input value={manualLocation} onChange={(e) => setManualLocation(e.target.value)} placeholder="Location or meeting point" />
+                    </div>
+                  )}
+
+                  {componentType.toLowerCase() === "transfer" && (
+                    <div>
+                      <label className="text-sm font-medium">Pickup / Notes</label>
+                      <Input value={manualDescription} onChange={(e) => setManualDescription(e.target.value)} placeholder="Pickup details or vehicle notes" />
+                    </div>
+                  )}
+
+                  {/* Bullets */}
+                  <div>
+                    <label className="text-sm font-medium">Details / Highlights (bullet points)</label>
+                    <div className="space-y-2 mt-2">
+                      {manualBullets.map((b, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-sm">•</span>
+                          <Input value={b} onChange={(e) => handleManualBulletChange(idx, e.target.value)} className="flex-1" />
+                          <Button variant="ghost" onClick={() => handleRemoveManualBullet(idx)}>Remove</Button>
+                        </div>
+                      ))}
+                      <div>
+                        <Button size="sm" onClick={handleAddManualBullet}>Add Bullet</Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
 
-            <div className="p-4 border-t flex justify-end gap-2">
+            <div className="p-2 border-t flex justify-end gap-2">
               <Button variant="ghost" onClick={() => { setSelectedSource(null); setManualBullets([""]); setManualTitle("") }}>Cancel</Button>
               <Button onClick={handleSubmitManual}>Create</Button>
             </div>
@@ -541,7 +646,7 @@ export function ComponentSourceModal({
 
         {selectedSource === "templates" && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b">
+            <div className="p-2 border-b">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Choose {componentTitle} Template</h3>
                 <Button variant="ghost" onClick={() => setSelectedSource(null)}>
@@ -591,7 +696,7 @@ export function ComponentSourceModal({
                       className={`${getColor(template.category)} cursor-pointer hover:shadow-md transition-all`}
                       onClick={() => handleSelectTemplate(template)}
                     >
-                      <CardContent className="p-4">
+                      <CardContent className="p-2">
                         <div className="flex items-start space-x-3">
                           <div className="text-2xl">{getIcon(template.category)}</div>
                           <div className="flex-1 min-w-0">
@@ -642,7 +747,7 @@ export function ComponentSourceModal({
 
         {selectedSource === "library" && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b flex-shrink-0">
+            <div className="p-2 border-b flex-shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Choose {componentTitle} from Library</h3>
                 <Button variant="ghost" onClick={() => setSelectedSource(null)}>
@@ -722,7 +827,7 @@ export function ComponentSourceModal({
                               className={`${getColor(item.category)} cursor-pointer hover:shadow-md transition-all ${!validation.isValid ? "opacity-75 border-yellow-300" : ""}`}
                               onClick={() => handleSelectLibraryItem(item)}
                             >
-                              <CardContent className="p-4">
+                              <CardContent className="p-2">
                                 <div className="flex items-start space-x-3">
                                   <div className="text-2xl">{getIcon(item.category)}</div>
                                   <div className="flex-1 min-w-0">
