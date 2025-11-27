@@ -29,33 +29,33 @@ export function ActivityEvent({ event, isDetailedView = true, onEdit, onDelete }
   if (!isDetailedView) {
     // Summary view: show only activity name
     return (
-      <div className="bg-white p-4 rounded-lg border border-gray-200 relative">
+      <div className="bg-white p-2 rounded-lg border border-gray-200 relative">
         <EventSourceBadge event={event} />
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-100 rounded-lg">
-            <Camera className="h-5 w-5 text-green-600" />
+        <div className="flex items-center gap-1.5">
+          <div className="p-1 bg-green-100 rounded-lg">
+            <Camera className="h-3.5 w-3.5 text-green-600" />
           </div>
-          <h4 className="text-lg font-semibold text-gray-800">{event.title || "Activity Name"}</h4>
+          <h4 className="text-sm font-semibold text-gray-800 truncate">{event.title || "Activity Name"}</h4>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-white p-4 rounded-lg border border-gray-200 relative">
+    <div className="bg-white p-2 rounded-lg border border-gray-200 relative">
       <EventSourceBadge event={event} />
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-green-100 rounded-lg">
-          <Camera className="h-5 w-5 text-green-600" />
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <div className="p-1 bg-green-100 rounded-lg">
+          <Camera className="h-3.5 w-3.5 text-green-600" />
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 border-green-200">
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 border-green-200 py-0 px-1">
               Activity
             </Badge>
             {event.time && (
               <div className="flex items-center text-xs text-gray-500">
-                <Clock className="h-3 w-3 mr-1" />
+                <Clock className="h-2.5 w-2.5 mr-0.5" />
                 {event.time}
               </div>
             )}
@@ -63,40 +63,40 @@ export function ActivityEvent({ event, isDetailedView = true, onEdit, onDelete }
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="w-1 h-6 bg-green-200 rounded-full"></div>
-          <h4 className="text-lg font-semibold text-gray-800">{event.title || "Activity Name"}</h4>
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="w-0.5 h-4 bg-green-200 rounded-full"></div>
+          <h4 className="text-sm font-semibold text-gray-800">{event.title || "Activity Name"}</h4>
         </div>
 
-        <div className="flex items-start gap-3 pl-4">
-          <div className="w-4 h-4 border-l-2 border-b-2 border-green-200 rounded-bl-lg mt-1"></div>
-          <p className="flex-1 text-sm text-gray-600">{event.description || event.mainPoint || "Activity details"}</p>
+        <div className="flex items-start gap-1.5 pl-2">
+          <div className="w-3 h-3 border-l border-b border-green-200 rounded-bl-lg mt-0.5 flex-shrink-0"></div>
+          <p className="flex-1 text-xs text-gray-600">{event.description || event.mainPoint || "Activity details"}</p>
         </div>
 
         {event.location && (
-          <div className="pl-4 flex items-center gap-1 text-sm text-gray-500">
-            <MapPin className="h-4 w-4" />
+          <div className="pl-2 flex items-center gap-1 text-xs text-gray-500">
+            <MapPin className="h-3 w-3" />
             <span>{event.location}</span>
           </div>
         )}
 
         {/* Activity Details */}
-        <div className="pl-4 flex flex-wrap items-center gap-3 text-sm">
+        <div className="pl-2 flex flex-wrap items-center gap-1.5 text-xs">
           {event.duration && (
-            <div className="flex items-center gap-1 text-gray-500">
-              <Calendar className="h-4 w-4" />
+            <div className="flex items-center gap-0.5 text-gray-500">
+              <Calendar className="h-3 w-3" />
               <span>{event.duration}</span>
             </div>
           )}
           {event.capacity && (
-            <div className="flex items-center gap-1 text-gray-500">
-              <Users className="h-4 w-4" />
-              <span>Max {event.capacity} people</span>
+            <div className="flex items-center gap-0.5 text-gray-500">
+              <Users className="h-3 w-3" />
+              <span>Max {event.capacity}</span>
             </div>
           )}
           {event.difficulty && (
-            <Badge variant="outline" className={`text-xs ${getDifficultyColor(event.difficulty)}`}>
+            <Badge variant="outline" className={`text-xs ${getDifficultyColor(event.difficulty)} py-0 px-1`}>
               {event.difficulty}
             </Badge>
           )}
@@ -104,13 +104,13 @@ export function ActivityEvent({ event, isDetailedView = true, onEdit, onDelete }
 
         {/* Highlights */}
         {event.highlights && event.highlights.length > 0 && (
-          <div className="pl-4 flex flex-wrap gap-2">
+          <div className="pl-2 flex flex-wrap gap-1">
             {event.highlights.map((highlight, index) => (
               <span
                 key={index}
-                className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-xs text-green-700 border border-green-200"
+                className="inline-flex items-center px-1.5 py-0 rounded-md bg-green-50 text-xs text-green-700 border border-green-200"
               >
-                <Star className="h-3 w-3 mr-1" />
+                <Star className="h-2.5 w-2.5 mr-0.5" />
                 {highlight}
               </span>
             ))}
@@ -120,12 +120,12 @@ export function ActivityEvent({ event, isDetailedView = true, onEdit, onDelete }
 
       {/* Price */}
       {event.price && (
-        <div className="mt-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
+        <div className="mt-1.5 p-1.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Activity cost</span>
+            <span className="text-xs text-gray-600">Activity</span>
             <div className="text-right">
-              <span className="text-lg font-bold text-green-600">${event.price}</span>
-              <span className="text-xs text-gray-500 block">per person</span>
+              <span className="text-sm font-bold text-green-600">${event.price}</span>
+              <span className="text-xs text-gray-500 block leading-none">per person</span>
             </div>
           </div>
         </div>

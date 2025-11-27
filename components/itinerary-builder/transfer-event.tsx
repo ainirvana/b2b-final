@@ -15,18 +15,18 @@ interface TransferEventProps {
 export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }: TransferEventProps) {
   const getVehicleIcon = (vehicleType?: string) => {
     // You could expand this with different vehicle icons
-    return <Car className="h-5 w-5 text-purple-600" />
+    return <Car className="h-3.5 w-3.5 text-purple-600" />
   }
 
   if (!isDetailedView) {
     // Summary view: show only fromLocation -> toLocation
     return (
-      <div className="bg-white rounded-lg border-0 relative">
+      <div className="bg-white rounded-lg border border-gray-200 relative p-2">
         <EventSourceBadge event={event} />
-        <div className="flex items-center gap-3 p-4">
-          <div className="p-2 bg-purple-100 rounded-lg">{getVehicleIcon(event.vehicleType)}</div>
-          <div className="text-lg font-semibold text-gray-800">
-            {event.fromLocation || "Pick-up location"} → {event.toLocation || "Drop-off location"}
+        <div className="flex items-center gap-1.5">
+          <div className="p-1 bg-purple-100 rounded-lg">{getVehicleIcon(event.vehicleType)}</div>
+          <div className="text-sm font-semibold text-gray-800">
+            {event.fromLocation || "Pick-up"} → {event.toLocation || "Drop-off"}
           </div>
         </div>
       </div>
@@ -34,18 +34,18 @@ export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }
   }
 
   return (
-    <div className="bg-white rounded-lg border-0 relative">
+    <div className="bg-white rounded-lg border border-gray-200 relative p-2">
       <EventSourceBadge event={event} />
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-purple-100 rounded-lg">{getVehicleIcon(event.vehicleType)}</div>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <div className="p-1 bg-purple-100 rounded-lg">{getVehicleIcon(event.vehicleType)}</div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className="text-xs bg-purple-50 text-purple-700 border-purple-200 py-0 px-1">
               Transfer
             </Badge>
             {event.time && (
               <div className="flex items-center text-xs text-gray-500">
-                <Clock className="h-3 w-3 mr-1" />
+                <Clock className="h-2.5 w-2.5 mr-0.5" />
                 {event.time}
               </div>
             )}
@@ -53,36 +53,36 @@ export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-1.5">
         {/* Route */}
-        <div className="flex items-center gap-3">
-          <div className="w-1 h-6 bg-purple-200 rounded-full"></div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-0.5 h-4 bg-purple-200 rounded-full\"></div>
           <div className="flex-1">
-            <div className="text-sm font-medium text-gray-800">
+            <div className="text-xs font-medium text-gray-800">
               {event.fromLocation || "Pick-up location"} → {event.toLocation || "Drop-off location"}
             </div>
           </div>
         </div>
 
-        <div className="flex items-start gap-3 pl-4">
-          <div className="w-4 h-4 border-l-2 border-b-2 border-purple-200 rounded-bl-lg mt-1"></div>
+        <div className="flex items-start gap-1.5 pl-2">
+          <div className="w-3 h-3 border-l-2 border-b-2 border-purple-200 rounded-bl-lg mt-0.5\"></div>
           <div className="flex-1">
-            <p className="text-sm text-gray-600">{event.description || "Transfer details"}</p>
-            {event.vehicleType && <p className="text-xs text-purple-600 mt-1 font-medium">{event.vehicleType}</p>}
+            <p className="text-xs text-gray-600">{event.description || "Transfer details"}</p>
+            {event.vehicleType && <p className="text-xs text-purple-600 mt-0.5 font-medium\">{event.vehicleType}</p>}
           </div>
         </div>
 
         {/* Vehicle Details */}
-        <div className="pl-4 flex items-center gap-4 text-sm text-gray-500">
+        <div className="pl-2 flex items-center gap-2.5 text-xs text-gray-500">
           {event.capacity && (
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>{event.capacity} passengers</span>
+            <div className="flex items-center gap-0.5">
+              <Users className="h-3 w-3" />
+              <span>{event.capacity} pax</span>
             </div>
           )}
           {event.duration && (
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
+            <div className="flex items-center gap-0.5">
+              <Clock className="h-3 w-3" />
               <span>{event.duration}</span>
             </div>
           )}
@@ -90,11 +90,11 @@ export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }
 
         {/* Highlights/Features */}
         {event.highlights && event.highlights.length > 0 && (
-          <div className="pl-4 flex flex-wrap gap-2">
+          <div className="pl-2 flex flex-wrap gap-1">
             {event.highlights.map((highlight, index) => (
               <span
                 key={index}
-                className="inline-flex items-center px-2 py-1 rounded-md bg-purple-50 text-xs text-purple-700 border border-purple-200"
+                className="inline-flex items-center px-1.5 py-0 rounded-md bg-purple-50 text-xs text-purple-700 border border-purple-200"
               >
                 {highlight}
               </span>
@@ -105,10 +105,10 @@ export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }
 
       {/* Price */}
       {event.price && (
-        <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
+        <div className="mt-1.5 p-1.5 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Transfer cost</span>
-            <span className="text-lg font-bold text-purple-600">${event.price}</span>
+            <span className="text-xs text-gray-600">Transfer</span>
+            <span className="text-sm font-bold text-purple-600\">${event.price}</span>
           </div>
         </div>
       )}

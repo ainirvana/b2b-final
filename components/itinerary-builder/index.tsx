@@ -228,6 +228,15 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [gallery, setGallery] = useState<IGalleryItem[]>([])
   const [collapsedDays, setCollapsedDays] = useState<Set<number>>(new Set())
 
+  // Pricing toggle & modal state
+  const [pricingEnabled, setPricingEnabled] = useState<boolean>(false)
+  const [pricingDialogOpen, setPricingDialogOpen] = useState<boolean>(false)
+  const [pricingAdults, setPricingAdults] = useState<number>(2)
+  const [pricingChildren, setPricingChildren] = useState<number>(0)
+  const [pricingRooms, setPricingRooms] = useState<number>(1)
+  const [pricingNationality, setPricingNationality] = useState<string>('Indian')
+  const [pricingCurrency, setPricingCurrency] = useState<string>('INR')
+
   // Duplicate name dialog
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false)
   const [duplicateDialogMessage, setDuplicateDialogMessage] = useState("")
@@ -1523,10 +1532,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         </div>
 
         {/* Action Buttons Block */}
-        <div className="bg-white rounded-xl shadow-sm border mb-4 p-3">
+        <div className="bg-white rounded-xl shadow-sm border mb-1 p-1.5">
           <div className="flex flex-wrap justify-between items-center gap-2">
             {/* Left Buttons */}
-            <div className="flex space-x-2 flex-wrap">
+            <div className="flex space-x-2 flex-wrap items-center">
               <Button
                 variant={viewMode === 'itinerary' ? 'default' : 'outline'}
                 className="font-semibold whitespace-nowrap"
@@ -1534,13 +1543,33 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
               >
                 Itinerary
               </Button>
-              <Button
-                variant={viewMode === 'all-inclusions' ? 'default' : 'outline'}
-                className="font-semibold whitespace-nowrap"
-                onClick={() => setViewMode('all-inclusions')}
-              >
-                All Inclusions
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant={viewMode === 'all-inclusions' ? 'default' : 'outline'}
+                  className="font-semibold whitespace-nowrap"
+                  onClick={() => setViewMode('all-inclusions')}
+                >
+                  All Inclusions
+                </Button>
+
+                {/* Pricing toggle: opens modal immediately when turned on */}
+                <div className="flex items-center space-x-2 pl-1">
+                  <Switch
+                    checked={pricingEnabled}
+                    onCheckedChange={(v) => {
+                      const enabled = Boolean(v)
+                      setPricingEnabled(enabled)
+                      if (enabled) {
+                        setPricingDialogOpen(true)
+                      } else {
+                        setPricingDialogOpen(false)
+                      }
+                    }}
+                    aria-label="Toggle pricing options"
+                  />
+                  <span className="text-sm text-gray-700 select-none">Pricing</span>
+                </div>
+              </div>
             </div>
             {/* Right Buttons */}
             <div className="flex space-x-2 flex-wrap">
@@ -1567,15 +1596,123 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </div>
         </div>
 
+        {/* Pricing Options Dialog */}
+        <Dialog open={pricingDialogOpen} onOpenChange={(open) => {
+          setPricingDialogOpen(open)
+          if (!open) setPricingEnabled(false)
+        }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Pricing Settings</DialogTitle>
+              <DialogDescription>Configure your pricing options</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Both pricing modes enabled by default - no selection needed */}
+              <div className="text-sm text-gray-600">
+                ✓ Total Pricing • ✓ Individual Pricing (both active)
+              </div>
+
+              {/* Pax Information - with spinner controls */}
+              <div className="space-y-3 border-t pt-4">
+                <h3 className="text-sm font-semibold">Pax Information</h3>
+                
+                {/* Room */}
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Room</label>
+                  <div className="flex items-center gap-2 border rounded-lg px-2 py-1">
+                    <button onClick={() => setPricingRooms(Math.max(1, pricingRooms - 1))} className="text-gray-500 hover:text-gray-700">−</button>
+                    <span className="w-8 text-center font-semibold">{pricingRooms}</span>
+                    <button onClick={() => setPricingRooms(pricingRooms + 1)} className="text-gray-500 hover:text-gray-700">+</button>
+                  </div>
+                </div>
+
+                {/* Adults */}
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Adults</label>
+                  <div className="flex items-center gap-2 border rounded-lg px-2 py-1">
+                    <button onClick={() => setPricingAdults(Math.max(0, pricingAdults - 1))} className="text-gray-500 hover:text-gray-700">−</button>
+                    <span className="w-8 text-center font-semibold">{pricingAdults}</span>
+                    <button onClick={() => setPricingAdults(pricingAdults + 1)} className="text-gray-500 hover:text-gray-700">+</button>
+                  </div>
+                </div>
+
+                {/* Children */}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium block">Children</label>
+                      <p className="text-xs text-gray-500">0 - 17 Years Old</p>
+                    </div>
+                    <div className="flex items-center gap-2 border rounded-lg px-2 py-1">
+                      <button onClick={() => setPricingChildren(Math.max(0, pricingChildren - 1))} className="text-gray-500 hover:text-gray-700">−</button>
+                      <span className="w-8 text-center font-semibold">{pricingChildren}</span>
+                      <button onClick={() => setPricingChildren(pricingChildren + 1)} className="text-gray-500 hover:text-gray-700">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Guest Nationality */}
+              <div className="space-y-2 border-t pt-4">
+                <label className="text-sm font-medium">Guest Nationality</label>
+                <select
+                  value={pricingNationality}
+                  onChange={(e) => setPricingNationality(e.target.value)}
+                  className="w-full rounded-md border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="Indian">Indian</option>
+                  <option value="American">American</option>
+                  <option value="British">British</option>
+                  <option value="Canadian">Canadian</option>
+                  <option value="Australian">Australian</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Currency */}
+              <div className="space-y-2 border-t pt-4">
+                <label className="text-sm font-medium">Currency</label>
+                <select
+                  value={pricingCurrency}
+                  onChange={(e) => setPricingCurrency(e.target.value)}
+                  className="w-full rounded-md border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="INR">Indian Rupee (₹)</option>
+                  <option value="USD">US Dollar ($)</option>
+                  <option value="EUR">Euro (€)</option>
+                  <option value="GBP">British Pound (£)</option>
+                  <option value="AUD">Australian Dollar (A$)</option>
+                  <option value="CAD">Canadian Dollar (C$)</option>
+                </select>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2">
+              <Button variant="ghost" onClick={() => {
+                setPricingDialogOpen(false)
+                setPricingEnabled(false)
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={() => {
+                setPricingDialogOpen(false)
+              }}>
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <BrandingSettings branding={branding} onUpdate={branding => setBranding(branding)} />
 
         {/* Gallery Upload Section */}
-        <div className="mb-4">
+        <div className="mb-1">
           <GalleryUpload gallery={gallery} onGalleryUpdate={setGallery} />
         </div>
 
         {viewMode === 'itinerary' ? (
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             {days.map((day, dayIndex) => (
               <Card
                 key={`day-${dayIndex}-${day.day}`}
@@ -1586,7 +1723,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                 }}
                 onDrop={() => handleDrop(dayIndex, day.events.length)}
               >
-                <CardHeader className="pb-0">
+                <CardHeader className="pb-1.5 pt-2 px-2">
                   <div className="flex items-center justify-between">
                     <DayTitle
                       day={day.day}
@@ -1621,8 +1758,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                   </div>
                 </CardHeader>
                     {!collapsedDays.has(dayIndex) && (
-                      <CardContent>
-                        <div className="mt-4 space-y-4">
+                      <CardContent className="pt-1.5 px-2 pb-2">
+                        <div className="mt-1 space-y-1.5">
                           {day.events.map((event, eventIndex) => (
                             <EventCard
                               key={`${event.id}-${dayIndex}-${eventIndex}`}
@@ -1654,7 +1791,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             ))}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             {Object.entries(
               days.reduce((acc, day) => {
                 day.events.forEach((event) => {
@@ -1671,14 +1808,14 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
               const color = categoryInfo?.color || "bg-gray-50 border-gray-200"
               return (
                 <Card key={category} className={`border-2 ${color}`}>
-                  <CardHeader>
-                    <div className="flex items-center space-x-2">
-                      <Icon className="h-5 w-5" />
-                      <h3 className="text-lg font-semibold capitalize">{category}</h3>
+                  <CardHeader className="pt-2 px-2 pb-1.5">
+                    <div className="flex items-center space-x-1.5">
+                      <Icon className="h-4 w-4" />
+                      <h3 className="text-base font-semibold capitalize">{category}</h3>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
+                  <CardContent className="pt-1.5 px-2 pb-2">
+                    <div className="space-y-1.5">
                       {events.map((event, index) => (
                         <EventCard
                           key={`${event.id}-${index}`}
@@ -1724,19 +1861,19 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </div>
         )}
 
-        <div className="mt-4 text-center">
+        <div className="mt-2 text-center">
           <Button onClick={addDay} variant="outline" className="border-dashed border-2 bg-transparent">
             <Plus className="mr-2 h-4 w-4" />
             Add Day
           </Button>
         </div>
 
-        <div className="mt-4" onDragOver={(e) => { e.preventDefault(); handleDragOver(-1, 0) }} onDrop={() => handleDrop(-1, 0)}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold">Additional Information</h3>
+        <div className="mt-1" onDragOver={(e) => { e.preventDefault(); handleDragOver(-1, 0) }} onDrop={() => handleDrop(-1, 0)}>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-base font-semibold">Additional Information</h3>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-1.5">
             {serviceSlots.length === 0 && (
               <div className="text-sm text-gray-500 p-2 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Additional Information component here to add a section</div>
             )}
@@ -1744,7 +1881,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             {serviceSlots.map((slot, slotIndex) => (
               <Card key={slot.id} className="border-2 border-dashed border-gray-200">
                 <CardContent className="p-2 pt-2">
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {slot.events.map((event, eventIndex) => (
                       <div key={event.id}>
                         <EventCard
@@ -1782,12 +1919,12 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         </div>
 
 
-        <div className="mt-4" onDragOver={(e) => { e.preventDefault(); handleDragOver(-2, 0) }} onDrop={() => handleDrop(-2, 0)}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold">Ancillaries</h3>
+        <div className="mt-1" onDragOver={(e) => { e.preventDefault(); handleDragOver(-2, 0) }} onDrop={() => handleDrop(-2, 0)}>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-base font-semibold">Ancillaries</h3>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-1.5">
             {ancillarySlots.length === 0 && (
               <div className="text-sm text-gray-500 p-2 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Ancillaries component here to add a section</div>
             )}
@@ -1795,7 +1932,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             {ancillarySlots.map((slot, slotIndex) => (
               <Card key={slot.id} className="border-2 border-dashed border-gray-200">
                 <CardContent className="p-2 pt-2">
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {slot.events.map((event, eventIndex) => (
                       <div key={event.id}>
                         <EventCard
