@@ -236,6 +236,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [pricingRooms, setPricingRooms] = useState<number>(1)
   const [pricingNationality, setPricingNationality] = useState<string>('Indian')
   const [pricingCurrency, setPricingCurrency] = useState<string>('INR')
+  // Pricing mode: 'individual' (includes total) or 'total-only'
+  const [pricingMode, setPricingMode] = useState<'individual' | 'total-only'>('individual')
 
   // Duplicate name dialog
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false)
@@ -1608,9 +1610,31 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             </DialogHeader>
 
             <div className="space-y-4">
-              {/* Both pricing modes enabled by default - no selection needed */}
-              <div className="text-sm text-gray-600">
-                ✓ Total Pricing • ✓ Individual Pricing (both active)
+              {/* Pricing mode toggle */}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-gray-700">Pricing Mode</label>
+                <div className="flex flex-col gap-1">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="pricingMode"
+                      value="individual"
+                      checked={pricingMode === 'individual'}
+                      onChange={() => setPricingMode('individual')}
+                    />
+                    <span>Individual Pricing <span className="text-xs text-gray-500">(Includes total pricing)</span></span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="pricingMode"
+                      value="total-only"
+                      checked={pricingMode === 'total-only'}
+                      onChange={() => setPricingMode('total-only')}
+                    />
+                    <span>Only Total Pricing <span className="text-xs text-gray-500">(Show only total at the end)</span></span>
+                  </label>
+                </div>
               </div>
 
               {/* Pax Information - with spinner controls */}
@@ -1858,6 +1882,48 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                 </Card>
               )
             })}
+          </div>
+        )}
+
+
+        {/* Pricing Display Section */}
+        {pricingEnabled && (
+          <div className="mt-6 mb-2 p-4 rounded-lg border bg-yellow-50 border-yellow-200 text-center">
+            {pricingMode === 'total-only' ? (
+              <div>
+                <div className="text-lg font-bold text-gray-800">Total Price</div>
+                <div className="text-2xl font-extrabold text-green-700 mt-1">
+                  {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AUD' ? 'A$' : pricingCurrency === 'CAD' ? 'C$' : ''}
+                  {days.reduce((sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0), 0).toLocaleString()}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-lg font-bold text-gray-800 mb-2">Individual Pricing</div>
+                <div className="flex flex-col items-center gap-1">
+                  {days.map((day, dayIndex) => (
+                    <div key={dayIndex} className="w-full flex flex-col items-center">
+                      {day.events.map((event, eventIndex) => (
+                        typeof event.price === 'number' && event.price > 0 ? (
+                          <div key={eventIndex} className="flex justify-between w-64 text-sm">
+                            <span className="font-medium text-gray-700">{event.title || 'Event'}:</span>
+                            <span className="font-semibold text-green-700">
+                              {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AUD' ? 'A$' : pricingCurrency === 'CAD' ? 'C$' : ''}
+                              {event.price.toLocaleString()}
+                            </span>
+                          </div>
+                        ) : null
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 text-lg font-bold text-gray-800">Total Price</div>
+                <div className="text-2xl font-extrabold text-green-700 mt-1">
+                  {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AUD' ? 'A$' : pricingCurrency === 'CAD' ? 'C$' : ''}
+                  {days.reduce((sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0), 0).toLocaleString()}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
