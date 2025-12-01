@@ -26,6 +26,9 @@ interface EventCardProps {
   onDelete?: () => void
   onMealChange?: (meal: "breakfast" | "lunch" | "dinner", value: boolean) => void
   onUpdate?: (updatedEvent: IItineraryEvent) => void
+  nightIndex?: number // Current night for multi-night hotels (1, 2, 3, etc.)
+  totalNights?: number // Total nights for the hotel stay
+  dayNumber?: number // Actual day number (1, 2, 3, etc.)
 }
 
 export function EventCard({
@@ -36,6 +39,9 @@ export function EventCard({
   onDelete,
   onMealChange,
   onUpdate,
+  nightIndex,
+  totalNights,
+  dayNumber,
 }: EventCardProps) {
   const getEventColor = (category: string) => {
     if (!category) return "bg-gray-50 border-gray-200"
@@ -162,7 +168,7 @@ export function EventCard({
         {event.category === "flight" ? (
           <FlightEvent event={event} isDetailedView={isDetailedView} />
         ) : event.category === "hotel" ? (
-          <HotelEvent event={event} isDetailedView={isDetailedView} />
+          <HotelEvent event={event} isDetailedView={isDetailedView} nightIndex={nightIndex} totalNights={totalNights} dayNumber={dayNumber} />
         ) : event.category === "transfer" ? (
           <TransferEvent event={event} isDetailedView={isDetailedView} />
         ) : event.category === "activity" ? (

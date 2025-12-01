@@ -25,6 +25,7 @@ interface EventCardProps {
   onDelete?: () => void
   nightIndex?: number // Current night for multi-night hotels (1, 2, 3, etc.)
   totalNights?: number // Total nights for the hotel stay
+  dayNumber?: number // Actual day number (1, 2, 3, etc.)
 }
 
 export function EventCard({
@@ -36,13 +37,14 @@ export function EventCard({
   onDelete,
   nightIndex,
   totalNights,
+  dayNumber,
 }: EventCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const renderEventContent = () => {
     switch (event.category) {
       case 'hotel':
-        return <HotelEvent event={event} nightIndex={nightIndex} totalNights={totalNights} />
+        return <HotelEvent event={event} nightIndex={nightIndex} totalNights={totalNights} dayNumber={dayNumber} />
       case 'transfer':
         return <TransferEvent event={event} />
       case 'activity':

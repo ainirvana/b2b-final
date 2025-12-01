@@ -13,6 +13,8 @@ import {
   Eye,
   Sun,
   Calendar,
+  Users,
+  DollarSign,
   GripVertical,
   Plane,
   UtensilsCrossed,
@@ -238,6 +240,9 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [pricingCurrency, setPricingCurrency] = useState<string>('INR')
   // Pricing mode: 'individual' (includes total) or 'total-only'
   const [pricingMode, setPricingMode] = useState<'individual' | 'total-only'>('individual')
+  // Pricing dates
+  const [pricingStartDate, setPricingStartDate] = useState<string>("")
+  const [pricingEndDate, setPricingEndDate] = useState<string>("")
 
   // Duplicate name dialog
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false)
@@ -493,8 +498,9 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           hotelTotalNights: newEvent.nights,
         }
 
-        // Add hotel events to subsequent days
-        for (let i = 1; i < newEvent.nights; i++) {
+        // Add hotel events to subsequent days (including checkout day)
+        // For 2 nights: create 2 more hotel cards (day 2 night 2, day 3 checkout)
+        for (let i = 1; i <= newEvent.nights; i++) {
           const nextDayIndex = dayIndex + i
           
           // Extend days array if needed
@@ -513,7 +519,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             })
           }
 
-          // Create duplicate event for this night
+          // Create duplicate event for this night/checkout
           const nightEvent: IItineraryEvent = {
             ...newEvent,
             id: `event-${Date.now()}-night-${i}`,
@@ -642,8 +648,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         hotelTotalNights: updatedEvent.nights,
       }
 
-      // Add hotel events to subsequent days
-      for (let i = 1; i < updatedEvent.nights; i++) {
+      // Add hotel events to subsequent days (including checkout day)
+      for (let i = 1; i <= updatedEvent.nights; i++) {
         const nextDayIndex = editingEvent.dayIndex + i
         
         // Extend days array if needed
@@ -662,7 +668,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           })
         }
 
-        // Create duplicate event for this night
+        // Create duplicate event for this night/checkout
         const nightEvent: IItineraryEvent = {
           ...originalEvent,
           id: `event-${Date.now()}-night-${i}`,
@@ -736,7 +742,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     if (component.category === "additionalInformation") {
       console.log("[DEBUG] Creating service slot (manual) for Additional Information from modal")
       const title = (manualData && manualData.title) || `Additional Information ${serviceSlots.length + 1}`
-      const bullets: string[] = (manualData && Array.isArray(manualData.bullets)) ? manualData.bullets : []
+      // Support both `bullets` and `listItems` fields
+      const bullets: string[] = (manualData && Array.isArray(manualData.bullets)) ? manualData.bullets : (manualData && Array.isArray(manualData.listItems)) ? manualData.listItems : []
 
       const listEvent: IItineraryEvent = {
         id: `event-${Date.now()}`,
@@ -765,7 +772,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     if (component.category === "ancillaries") {
       console.log("[DEBUG] Creating ancillary slot (manual) from modal")
       const title = (manualData && manualData.title) || `Ancillaries ${ancillarySlots.length + 1}`
-      const bullets: string[] = (manualData && Array.isArray(manualData.bullets)) ? manualData.bullets : []
+      // Support both `bullets` and `listItems` fields
+      const bullets: string[] = (manualData && Array.isArray(manualData.bullets)) ? manualData.bullets : (manualData && Array.isArray(manualData.listItems)) ? manualData.listItems : []
 
       const listEvent: IItineraryEvent = {
         id: `event-${Date.now()}`,
@@ -875,6 +883,53 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     }
 
     newDays[dayIndex].events.splice(position, 0, newEvent)
+
+    // Handle multi-night hotels: duplicate event across nights
+    if (newEvent.category === "hotel" && newEvent.nights && newEvent.nights > 1) {
+      const hotelGroupId = newEvent.hotelGroupId || `hotel-${Date.now()}`
+      
+      // Update the original event with night tracking
+      newDays[dayIndex].events[position] = {
+        ...newEvent,
+        hotelGroupId,
+        hotelNightIndex: 1,
+        hotelTotalNights: newEvent.nights,
+      }
+
+      // Add hotel events to subsequent days (including checkout day)
+      for (let i = 1; i <= newEvent.nights; i++) {
+        const nextDayIndex = dayIndex + i
+        
+        // Extend days array if needed
+        if (nextDayIndex >= newDays.length) {
+          const lastDay = newDays[newDays.length - 1]
+          newDays.push({
+            ...lastDay,
+            day: newDays.length + 1,
+            title: `Day ${newDays.length + 1}`,
+            date: new Date(
+              new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000
+            )
+              .toISOString()
+              .split("T")[0],
+            events: [],
+          })
+        }
+
+        // Create duplicate event for this night/checkout
+        const nightEvent: IItineraryEvent = {
+          ...newEvent,
+          id: `event-${Date.now()}-night-${i}`,
+          hotelGroupId,
+          hotelNightIndex: i + 1,
+          hotelTotalNights: newEvent.nights,
+        }
+
+        // Add to the next day
+        newDays[nextDayIndex].events.push(nightEvent)
+      }
+    }
+
     setDays(newDays)
     setDraggedItem(null)
     setDropTarget(null)
@@ -1526,11 +1581,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             aria-label="Product Reference Code"
           />
 
-          {/* Detailed View Toggle */}
-          <div className="flex items-center gap-2 mt-3">
-            <Switch checked={isDetailedView} onCheckedChange={setIsDetailedView} />
-            <span className="text-sm font-medium text-gray-700">{isDetailedView ? "Detailed View" : "Summary View"}</span>
-          </div>
+          {/* Detailed View toggle moved next to All Inclusions button */}
         </div>
 
         {/* Action Buttons Block */}
@@ -1554,6 +1605,16 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                   All Inclusions
                 </Button>
 
+                {/* Detailed View toggle - visible between All Inclusions and Pricing.
+                    Enabled only when All Inclusions view is active. */}
+                <div className="flex items-center gap-2 ml-2">
+                  <Switch
+                    checked={isDetailedView}
+                    onCheckedChange={setIsDetailedView}
+                  />
+                  <span className="text-sm font-medium text-gray-700">{isDetailedView ? "Detailed View" : "Summary View"}</span>
+                </div>
+
                 {/* Pricing toggle: opens modal immediately when turned on */}
                 <div className="flex items-center space-x-2 pl-1">
                   <Switch
@@ -1570,6 +1631,22 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                     aria-label="Toggle pricing options"
                   />
                   <span className="text-sm text-gray-700 select-none">Pricing</span>
+                  {/* Minimal pricing summary */}
+                  <div className="ml-2 flex items-center gap-2 text-xs text-gray-600">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded">
+                      <Users className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">{pricingAdults + pricingChildren}</span>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span>{pricingStartDate && pricingEndDate ? `${pricingStartDate} → ${pricingEndDate}` : 'Dates'}</span>
+                    </div>
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded">
+                      <DollarSign className="h-4 w-4 text-gray-500" />
+                      <span>{pricingMode === 'individual' ? 'Indv' : 'Total'}</span>
+                      <span className="ml-1 font-medium">{pricingCurrency}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1710,6 +1787,25 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                   <option value="CAD">Canadian Dollar (C$)</option>
                 </select>
               </div>
+
+              {/* Dates */}
+              <div className="space-y-2 border-t pt-4">
+                <label className="text-sm font-medium">Dates</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={pricingStartDate}
+                    onChange={(e) => setPricingStartDate(e.target.value)}
+                    className="w-full rounded-md border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <input
+                    type="date"
+                    value={pricingEndDate}
+                    onChange={(e) => setPricingEndDate(e.target.value)}
+                    className="w-full rounded-md border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
             </div>
 
             <DialogFooter className="gap-2">
@@ -1791,6 +1887,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                               isDetailedView={isDetailedView}
                               nightIndex={event.hotelNightIndex}
                               totalNights={event.hotelTotalNights}
+                              dayNumber={dayIndex + 1}
                               onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
                               onEdit={() => handleEditEvent(dayIndex, eventIndex)}
                               onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
@@ -1840,32 +1937,28 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                   </CardHeader>
                   <CardContent className="pt-1.5 px-2 pb-2">
                     <div className="space-y-1.5">
-                      {events.map((event, index) => (
+                      {events.map((event, index) => {
+                        const dayIndex = days.findIndex((day) =>
+                          day.events.some((e) => e.id === event.id),
+                        )
+                        return (
                         <EventCard
                           key={`${event.id}-${index}`}
                           event={event}
                           isDetailedView={isDetailedView}
                           nightIndex={event.hotelNightIndex}
                           totalNights={event.hotelTotalNights}
+                          dayNumber={dayIndex + 1}
                           onDragStart={() => handleDragStart("event", event)}
                           onEdit={() => {
-                            const dayIndex = days.findIndex((day) =>
-                              day.events.some((e) => e.id === event.id),
-                            )
                             const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
                             handleEditEvent(dayIndex, eventIndex)
                           }}
                           onDelete={() => {
-                            const dayIndex = days.findIndex((day) =>
-                              day.events.some((e) => e.id === event.id),
-                            )
                             const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
                             handleDeleteEvent(dayIndex, eventIndex)
                           }}
                           onUpdate={(updatedEvent) => {
-                            const dayIndex = days.findIndex((day) =>
-                              day.events.some((e) => e.id === event.id),
-                            )
                             const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
                             const newDays = [...days]
                             newDays[dayIndex].events[eventIndex] = {
@@ -1876,7 +1969,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                             setDays(newDays)
                           }}
                         />
-                      ))}
+                        )
+                      })}
                     </div>
                   </CardContent>
                 </Card>
@@ -1934,20 +2028,18 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </Button>
         </div>
 
-        <div className="mt-1" onDragOver={(e) => { e.preventDefault(); handleDragOver(-1, 0) }} onDrop={() => handleDrop(-1, 0)}>
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold">Additional Information</h3>
-          </div>
+        <div className="mt-0 mb-0" onDragOver={(e) => { e.preventDefault(); handleDragOver(-1, 0) }} onDrop={() => handleDrop(-1, 0)}>
+          <h3 className="text-xs font-semibold mb-0.5 text-gray-700">Additional Information</h3>
 
-          <div className="space-y-1.5">
+          <div className="space-y-0">
             {serviceSlots.length === 0 && (
-              <div className="text-sm text-gray-500 p-2 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Additional Information component here to add a section</div>
+              <div className="text-xs text-gray-400 p-0.5 border border-dashed border-gray-200 rounded bg-gray-50">Drag here</div>
             )}
 
             {serviceSlots.map((slot, slotIndex) => (
-              <Card key={slot.id} className="border-2 border-dashed border-gray-200">
-                <CardContent className="p-2 pt-2">
-                  <div className="space-y-2">
+              <Card key={slot.id} className="border border-dashed border-gray-200 rounded-sm">
+                <CardContent className="p-0.5">
+                  <div className="space-y-0">
                     {slot.events.map((event, eventIndex) => (
                       <div key={event.id}>
                         <EventCard
@@ -1985,20 +2077,18 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         </div>
 
 
-        <div className="mt-1" onDragOver={(e) => { e.preventDefault(); handleDragOver(-2, 0) }} onDrop={() => handleDrop(-2, 0)}>
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-base font-semibold">Ancillaries</h3>
-          </div>
+        <div className="mt-0 mb-0" onDragOver={(e) => { e.preventDefault(); handleDragOver(-2, 0) }} onDrop={() => handleDrop(-2, 0)}>
+          <h3 className="text-xs font-semibold mb-0.5 text-gray-700">Ancillaries</h3>
 
-          <div className="space-y-1.5">
+          <div className="space-y-0">
             {ancillarySlots.length === 0 && (
-              <div className="text-sm text-gray-500 p-2 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">Drag the Ancillaries component here to add a section</div>
+              <div className="text-xs text-gray-400 p-0.5 border border-dashed border-gray-200 rounded bg-gray-50">Drag here</div>
             )}
 
             {ancillarySlots.map((slot, slotIndex) => (
-              <Card key={slot.id} className="border-2 border-dashed border-gray-200">
-                <CardContent className="p-2 pt-2">
-                  <div className="space-y-2">
+              <Card key={slot.id} className="border border-dashed border-gray-200 rounded-sm">
+                <CardContent className="p-0.5">
+                  <div className="space-y-0">
                     {slot.events.map((event, eventIndex) => (
                       <div key={event.id}>
                         <EventCard

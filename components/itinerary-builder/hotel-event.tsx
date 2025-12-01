@@ -10,11 +10,12 @@ interface HotelEventProps {
   isDetailedView?: boolean
   nightIndex?: number // Current night (1, 2, 3, etc.)
   totalNights?: number // Total nights for the stay
+  dayNumber?: number // Actual day number (1, 2, 3, etc.)
   onEdit?: () => void
   onDelete?: () => void
 }
 
-export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNights, onEdit, onDelete }: HotelEventProps) {
+export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNights, dayNumber, onEdit, onDelete }: HotelEventProps) {
   const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
       case "wifi":
@@ -30,8 +31,20 @@ export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNigh
     }
   }
 
+  // Default times
+  const checkInTime = event.checkIn || "11:00"
+  const checkOutTime = event.checkOut || "10:00"
+
   // Determine night display
   const nightDisplay = nightIndex && totalNights ? `${nightIndex}/${totalNights}N` : (event.nights ? `${event.nights}N` : null)
+
+  // Calculate checkout day: if hotel has X nights starting on day Y, checkout is on day Y + X
+  const checkoutDay = dayNumber && event.nights ? dayNumber + event.nights : null
+
+  // Determine if this is a check-in day or checkout day
+  const isCheckInDay = nightIndex === 1
+  // Checkout day is when nightIndex equals totalNights + 1 (the day after the last night)
+  const isCheckOutDay = nightIndex !== undefined && totalNights !== undefined && nightIndex === totalNights + 1
 
   if (!isDetailedView) {
     // Summary view: show only hotel name with night indicator
@@ -111,28 +124,45 @@ export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNigh
         )}
       </div>
 
-      {/* Check-in/Check-out Section */}
-      <div className="mt-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 p-2 rounded-lg">
-        <div className="flex items-center justify-between gap-1">
-          <div className="text-center flex-1">
-            <p className="text-xs text-gray-500 leading-tight">{nightIndex === 1 ? "In" : "Stay"}</p>
-            <p className="text-xs font-semibold text-gray-800">{event.checkIn || "14:00"}</p>
-          </div>
+      {/* Check-in/Check-out Tags and Times */}
+      <div className="mt-2 space-y-2">
+        {/* Check-in and Check-out Tags */}
+        <div className="flex gap-2 flex-wrap">
+          {isCheckInDay && (
+            <Badge className="bg-green-600 text-white text-xs py-1 px-2">
+              ✓ CHECK-IN
+            </Badge>
+          )}
+          {isCheckOutDay && (
+            <Badge className="bg-red-600 text-white text-xs py-1 px-2">
+              ✓ CHECK-OUT
+            </Badge>
+          )}
+        </div>
 
-          <div className="flex-1 flex items-center justify-center">
-            <div className="flex-grow border-t border-dashed border-blue-300"></div>
-            {nightDisplay && (
-              <div className="flex items-center gap-0.5 mx-1 px-1.5 py-0 bg-white rounded-full shadow-sm">
-                <span className="text-xs font-semibold text-blue-600">{nightDisplay}</span>
-                <Moon className="h-2.5 w-2.5 text-blue-500" />
-              </div>
-            )}
-            <div className="flex-grow border-t border-dashed border-blue-300"></div>
-          </div>
+        {/* Check-in/Check-out Times */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-2 rounded-lg">
+          <div className="flex items-center justify-between gap-1">
+            <div className="text-center flex-1">
+              <p className="text-xs text-gray-500 leading-tight">{isCheckInDay ? "Check-In" : "Stay"}</p>
+              <p className="text-xs font-semibold text-gray-800">{checkInTime}</p>
+            </div>
 
-          <div className="text-center flex-1">
-            <p className="text-xs text-gray-500 leading-tight">{nightIndex === totalNights ? "Out" : "Stay"}</p>
-            <p className="text-xs font-semibold text-gray-800">{event.checkOut || "12:00"}</p>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="flex-grow border-t border-dashed border-blue-300"></div>
+              {nightDisplay && (
+                <div className="flex items-center gap-0.5 mx-1 px-1.5 py-0 bg-white rounded-full shadow-sm">
+                  <span className="text-xs font-semibold text-blue-600">{nightDisplay}</span>
+                  <Moon className="h-2.5 w-2.5 text-blue-500" />
+                </div>
+              )}
+              <div className="flex-grow border-t border-dashed border-blue-300"></div>
+            </div>
+
+            <div className="text-center flex-1">
+              <p className="text-xs text-gray-500 leading-tight">{isCheckOutDay ? "Check-Out" : "Stay"}</p>
+              <p className="text-xs font-semibold text-gray-800">{checkOutTime}</p>
+            </div>
           </div>
         </div>
       </div>

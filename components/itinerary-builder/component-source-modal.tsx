@@ -617,8 +617,8 @@ export function ComponentSourceModal({
         {selectedSource === "manual" && (
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4">
-              {componentType.toLowerCase() === "additionalinformation" ? (
-                // Additional Information special case
+              {(componentType.toLowerCase() === "additionalinformation" || componentType.toLowerCase().includes("ancill")) ? (
+                // Additional Information and Ancillaries special case
                 <div className="space-y-4">
                   <div className="mb-6">
                     <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -628,7 +628,7 @@ export function ComponentSourceModal({
                     <div className="space-y-4 pl-4 border-l-2 border-red-200">
                       <div>
                         <label className="text-sm font-medium">Title</label>
-                        <Input value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder="Section title e.g. Terms and Conditions" />
+                        <Input value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder={componentType.toLowerCase().includes("ancill") ? "Section title e.g. Optional Extras" : "Section title e.g. Terms and Conditions"} />
                       </div>
                     </div>
                   </div>
@@ -640,7 +640,7 @@ export function ComponentSourceModal({
                     </h4>
                     <div className="space-y-4 pl-4 border-l-2 border-gray-200">
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Additional Information (bullet points)</label>
+                        <label className="text-sm font-medium mb-2 block">{componentType.toLowerCase().includes("ancill") ? "Ancillaries (bullet points)" : "Additional Information (bullet points)"}</label>
                         <div className="space-y-2">
                           {manualBullets.map((b, idx) => (
                             <div key={idx} className="flex items-center gap-2">
