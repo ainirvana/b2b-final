@@ -58,7 +58,7 @@ export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNigh
             </div>
             <h4 className="text-sm font-semibold text-gray-800 truncate">{event.title || "Hotel Name"}</h4>
           </div>
-          {nightDisplay && (
+          {nightDisplay && !isCheckOutDay && (
             <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-300 flex-shrink-0 text-xs py-0.5 px-1.5">
               {nightDisplay}
             </Badge>
@@ -80,7 +80,7 @@ export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNigh
             <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200 py-0 px-1">
               Hotel
             </Badge>
-            {nightDisplay && (
+            {nightDisplay && !isCheckOutDay && (
               <Badge className="text-xs bg-blue-600 text-white py-0 px-1">
                 {nightDisplay}
               </Badge>
@@ -150,7 +150,7 @@ export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNigh
 
             <div className="flex-1 flex items-center justify-center">
               <div className="flex-grow border-t border-dashed border-blue-300"></div>
-              {nightDisplay && (
+              {nightDisplay && !isCheckOutDay && (
                 <div className="flex items-center gap-0.5 mx-1 px-1.5 py-0 bg-white rounded-full shadow-sm">
                   <span className="text-xs font-semibold text-blue-600">{nightDisplay}</span>
                   <Moon className="h-2.5 w-2.5 text-blue-500" />
