@@ -63,7 +63,7 @@ interface ItineraryBuilderProps {
 const EMPTY_DAY: IItineraryDay = {
   day: 1,
   date: new Date().toISOString().split("T")[0],
-  title: "Day 1",
+  title: "",
   description: "",
   detailedDescription: "",
   events: [],
@@ -311,7 +311,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         const initialDays = Array.from({ length: numDays }, (_, index) => ({
           ...EMPTY_DAY,
           day: index + 1,
-          title: `Day ${index + 1}`,
+          title: "",
           date: new Date(new Date().setDate(new Date().getDate() + index)).toISOString().split("T")[0],
           events: [],
         }))
@@ -512,7 +512,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             newDays.push({
               ...lastDay,
               day: newDays.length + 1,
-              title: `Day ${newDays.length + 1}`,
+              title: "",
               date: new Date(
                 new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000
               )
@@ -661,7 +661,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           newDays.push({
             ...lastDay,
             day: newDays.length + 1,
-            title: `Day ${newDays.length + 1}`,
+            title: "",
             date: new Date(
               new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000
             )
@@ -692,7 +692,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const addDay = () => {
     const newDay: IItineraryDay = {
       day: days.length + 1,
-      title: `Day ${days.length + 1}`,
+      title: "",
       date: new Date(Date.now() + days.length * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       description: "",
       detailedDescription: "",

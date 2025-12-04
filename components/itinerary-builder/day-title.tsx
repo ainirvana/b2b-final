@@ -21,7 +21,7 @@ export function DayTitle({ day, title, nights, onTitleChange, onNightsChange }: 
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
         className="text-sm font-medium border-none p-0 h-auto bg-transparent w-44"
-        placeholder="Enter day title"
+        placeholder="Destination"
       />
       {onNightsChange && (
         <div className="flex items-center space-x-0.5">
