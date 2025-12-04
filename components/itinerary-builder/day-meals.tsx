@@ -15,43 +15,44 @@ interface DayMealsProps {
 
 export function DayMeals({ meals, onChange, className }: DayMealsProps) {
   return (
-    <div className={cn("bg-[#FFF8E7] p-2 rounded-md flex items-center justify-between min-h-[56px]", className)}>
+    <div className={cn("bg-[#FFF8E7] p-3 rounded-md flex items-center justify-between gap-4 mt-2", className)}>
       {/* Breakfast */}
-      <div className="flex items-center gap-3 flex-1 border-r border-[#E5DBC4] px-3 cursor-pointer hover:bg-[#FFF3D9] transition-colors" onClick={() => onChange?.('breakfast', !meals.breakfast)}>
-        <Coffee className="h-5 w-5" />
-        <span className="text-sm font-medium">Breakfast</span>
-        <div className="flex-1" />
+      <div className="flex items-center gap-2 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => onChange?.('breakfast', !meals.breakfast)}>
+        <Coffee className="h-4 w-4 text-gray-700" />
+        <span className="text-sm font-medium text-gray-800">Breakfast</span>
         <span className={cn(
-          "text-xs",
-          meals.breakfast ? "text-green-600" : "text-gray-600"
+          "ml-auto text-lg font-bold",
+          meals.breakfast ? "text-green-600" : "text-red-500"
         )}>
-          {meals.breakfast ? "Included" : "Not Included"}
+          {meals.breakfast ? "✓" : "✗"}
         </span>
       </div>
+
+      <div className="h-6 w-px bg-[#E5DBC4]" />
 
       {/* Lunch */}
-      <div className="flex items-center gap-3 flex-1 border-r border-[#E5DBC4] px-3 cursor-pointer hover:bg-[#FFF3D9] transition-colors" onClick={() => onChange?.('lunch', !meals.lunch)}>
-        <UtensilsCrossed className="h-5 w-5" />
-        <span className="text-sm font-medium">Lunch</span>
-        <div className="flex-1" />
+      <div className="flex items-center gap-2 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => onChange?.('lunch', !meals.lunch)}>
+        <UtensilsCrossed className="h-4 w-4 text-gray-700" />
+        <span className="text-sm font-medium text-gray-800">Lunch</span>
         <span className={cn(
-          "text-xs",
-          meals.lunch ? "text-green-600" : "text-gray-600"
+          "ml-auto text-lg font-bold",
+          meals.lunch ? "text-green-600" : "text-red-500"
         )}>
-          {meals.lunch ? "Included" : "Not Included"}
+          {meals.lunch ? "✓" : "✗"}
         </span>
       </div>
 
+      <div className="h-6 w-px bg-[#E5DBC4]" />
+
       {/* Dinner */}
-      <div className="flex items-center gap-3 flex-1 px-3 cursor-pointer hover:bg-[#FFF3D9] transition-colors" onClick={() => onChange?.('dinner', !meals.dinner)}>
-        <Wine className="h-5 w-5" />
-        <span className="text-sm font-medium">Dinner</span>
-        <div className="flex-1" />
+      <div className="flex items-center gap-2 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => onChange?.('dinner', !meals.dinner)}>
+        <Wine className="h-4 w-4 text-gray-700" />
+        <span className="text-sm font-medium text-gray-800">Dinner</span>
         <span className={cn(
-          "text-xs",
-          meals.dinner ? "text-green-600" : "text-gray-600"
+          "ml-auto text-lg font-bold",
+          meals.dinner ? "text-green-600" : "text-red-500"
         )}>
-          {meals.dinner ? "Included" : "Not Included"}
+          {meals.dinner ? "✓" : "✗"}
         </span>
       </div>
     </div>

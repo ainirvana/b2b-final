@@ -36,6 +36,7 @@ import {
 } from "lucide-react"
 import { EventCard } from "../event-card"
 import { DayTitle } from "./day-title"
+import { DayMeals } from "./day-meals"
 import { EditEventModal } from "./edit-event-modal"
 // Library sidebar, integration panel and usage stats removed from builder
 import { ComponentSourceModal } from "./component-source-modal"
@@ -407,10 +408,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
   const convertLibraryItemToEvent = (libraryItem: any): IItineraryEvent => {
     const convertedEvent = LibraryToItineraryConverter.convertToItineraryEvent(libraryItem)
-    
+
     // Generate hotel group ID if it's a hotel
     const hotelGroupId = convertedEvent.category === "hotel" ? `hotel-${Date.now()}` : undefined
-    
+
     return {
       ...convertedEvent,
       libraryItemId: libraryItem.id,
@@ -489,7 +490,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       // Handle multi-night hotels: duplicate event across nights
       if (newEvent.category === "hotel" && newEvent.nights && newEvent.nights > 1) {
         const hotelGroupId = newEvent.hotelGroupId || `hotel-${Date.now()}`
-        
+
         // Update the original event with night tracking
         newDays[dayIndex].events[position] = {
           ...newEvent,
@@ -502,7 +503,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         // For 2 nights: create 2 more hotel cards (day 2 night 2, day 3 checkout)
         for (let i = 1; i <= newEvent.nights; i++) {
           const nextDayIndex = dayIndex + i
-          
+
           // Extend days array if needed
           if (nextDayIndex >= newDays.length) {
             const lastDay = newDays[newDays.length - 1]
@@ -639,7 +640,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     if (updatedEvent.category === "hotel" && updatedEvent.nights && updatedEvent.nights > 1) {
       const originalEvent = newDays[editingEvent.dayIndex].events[editingEvent.eventIndex]
       const hotelGroupId = originalEvent.hotelGroupId || `hotel-${Date.now()}`
-      
+
       // Update the original event with night tracking
       newDays[editingEvent.dayIndex].events[editingEvent.eventIndex] = {
         ...originalEvent,
@@ -651,7 +652,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       // Add hotel events to subsequent days (including checkout day)
       for (let i = 1; i <= updatedEvent.nights; i++) {
         const nextDayIndex = editingEvent.dayIndex + i
-        
+
         // Extend days array if needed
         if (nextDayIndex >= newDays.length) {
           const lastDay = newDays[newDays.length - 1]
@@ -887,7 +888,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     // Handle multi-night hotels: duplicate event across nights
     if (newEvent.category === "hotel" && newEvent.nights && newEvent.nights > 1) {
       const hotelGroupId = newEvent.hotelGroupId || `hotel-${Date.now()}`
-      
+
       // Update the original event with night tracking
       newDays[dayIndex].events[position] = {
         ...newEvent,
@@ -899,7 +900,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       // Add hotel events to subsequent days (including checkout day)
       for (let i = 1; i <= newEvent.nights; i++) {
         const nextDayIndex = dayIndex + i
-        
+
         // Extend days array if needed
         if (nextDayIndex >= newDays.length) {
           const lastDay = newDays[newDays.length - 1]
@@ -1034,7 +1035,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     setDropTarget(null)
   }
 
-  
+
 
   // library selection handler removed
 
@@ -1138,7 +1139,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     // NOW we can proceed with saving
     setIsSaving(true)
     setCountryError("")
-    
+
     try {
       const totalPrice = days.reduce(
         (sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0),
@@ -1258,7 +1259,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
     try {
       console.log("[DEBUG] Auto-saving itinerary...")
-      
+
       const daysToSave = updatedDays || days
       const totalPrice = daysToSave.reduce(
         (sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0),
@@ -1302,7 +1303,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
       const result = await updateItinerary(currentItineraryId, itineraryData)
       console.log("[DEBUG] Auto-save completed successfully")
-      
+
       if (onSave) {
         await onSave()
       }
@@ -1525,13 +1526,12 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                 <Badge
                   key={highlight}
                   variant="outline"
-                  className={`cursor-pointer ${
-                    days.some(day =>
-                      day.events.some(event => event.highlights?.includes(highlight))
-                    )
-                      ? 'bg-[#2D7CEA] text-white'
-                      : 'bg-white text-gray-600'
-                  }`}
+                  className={`cursor-pointer ${days.some(day =>
+                    day.events.some(event => event.highlights?.includes(highlight))
+                  )
+                    ? 'bg-[#2D7CEA] text-white'
+                    : 'bg-white text-gray-600'
+                    }`}
                   onClick={() => toggleHighlight(highlight)}
                   role="button"
                   tabIndex={0}
@@ -1717,7 +1717,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
               {/* Pax Information - with spinner controls */}
               <div className="space-y-3 border-t pt-4">
                 <h3 className="text-sm font-semibold">Pax Information</h3>
-                
+
                 {/* Room */}
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">Room</label>
@@ -1877,37 +1877,45 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                     </div>
                   </div>
                 </CardHeader>
-                    {!collapsedDays.has(dayIndex) && (
-                      <CardContent className="pt-1.5 px-2 pb-2">
-                        <div className="mt-1 space-y-1.5">
-                          {day.events.map((event, eventIndex) => (
-                            <EventCard
-                              key={`${event.id}-${dayIndex}-${eventIndex}`}
-                              event={event}
-                              isDetailedView={isDetailedView}
-                              nightIndex={event.hotelNightIndex}
-                              totalNights={event.hotelTotalNights}
-                              dayNumber={dayIndex + 1}
-                              onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
-                              onEdit={() => handleEditEvent(dayIndex, eventIndex)}
-                              onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
-                              onMealChange={(meal, value) => {
-                                // meals property is not part of IItineraryEvent, so this is removed
-                              }}
-                              onUpdate={(updatedEvent) => {
-                                const newDays = [...days]
-                                newDays[dayIndex].events[eventIndex] = {
-                                  ...updatedEvent,
-                                  highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
-                                  listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
-                                }
-                                setDays(newDays)
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </CardContent>
+                {!collapsedDays.has(dayIndex) && (
+                  <CardContent className="pt-1.5 px-2 pb-2">
+                    <div className="mt-1 space-y-1.5">
+                      {day.events.map((event, eventIndex) => (
+                        <EventCard
+                          key={`${event.id}-${dayIndex}-${eventIndex}`}
+                          event={event}
+                          isDetailedView={isDetailedView}
+                          nightIndex={event.hotelNightIndex}
+                          totalNights={event.hotelTotalNights}
+                          dayNumber={dayIndex + 1}
+                          onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
+                          onEdit={() => handleEditEvent(dayIndex, eventIndex)}
+                          onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
+                          onMealChange={(meal, value) => {
+                            // meals property is not part of IItineraryEvent, so this is removed
+                          }}
+                          onUpdate={(updatedEvent) => {
+                            const newDays = [...days]
+                            newDays[dayIndex].events[eventIndex] = {
+                              ...updatedEvent,
+                              highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
+                              listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
+                            }
+                            setDays(newDays)
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Meals Component - only show if day has a meal event */}
+                    {day.events.some(event => event.category === 'meal') && (
+                      <DayMeals
+                        meals={day.meals}
+                        onChange={(meal, value) => updateDayMeals(dayIndex, meal, value)}
+                      />
                     )}
+                  </CardContent>
+                )}
               </Card>
             ))}
           </div>
@@ -1942,33 +1950,33 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           day.events.some((e) => e.id === event.id),
                         )
                         return (
-                        <EventCard
-                          key={`${event.id}-${index}`}
-                          event={event}
-                          isDetailedView={isDetailedView}
-                          nightIndex={event.hotelNightIndex}
-                          totalNights={event.hotelTotalNights}
-                          dayNumber={dayIndex + 1}
-                          onDragStart={() => handleDragStart("event", event)}
-                          onEdit={() => {
-                            const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
-                            handleEditEvent(dayIndex, eventIndex)
-                          }}
-                          onDelete={() => {
-                            const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
-                            handleDeleteEvent(dayIndex, eventIndex)
-                          }}
-                          onUpdate={(updatedEvent) => {
-                            const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
-                            const newDays = [...days]
-                            newDays[dayIndex].events[eventIndex] = {
-                              ...updatedEvent,
-                              highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
-                              listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
-                            }
-                            setDays(newDays)
-                          }}
-                        />
+                          <EventCard
+                            key={`${event.id}-${index}`}
+                            event={event}
+                            isDetailedView={isDetailedView}
+                            nightIndex={event.hotelNightIndex}
+                            totalNights={event.hotelTotalNights}
+                            dayNumber={dayIndex + 1}
+                            onDragStart={() => handleDragStart("event", event)}
+                            onEdit={() => {
+                              const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
+                              handleEditEvent(dayIndex, eventIndex)
+                            }}
+                            onDelete={() => {
+                              const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
+                              handleDeleteEvent(dayIndex, eventIndex)
+                            }}
+                            onUpdate={(updatedEvent) => {
+                              const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
+                              const newDays = [...days]
+                              newDays[dayIndex].events[eventIndex] = {
+                                ...updatedEvent,
+                                highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
+                                listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
+                              }
+                              setDays(newDays)
+                            }}
+                          />
                         )
                       })}
                     </div>
@@ -2060,7 +2068,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                             newSlots[slotIndex].events.splice(eventIndex, 1)
                             setServiceSlots(newSlots)
                           }}
-                          onMealChange={() => {}}
+                          onMealChange={() => { }}
                           onUpdate={(updatedEvent) => {
                             const newSlots = [...serviceSlots]
                             newSlots[slotIndex].events[eventIndex] = updatedEvent
@@ -2109,7 +2117,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                             newSlots[slotIndex].events.splice(eventIndex, 1)
                             setAncillarySlots(newSlots)
                           }}
-                          onMealChange={() => {}}
+                          onMealChange={() => { }}
                           onUpdate={(updatedEvent) => {
                             const newSlots = [...ancillarySlots]
                             newSlots[slotIndex].events[eventIndex] = updatedEvent
@@ -2129,21 +2137,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       </div>
 
       <div className="w-80 border-l bg-white flex flex-col h-screen">
-        <div className="border-b bg-gray-50 p-4 flex-shrink-0">
-          <div>
-            <Button
-              onClick={() => setActiveSidebar("components")}
-              className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeSidebar === "components"
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-              }`}
-            >
-              Components
-            </Button>
-          </div>
-        </div>
-
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 flex flex-col min-h-0">
             <div className="p-4 border-b flex-shrink-0">
