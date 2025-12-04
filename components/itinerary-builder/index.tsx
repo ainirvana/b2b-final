@@ -38,6 +38,7 @@ import {
 import { EventCard } from "../event-card"
 import { DayTitle } from "./day-title"
 import { DayMeals } from "./day-meals"
+import { DateCalendarCard } from "./date-calendar-card"
 import { EditEventModal } from "./edit-event-modal"
 // Library sidebar, integration panel and usage stats removed from builder
 import { ComponentSourceModal } from "./component-source-modal"
@@ -203,6 +204,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [title, setTitle] = useState("New Itinerary")
   const [description, setDescription] = useState("")
   const [isDetailedView, setIsDetailedView] = useState(true)
+  const [showDates, setShowDates] = useState(true)
   const [serviceSlots, setServiceSlots] = useState<Array<{ id: string; title: string; events: IItineraryEvent[] }>>([])
   const [ancillarySlots, setAncillarySlots] = useState<Array<{ id: string; title: string; events: IItineraryEvent[] }>>([])
   const [editingEvent, setEditingEvent] = useState<{
@@ -244,7 +246,20 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [pricingMode, setPricingMode] = useState<'individual' | 'total-only'>('individual')
   // Pricing dates
   const [pricingStartDate, setPricingStartDate] = useState<string>("")
+  // pricingEndDate is now derived from pricingStartDate + days.length
   const [pricingEndDate, setPricingEndDate] = useState<string>("")
+
+  // Update pricingEndDate whenever pricingStartDate or days change
+  useEffect(() => {
+    if (pricingStartDate && days.length > 0) {
+      const start = new Date(pricingStartDate)
+      const end = new Date(start)
+      end.setDate(start.getDate() + (days.length - 1))
+      setPricingEndDate(end.toISOString().split('T')[0])
+    } else {
+      setPricingEndDate("")
+    }
+  }, [pricingStartDate, days.length])
 
   // Duplicate name dialog
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false)
@@ -1617,6 +1632,15 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                   <span className="text-sm font-medium text-gray-700">{isDetailedView ? "Detailed View" : "Summary View"}</span>
                 </div>
 
+                {/* Date Visibility Toggle */}
+                <div className="flex items-center gap-2 ml-2">
+                  <Switch
+                    checked={showDates}
+                    onCheckedChange={setShowDates}
+                  />
+                  <span className="text-sm font-medium text-gray-700">{showDates ? "Show Dates" : "Hide Dates"}</span>
+                </div>
+
                 {/* Pricing toggle: opens modal immediately when turned on */}
                 <div className="flex items-center space-x-2 pl-1">
                   <Switch
@@ -1787,25 +1811,21 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                   <option value="GBP">British Pound (£)</option>
                   <option value="AUD">Australian Dollar (A$)</option>
                   <option value="CAD">Canadian Dollar (C$)</option>
+                  <option value="dual" disabled>Dual Currency (Coming Soon)</option>
                 </select>
               </div>
 
               {/* Dates */}
               <div className="space-y-2 border-t pt-4">
                 <label className="text-sm font-medium">Dates</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   <input
                     type="date"
                     value={pricingStartDate}
                     onChange={(e) => setPricingStartDate(e.target.value)}
                     className="w-full rounded-md border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
-                  <input
-                    type="date"
-                    value={pricingEndDate}
-                    onChange={(e) => setPricingEndDate(e.target.value)}
-                    className="w-full rounded-md border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
+                  {/* End Date is calculated automatically */}
                 </div>
               </div>
             </div>
@@ -1853,6 +1873,12 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                       onTitleChange={(newTitle) => updateDayTitle(dayIndex, newTitle)}
                     />
                     <div className="flex items-center gap-1">
+                      {showDates && pricingStartDate && (() => {
+                        const startDate = new Date(pricingStartDate)
+                        const currentDate = new Date(startDate)
+                        currentDate.setDate(startDate.getDate() + dayIndex)
+                        return <DateCalendarCard date={currentDate.toISOString().split('T')[0]} />
+                      })()}
                       <Button variant="ghost" size="sm" onClick={() => toggleDayCollapse(dayIndex)} className="p-2">
                         {collapsedDays.has(dayIndex) ? (
                           <ChevronDown className="h-4 w-4" />

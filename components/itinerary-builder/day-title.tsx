@@ -6,12 +6,13 @@ import { Badge } from "@/components/ui/badge"
 interface DayTitleProps {
   day: number
   title: string
+  date?: string
   nights?: number
   onTitleChange: (title: string) => void
   onNightsChange?: (nights: string) => void
 }
 
-export function DayTitle({ day, title, nights, onTitleChange, onNightsChange }: DayTitleProps) {
+export function DayTitle({ day, title, date, nights, onTitleChange, onNightsChange }: DayTitleProps) {
   return (
     <div className="flex items-center space-x-1.5">
       <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-none py-0 px-1.5 text-xs">
@@ -32,7 +33,7 @@ export function DayTitle({ day, title, nights, onTitleChange, onNightsChange }: 
             className="w-8 h-6 p-0.5 text-center text-xs"
             min={0}
           />
-          <span className="text-xs text-gray-600\">N</span>
+          <span className="text-xs text-gray-600">N</span>
         </div>
       )}
     </div>
