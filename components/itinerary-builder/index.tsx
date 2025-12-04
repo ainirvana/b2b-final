@@ -28,6 +28,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
   Trash2,
   Briefcase,
   Copy,
@@ -260,6 +261,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [highlightOptions, setHighlightOptions] = useState<string[]>([])
   const [newHighlight, setNewHighlight] = useState<string>("")
   const [viewMode, setViewMode] = useState<'itinerary' | 'all-inclusions'>('itinerary')
+  const [isSidebarMinimized, setIsSidebarMinimized] = useState(false)
 
   // Load existing itinerary data when editing
   useEffect(() => {
@@ -2136,29 +2138,43 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         {/* Library integration panel removed from builder view */}
       </div>
 
-      <div className="w-80 border-l bg-white flex flex-col h-screen">
+      <div className={`border-l bg-white flex flex-col h-screen transition-all duration-300 ${isSidebarMinimized ? 'w-20' : 'w-80'}`}>
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="p-4 border-b flex-shrink-0">
-              <h3 className="font-semibold text-lg">Components</h3>
+            <div className="p-4 border-b flex-shrink-0 flex items-center justify-between">
+              {!isSidebarMinimized && <h3 className="font-semibold text-lg">Components</h3>}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsSidebarMinimized(!isSidebarMinimized)}
+                className="p-2"
+                title={isSidebarMinimized ? "Expand sidebar" : "Minimize sidebar"}
+              >
+                {isSidebarMinimized ? <ChevronLeft className="h-4 w-4" /> : <ChevronDown className="h-4 w-4 rotate-90" />}
+              </Button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 min-h-0">
-              <div className="space-y-3">
+              <div className={`space-y-3 ${isSidebarMinimized ? 'flex flex-col items-center' : ''}`}>
                 {COMPONENT_TEMPLATES.filter(c => c.category !== 'visa' && c.category !== 'insurance').map((component) => {
                   const Icon = component.icon
                   return (
                     <Card
                       key={component.category}
-                      className={`${component.color} cursor-move hover:shadow-md transition-shadow`}
+                      className={`${component.color} cursor-move hover:shadow-md transition-shadow ${isSidebarMinimized ? 'w-12 h-12 flex items-center justify-center' : ''}`}
                       draggable
                       onDragStart={() => handleDragStart("component", component)}
+                      title={isSidebarMinimized ? component.title : undefined}
                     >
-                      <CardContent className="p-3">
-                        <div className="flex items-center space-x-2">
-                          <GripVertical className="h-4 w-4 text-gray-400" />
-                          <Icon className="h-4 w-4" />
-                          <span className="font-medium">{component.title}</span>
-                        </div>
+                      <CardContent className={isSidebarMinimized ? "p-0 flex items-center justify-center" : "p-3"}>
+                        {isSidebarMinimized ? (
+                          <Icon className="h-5 w-5" />
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <GripVertical className="h-4 w-4 text-gray-400" />
+                            <Icon className="h-4 w-4" />
+                            <span className="font-medium">{component.title}</span>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )
