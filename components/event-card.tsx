@@ -191,12 +191,39 @@ export function EventCard({
           </div>
         ) : event.category === "list" ? (
           <div className="py-2">
-            <div className="flex items-center gap-2 mb-2">
-              <h4 className="font-semibold text-gray-800">{event.title || "List Title"}</h4>
-              {renderComponentSourceBadge()}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-gray-800">{event.title || "List Title"}</h4>
+                {renderComponentSourceBadge()}
+              </div>
+              {(onEdit || onDelete) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-no-edit>
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {onEdit && (
+                      <DropdownMenuItem onClick={onEdit}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                    )}
+                    {onDelete && (
+                      <DropdownMenuItem onClick={onDelete} className="text-red-600">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             <ul className="list-disc list-inside space-y-1 text-gray-700">
-              {event.listItems?.map((item, index) => <li key={index}>{item}</li>) || <li>Add list items...</li>}
+              {event.listItems?.map((item, index) => (
+                <li key={index} className="whitespace-pre-wrap">{item}</li>
+              )) || <li>Add list items...</li>}
             </ul>
           </div>
         ) : isDetailedView ? (

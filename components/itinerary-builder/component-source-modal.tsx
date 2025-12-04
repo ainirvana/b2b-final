@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Plus, Library, Star, Clock, Filter, Copy, Heart } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -340,7 +341,7 @@ export function ComponentSourceModal({
     setManualBullets(copy)
   }
 
-  const handleAddManualBullet = () => setManualBullets([...manualBullets, ""]) 
+  const handleAddManualBullet = () => setManualBullets([...manualBullets, ""])
   const handleRemoveManualBullet = (index: number) => {
     const copy = manualBullets.filter((_, i) => i !== index)
     setManualBullets(copy.length ? copy : [""])
@@ -643,10 +644,21 @@ export function ComponentSourceModal({
                         <label className="text-sm font-medium mb-2 block">{componentType.toLowerCase().includes("ancill") ? "Ancillaries (bullet points)" : "Additional Information (bullet points)"}</label>
                         <div className="space-y-2">
                           {manualBullets.map((b, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <span className="text-sm">•</span>
-                              <Input value={b} onChange={(e) => handleManualBulletChange(idx, e.target.value)} className="flex-1" placeholder="Add information" />
-                              <Button variant="ghost" size="sm" onClick={() => handleRemoveManualBullet(idx)}>Remove</Button>
+                            <div key={idx} className="flex items-start gap-2">
+                              <span className="text-sm mt-2">•</span>
+                              <Textarea
+                                value={b}
+                                onChange={(e) => handleManualBulletChange(idx, e.target.value)}
+                                className="flex-1 min-h-[40px] resize-none"
+                                placeholder="Add information (can be a bullet point or full paragraph)"
+                                rows={1}
+                                onInput={(e) => {
+                                  const target = e.target as HTMLTextAreaElement;
+                                  target.style.height = 'auto';
+                                  target.style.height = target.scrollHeight + 'px';
+                                }}
+                              />
+                              <Button variant="ghost" size="sm" onClick={() => handleRemoveManualBullet(idx)} className="mt-1">Remove</Button>
                             </div>
                           ))}
                           <Button size="sm" onClick={handleAddManualBullet} variant="outline">Add Bullet</Button>
@@ -897,10 +909,21 @@ export function ComponentSourceModal({
                         <label className="text-sm font-medium mb-2 block">Details / Additional Information</label>
                         <div className="space-y-2">
                           {manualBullets.map((b, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <span className="text-sm">•</span>
-                              <Input value={b} onChange={(e) => handleManualBulletChange(idx, e.target.value)} className="flex-1" placeholder="Add detail" />
-                              <Button variant="ghost" size="sm" onClick={() => handleRemoveManualBullet(idx)}>Remove</Button>
+                            <div key={idx} className="flex items-start gap-2">
+                              <span className="text-sm mt-2">•</span>
+                              <Textarea
+                                value={b}
+                                onChange={(e) => handleManualBulletChange(idx, e.target.value)}
+                                className="flex-1 min-h-[40px] resize-none"
+                                placeholder="Add detail (can be a bullet point or full paragraph)"
+                                rows={1}
+                                onInput={(e) => {
+                                  const target = e.target as HTMLTextAreaElement;
+                                  target.style.height = 'auto';
+                                  target.style.height = target.scrollHeight + 'px';
+                                }}
+                              />
+                              <Button variant="ghost" size="sm" onClick={() => handleRemoveManualBullet(idx)} className="mt-1">Remove</Button>
                             </div>
                           ))}
                           <Button size="sm" onClick={handleAddManualBullet} variant="outline">Add Detail</Button>
@@ -913,7 +936,7 @@ export function ComponentSourceModal({
             </div>
 
             <div className="p-4 border-t flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => { 
+              <Button variant="ghost" onClick={() => {
                 setSelectedSource(null)
                 setManualTitle("")
                 setManualBullets([""])
@@ -1139,9 +1162,8 @@ export function ComponentSourceModal({
                                       <div className="flex items-center gap-2 ml-2">
                                         <button
                                           onClick={(e) => toggleFavorite(item._id, e)}
-                                          className={`p-1 rounded-full hover:bg-white/50 transition-colors ${
-                                            isFavorite ? "text-red-500" : "text-gray-400"
-                                          }`}
+                                          className={`p-1 rounded-full hover:bg-white/50 transition-colors ${isFavorite ? "text-red-500" : "text-gray-400"
+                                            }`}
                                         >
                                           <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
                                         </button>
