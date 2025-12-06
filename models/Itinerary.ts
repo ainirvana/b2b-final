@@ -147,6 +147,10 @@ export interface IItineraryEvent {
   endTime?: string
   flightClass?: string
   flightNotes?: string
+  baggage?: string
+  stops?: string
+  pnr?: string
+  refundable?: string
   // Transfer specific
   fromLocation?: string
   toLocation?: string

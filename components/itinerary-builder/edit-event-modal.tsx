@@ -56,11 +56,13 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       mealPlan: event?.mealPlan || "",
       hotelNotes: event?.hotelNotes || "",
       additionalInfoSections: event?.additionalInfoSections ? [...event.additionalInfoSections] : [],
+      amenities: event?.amenities ? [...event.amenities] : [],
     };
   });
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
   const [isValidating, setIsValidating] = useState(false)
   const [newTag, setNewTag] = useState("")
+  const [newAmenity, setNewAmenity] = useState("")
 
   useEffect(() => {
     if (event) {
@@ -93,6 +95,16 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
         mealPlan: event?.mealPlan || "",
         hotelNotes: event?.hotelNotes || "",
         additionalInfoSections: event?.additionalInfoSections ? [...event.additionalInfoSections] : [],
+        amenities: event?.amenities ? [...event.amenities] : [],
+        // Flight specific
+        baggage: event?.baggage || "",
+        stops: event?.stops || "",
+        pnr: event?.pnr || "",
+        refundable: event?.refundable || "",
+        flightNumber: event?.flightNumber || "",
+        airlines: event?.airlines || "",
+        flightClass: event?.flightClass || "",
+        endTime: event?.endTime || "",
       })
       setValidationErrors({})
     }
@@ -333,6 +345,16 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       listItems: editedEvent.listItems ? [...editedEvent.listItems] : [],
       meals: editedEvent.meals ? [...editedEvent.meals] : [],
       additionalInfoSections: editedEvent.additionalInfoSections ? [...editedEvent.additionalInfoSections] : [],
+      amenities: editedEvent.amenities ? [...editedEvent.amenities] : [],
+      // Flight specific
+      baggage: editedEvent.baggage,
+      stops: editedEvent.stops,
+      pnr: editedEvent.pnr,
+      refundable: editedEvent.refundable,
+      flightNumber: editedEvent.flightNumber,
+      airlines: editedEvent.airlines,
+      flightClass: editedEvent.flightClass,
+      endTime: editedEvent.endTime,
       libraryItemId: event?.libraryItemId,
       componentSource: event?.componentSource || "manual"
     }
@@ -361,191 +383,93 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       case "flight":
         return (
           <>
-            {/* Mandatory Fields */}
-            <div className="mb-6">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                Mandatory Fields
-              </h4>
-              <div className="space-y-4 pl-4 border-l-2 border-red-200">
-                {renderFieldWithValidation(
-                  "title",
-                  "Flight Title",
-                  <Input
-                    id="title"
-                    value={editedEvent.title || ""}
-                    onChange={(e) => handleFieldChange("title", e.target.value)}
-                    placeholder="Enter flight title"
-                    className={validationErrors.title ? "border-red-500" : ""}
-                  />,
-                  true,
-                )}
+            <div className="space-y-4">
+              {/* Mandatory Fields */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                  Mandatory Fields
+                </h4>
+                <div className="space-y-4 pl-4 border-l-2 border-red-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    {renderFieldWithValidation("fromCity", "From", <Input id="fromCity" value={editedEvent.fromCity || ""} onChange={(e) => handleFieldChange("fromCity", e.target.value)} placeholder="Origin" />, true)}
+                    {renderFieldWithValidation("toCity", "To", <Input id="toCity" value={editedEvent.toCity || ""} onChange={(e) => handleFieldChange("toCity", e.target.value)} placeholder="Destination" />, true)}
+                  </div>
+                  {renderFieldWithValidation("duration", "Flight Duration", <Input id="duration" value={editedEvent.duration || ""} onChange={(e) => handleFieldChange("duration", e.target.value)} placeholder="e.g. 2h 30m" />, true)}
+                  {renderFieldWithValidation("airlines", "Airline Name", <Input id="airlines" value={editedEvent.airlines || ""} onChange={(e) => handleFieldChange("airlines", e.target.value)} placeholder="e.g. Emirates" />, true)}
+                  {renderFieldWithValidation("flightClass", "Class", <Input id="flightClass" value={editedEvent.flightClass || ""} onChange={(e) => handleFieldChange("flightClass", e.target.value)} placeholder="e.g. Economy" />, true)}
+                  {renderFieldWithValidation("price", "Price", <Input id="price" type="number" value={editedEvent.price || ""} onChange={(e) => handleNumericInput(e, "price")} placeholder="0.00" />, true)}
+                  <div className="grid grid-cols-2 gap-4">
+                    {renderFieldWithValidation("time", "Departure Time", <Input id="time" type="time" value={editedEvent.time || ""} onChange={(e) => handleFieldChange("time", e.target.value)} />, true)}
+                    {renderFieldWithValidation("endTime", "Arrival Time", <Input id="endTime" type="time" value={editedEvent.endTime || ""} onChange={(e) => handleFieldChange("endTime", e.target.value)} />, true)}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Non-Mandatory Fields */}
-            <div className="mb-6">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
-                Non-Mandatory Fields
-              </h4>
-              <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                <div className="grid grid-cols-2 gap-4">
-                  {renderFieldWithValidation(
-                    "fromCity",
-                    "From",
-                    <Input
-                      id="fromCity"
-                      value={editedEvent.fromCity || ""}
-                      onChange={(e) => handleFieldChange("fromCity", e.target.value)}
-                      placeholder="Origin city"
-                      className={validationErrors.fromCity ? "border-red-500" : ""}
-                    />,
-                  )}
-                  {renderFieldWithValidation(
-                    "toCity",
-                    "To",
-                    <Input
-                      id="toCity"
-                      value={editedEvent.toCity || ""}
-                      onChange={(e) => handleFieldChange("toCity", e.target.value)}
-                      placeholder="Destination city"
-                      className={validationErrors.toCity ? "border-red-500" : ""}
-                    />,
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {renderFieldWithValidation(
-                    "airlines",
-                    "Airlines",
-                    <Input
-                      id="airlines"
-                      value={(editedEvent as any).airlines || ""}
-                      onChange={(e) => handleFieldChange("airlines", e.target.value)}
-                      placeholder="e.g., Emirates, Qatar Airways"
-                      className={validationErrors.airlines ? "border-red-500" : ""}
-                    />,
-                  )}
-                  {renderFieldWithValidation(
-                    "flightNumber",
-                    "Flight No.",
-                    <Input
-                      id="flightNumber"
-                      value={(editedEvent as any).flightNumber || ""}
-                      onChange={(e) => handleFieldChange("flightNumber", e.target.value)}
-                      placeholder="e.g., EK 123"
-                      className={validationErrors.flightNumber ? "border-red-500" : ""}
-                    />,
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  {renderFieldWithValidation(
-                    "startTime",
-                    "Start Destination (Time)",
-                    <Input
-                      id="startTime"
-                      type="time"
-                      value={(editedEvent as any).startTime || ""}
-                      onChange={(e) => handleFieldChange("startTime", e.target.value)}
-                      className={validationErrors.startTime ? "border-red-500" : ""}
-                    />,
-                  )}
-                  {renderFieldWithValidation(
-                    "endTime",
-                    "Final Destination (Time)",
-                    <Input
-                      id="endTime"
-                      type="time"
-                      value={(editedEvent as any).endTime || ""}
-                      onChange={(e) => handleFieldChange("endTime", e.target.value)}
-                      className={validationErrors.endTime ? "border-red-500" : ""}
-                    />,
-                  )}
-                </div>
-                {renderFieldWithValidation(
-                  "flightClass",
-                  "Flight Class",
-                  <Select
-                    value={(editedEvent as any).flightClass || ""}
-                    onValueChange={(value) => handleFieldChange("flightClass", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select flight class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="economy">Economy</SelectItem>
-                      <SelectItem value="premium-economy">Premium Economy</SelectItem>
-                      <SelectItem value="business">Business</SelectItem>
-                      <SelectItem value="first">First Class</SelectItem>
-                    </SelectContent>
-                  </Select>,
-                )}
-                <div className="grid gap-2">
-                  <Label htmlFor="highlights">Highlights</Label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {editedEvent.highlights?.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="px-2 py-1">
-                        {tag}
-                        <button onClick={() => handleRemoveTag(tag)} className="ml-2 hover:text-red-500 focus:outline-none">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      id="newTag"
-                      placeholder="Add a highlight"
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      onKeyDown={handleAddTag}
-                      className={`flex-1 ${validationErrors.newTag ? "border-red-500" : ""}`}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        if (newTag.trim()) {
-                          if (newTag.trim().length < 2) {
-                            setValidationErrors((prev) => ({ ...prev, newTag: "Tag must be at least 2 characters" }))
-                            return
-                          }
-                          if (!editedEvent.highlights) {
-                            setEditedEvent({ ...editedEvent, highlights: [newTag.trim()] })
-                          } else if (!editedEvent.highlights.includes(newTag.trim())) {
-                            setEditedEvent({
-                              ...editedEvent,
-                              highlights: [...editedEvent.highlights, newTag.trim()],
-                            })
-                          }
-                          setNewTag("")
-                          setValidationErrors((prev) => ({ ...prev, newTag: "" }))
-                        }
-                      }}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {validationErrors.newTag && (
-                    <div className="flex items-center gap-1 text-red-500 text-sm">
-                      <AlertCircle className="h-3 w-3" />
-                      <span>{validationErrors.newTag}</span>
+              {/* Optional Fields */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                  Optional Fields
+                </h4>
+                <div className="space-y-4 pl-4 border-l-2 border-gray-200">
+                  {renderFieldWithValidation("baggage", "Check in, cabin luggage", <Input id="baggage" value={editedEvent.baggage || ""} onChange={(e) => handleFieldChange("baggage", e.target.value)} placeholder="e.g. 20kg check-in, 7kg cabin" />)}
+                  {renderFieldWithValidation("title", "Flight Title", <Input id="title" value={editedEvent.title || ""} onChange={(e) => handleFieldChange("title", e.target.value)} placeholder="e.g. Flight to Paris" />)}
+                  {renderFieldWithValidation("stops", "Stops", <Input id="stops" value={editedEvent.stops || ""} onChange={(e) => handleFieldChange("stops", e.target.value)} placeholder="e.g. Non-stop" />)}
+                  {renderFieldWithValidation("flightNumber", "Flight No.", <Input id="flightNumber" value={editedEvent.flightNumber || ""} onChange={(e) => handleFieldChange("flightNumber", e.target.value)} placeholder="e.g. EK123" />)}
+                  {renderFieldWithValidation("pnr", "PNR Number", <Input id="pnr" value={editedEvent.pnr || ""} onChange={(e) => handleFieldChange("pnr", e.target.value)} placeholder="Enter PNR" />)}
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="amenities">Amenities</Label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {editedEvent.amenities?.map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="px-2 py-1">
+                          {tag}
+                          <button onClick={() => {
+                            const newAmenities = editedEvent.amenities ? editedEvent.amenities.filter(t => t !== tag) : [];
+                            handleFieldChange("amenities", newAmenities);
+                          }} className="ml-2 hover:text-red-500 focus:outline-none">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
                     </div>
-                  )}
+                    <div className="flex gap-2">
+                      <Input
+                        id="newAmenity"
+                        placeholder="Add amenity"
+                        value={newAmenity}
+                        onChange={(e) => setNewAmenity(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (newAmenity.trim()) {
+                              const current = editedEvent.amenities || [];
+                              if (!current.includes(newAmenity.trim())) {
+                                handleFieldChange("amenities", [...current, newAmenity.trim()]);
+                              }
+                              setNewAmenity("");
+                            }
+                          }
+                        }}
+                      />
+                      <Button type="button" variant="outline" size="icon" onClick={() => {
+                        if (newAmenity.trim()) {
+                          const current = editedEvent.amenities || [];
+                          if (!current.includes(newAmenity.trim())) {
+                            handleFieldChange("amenities", [...current, newAmenity.trim()]);
+                          }
+                          setNewAmenity("");
+                        }
+                      }}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {renderFieldWithValidation("refundable", "Refundable / Non refundable", <Input id="refundable" value={editedEvent.refundable || ""} onChange={(e) => handleFieldChange("refundable", e.target.value)} placeholder="e.g. Refundable" />)}
+                  {renderFieldWithValidation("description", "Description", <Input id="description" value={editedEvent.description || ""} onChange={(e) => handleFieldChange("description", e.target.value)} placeholder="Add description" />)}
                 </div>
-                {renderFieldWithValidation(
-                  "flightNotes",
-                  "Flight Notes",
-                  <Textarea
-                    id="flightNotes"
-                    value={(editedEvent as any).flightNotes || ""}
-                    onChange={(e) => handleFieldChange("flightNotes", e.target.value)}
-                    placeholder="Additional flight notes..."
-                    rows={3}
-                    className={validationErrors.flightNotes ? "border-red-500" : ""}
-                  />,
-                )}
               </div>
             </div>
           </>
@@ -1043,7 +967,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
           {renderFields()}
 
           {/* Additional Information Section */}
-          {editedEvent.category !== "meal" && (
+          {editedEvent.category !== "meal" && editedEvent.category !== "flight" && (
             <div className="border rounded-md p-4">
               <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
               {editedEvent.additionalInfoSections && editedEvent.additionalInfoSections.length > 0 ? (
@@ -1100,7 +1024,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
             </div>
           )}
 
-          {renderFieldWithValidation(
+          {!["meal", "flight"].includes(editedEvent.category) && renderFieldWithValidation(
             "price",
             "Price",
             <Input

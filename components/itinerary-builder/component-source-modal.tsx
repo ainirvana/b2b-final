@@ -336,6 +336,15 @@ export function ComponentSourceModal({
   const [manualHighlights, setManualHighlights] = useState<string[]>([""])
   const [manualMeals, setManualMeals] = useState<string[]>([])
   const [manualCustomMealDescription, setManualCustomMealDescription] = useState("")
+  // Flight specific fields
+  const [manualBaggage, setManualBaggage] = useState("")
+  const [manualStops, setManualStops] = useState("")
+  const [manualPnr, setManualPnr] = useState("")
+  const [manualRefundable, setManualRefundable] = useState("")
+  const [manualFlightNumber, setManualFlightNumber] = useState("")
+  const [manualAirline, setManualAirline] = useState("")
+  const [manualClass, setManualClass] = useState("")
+  const [manualEndTime, setManualEndTime] = useState("")
 
   const mealOptions = [
     { id: "breakfast", label: "Breakfast" },
@@ -444,6 +453,15 @@ export function ComponentSourceModal({
     if (cleanedAmenities.length) payload.amenities = cleanedAmenities
     if (manualMeals.length) payload.meals = manualMeals
     if (manualCustomMealDescription) payload.customMealDescription = manualCustomMealDescription
+    // Flight specific payload
+    if (manualBaggage) payload.baggage = manualBaggage
+    if (manualStops) payload.stops = manualStops
+    if (manualPnr) payload.pnr = manualPnr
+    if (manualRefundable) payload.refundable = manualRefundable
+    if (manualFlightNumber) payload.flightNumber = manualFlightNumber
+    if (manualAirline) payload.airlines = manualAirline
+    if (manualClass) payload.flightClass = manualClass
+    if (manualEndTime) payload.endTime = manualEndTime
 
     onSelectManual(payload)
     onClose()
@@ -476,6 +494,14 @@ export function ComponentSourceModal({
     setManualHighlights([""])
     setManualMeals([])
     setManualCustomMealDescription("")
+    setManualBaggage("")
+    setManualStops("")
+    setManualPnr("")
+    setManualRefundable("")
+    setManualFlightNumber("")
+    setManualAirline("")
+    setManualClass("")
+    setManualEndTime("")
   }
 
   const handleSelectTemplate = (template: ComponentTemplate) => {
@@ -743,6 +769,104 @@ export function ComponentSourceModal({
                       placeholder="0.00"
                       className="input-field"
                     />
+                  </div>
+                </div>
+              ) : componentType.toLowerCase() === "flight" ? (
+                <div className="space-y-4">
+                  {/* Mandatory Fields */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                      Mandatory Fields
+                    </h4>
+                    <div className="space-y-4 pl-4 border-l-2 border-red-200">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">From</label>
+                          <Input value={manualFromCity} onChange={(e) => setManualFromCity(e.target.value)} placeholder="Origin" />
+                        </div>
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">To</label>
+                          <Input value={manualToCity} onChange={(e) => setManualToCity(e.target.value)} placeholder="Destination" />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Flight Duration</label>
+                        <Input value={manualDuration} onChange={(e) => setManualDuration(e.target.value)} placeholder="e.g. 2h 30m" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Airline Name</label>
+                        <Input value={manualAirline} onChange={(e) => setManualAirline(e.target.value)} placeholder="e.g. Emirates" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Class</label>
+                        <Input value={manualClass} onChange={(e) => setManualClass(e.target.value)} placeholder="e.g. Economy" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Price</label>
+                        <Input type="number" value={manualPrice} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="0.00" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">Departure Time</label>
+                          <Input type="time" value={manualTime} onChange={(e) => setManualTime(e.target.value)} />
+                        </div>
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">Arrival Time</label>
+                          <Input type="time" value={manualEndTime} onChange={(e) => setManualEndTime(e.target.value)} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional Fields */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                      Optional Fields
+                    </h4>
+                    <div className="space-y-4 pl-4 border-l-2 border-gray-200">
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Check in, cabin luggage</label>
+                        <Input value={manualBaggage} onChange={(e) => setManualBaggage(e.target.value)} placeholder="e.g. 20kg check-in, 7kg cabin" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Flight Title</label>
+                        <Input value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder="e.g. Flight to Paris" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Stops</label>
+                        <Input value={manualStops} onChange={(e) => setManualStops(e.target.value)} placeholder="e.g. Non-stop" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Flight No.</label>
+                        <Input value={manualFlightNumber} onChange={(e) => setManualFlightNumber(e.target.value)} placeholder="e.g. EK123" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">PNR Number</label>
+                        <Input value={manualPnr} onChange={(e) => setManualPnr(e.target.value)} placeholder="Enter PNR" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Amenities</label>
+                        <div className="space-y-2">
+                          {manualAmenities.map((a, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <Input value={a} onChange={(e) => handleManualAmenitiesChange(idx, e.target.value)} placeholder="Add amenity" />
+                              <Button variant="ghost" size="sm" onClick={() => handleRemoveManualAmenity(idx)}>Remove</Button>
+                            </div>
+                          ))}
+                          <Button size="sm" onClick={handleAddManualAmenity} variant="outline">Add Amenity</Button>
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Refundable / Non refundable</label>
+                        <Input value={manualRefundable} onChange={(e) => setManualRefundable(e.target.value)} placeholder="e.g. Refundable" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Description</label>
+                        <Input value={manualDescription} onChange={(e) => setManualDescription(e.target.value)} placeholder="Add description" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
