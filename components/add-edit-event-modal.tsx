@@ -952,11 +952,10 @@ export function AddEditEventModal({ isOpen, onClose, item, day, isLibraryMode = 
                     <TabsTrigger
                       key={category.id}
                       value={category.id}
-                      className={`flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${
-                        isActive
-                          ? "bg-white shadow-brand-sm text-brand-primary-600 border border-brand-primary-200"
-                          : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
-                      }`}
+                      className={`flex flex-col items-center p-4 rounded-lg transition-all duration-200 ${isActive
+                        ? "bg-white shadow-brand-sm text-brand-primary-600 border border-brand-primary-200"
+                        : "text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50"
+                        }`}
                     >
                       <Icon className={`h-5 w-5 mb-2 ${isActive ? category.color : "text-neutral-500"}`} />
                       <span className="text-label-sm font-medium">{category.label}</span>
@@ -969,190 +968,192 @@ export function AddEditEventModal({ isOpen, onClose, item, day, isLibraryMode = 
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column - Basic Information, Description, Media */}
-            <div className="space-y-6">
-              {/* Basic Information and Description - Moved to top */}
-              <Card className="card-flat">
-                <CardContent className="p-6">
-                  <h4 className="text-base font-semibold text-neutral-900 mb-4">Basic Information</h4>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="description" className="text-label-md">
-                        Description
-                      </Label>
-                      <Textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={(e) => handleInputChange("description", e.target.value)}
-                        placeholder="Add detailed description..."
-                        rows={4}
-                        className="input-field mt-1 resize-none"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="title" className="text-label-md">
-                        Title *
-                      </Label>
-                      <Input
-                        id="title"
-                        value={formData.title}
-                        onChange={(e) => handleInputChange("title", e.target.value)}
-                        placeholder="Enter event title"
-                        required
-                        className="input-field mt-1"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+            {selectedCategory !== "Meal" && (
+              <div className="space-y-6">
+                {/* Basic Information and Description - Moved to top */}
+                <Card className="card-flat">
+                  <CardContent className="p-6">
+                    <h4 className="text-base font-semibold text-neutral-900 mb-4">Basic Information</h4>
+                    <div className="space-y-4">
                       <div>
-                        <Label htmlFor="location" className="text-label-md">
-                          City/Location
+                        <Label htmlFor="description" className="text-label-md">
+                          Description
                         </Label>
-                        <Input
-                          id="location"
-                          value={extraFields.location || ""}
-                          onChange={(e) => setExtraFields((prev) => ({ ...prev, location: e.target.value }))}
-                          placeholder="e.g., Bangkok, Thailand"
-                          className="input-field mt-1"
+                        <Textarea
+                          id="description"
+                          value={formData.description}
+                          onChange={(e) => handleInputChange("description", e.target.value)}
+                          placeholder="Add detailed description..."
+                          rows={4}
+                          className="input-field mt-1 resize-none"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="area" className="text-label-md">
-                          Area/District
+                        <Label htmlFor="title" className="text-label-md">
+                          Title *
                         </Label>
                         <Input
-                          id="area"
-                          value={extraFields.area || ""}
-                          onChange={(e) => setExtraFields((prev) => ({ ...prev, area: e.target.value }))}
-                          placeholder="e.g., Sukhumvit"
+                          id="title"
+                          value={formData.title}
+                          onChange={(e) => handleInputChange("title", e.target.value)}
+                          placeholder="Enter event title"
+                          required
                           className="input-field mt-1"
                         />
                       </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="location" className="text-label-md">
+                            City/Location
+                          </Label>
+                          <Input
+                            id="location"
+                            value={extraFields.location || ""}
+                            onChange={(e) => setExtraFields((prev) => ({ ...prev, location: e.target.value }))}
+                            placeholder="e.g., Bangkok, Thailand"
+                            className="input-field mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="area" className="text-label-md">
+                            Area/District
+                          </Label>
+                          <Input
+                            id="area"
+                            value={extraFields.area || ""}
+                            onChange={(e) => setExtraFields((prev) => ({ ...prev, area: e.target.value }))}
+                            placeholder="e.g., Sukhumvit"
+                            className="input-field mt-1"
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Tags Management - New section */}
-              <Card className="card-flat border-2 border-brand-primary-300">
-                <CardContent className="p-6">
-                  <h4 className="text-base font-semibold text-brand-primary-700 mb-4 flex items-center">
-                    <Tag className="h-5 w-5 mr-2" />
-                    Tags & Labels
-                  </h4>
-                  <div className="space-y-4">
-                    <div className="flex space-x-2">
-                      <Input
-                        value={newTag}
-                        onChange={(e) => setNewTag(e.target.value)}
-                        placeholder="Add a tag or label..."
-                        className="input-field flex-1 border-2 focus:border-brand-primary-500"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault()
-                            addTag()
-                          }
-                        }}
-                      />
+                {/* Tags Management - New section */}
+                <Card className="card-flat border-2 border-brand-primary-300">
+                  <CardContent className="p-6">
+                    <h4 className="text-base font-semibold text-brand-primary-700 mb-4 flex items-center">
+                      <Tag className="h-5 w-5 mr-2" />
+                      Tags & Labels
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="flex space-x-2">
+                        <Input
+                          value={newTag}
+                          onChange={(e) => setNewTag(e.target.value)}
+                          placeholder="Add a tag or label..."
+                          className="input-field flex-1 border-2 focus:border-brand-primary-500"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault()
+                              addTag()
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          onClick={addTag}
+                          className="btn-primary bg-brand-primary-600 hover:bg-brand-primary-700 shadow-sm"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Tag
+                        </Button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-4 min-h-[40px] border-t pt-3 border-neutral-200">
+                        {formData.tags && formData.tags.length > 0 ? (
+                          formData.tags.map((tag, index) => (
+                            <Badge
+                              key={index}
+                              className="px-3 py-1.5 bg-brand-primary-100 text-brand-primary-700 hover:bg-brand-primary-200 flex items-center shadow-sm"
+                            >
+                              <span className="font-medium">{tag}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => removeTag(tag)}
+                                className="ml-2 p-0 h-4 w-4 text-brand-primary-700 hover:text-red-600"
+                                title="Remove tag"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-sm text-neutral-500 italic">
+                            No tags added yet. Enter a tag above and click Add Tag.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Media Upload */}
+                <Card className="card-flat">
+                  <CardContent className="p-6">
+                    <h4 className="text-base font-semibold text-neutral-900 mb-4">Media Upload</h4>
+                    <div className="space-y-4">
                       <Button
                         type="button"
-                        onClick={addTag}
-                        className="btn-primary bg-brand-primary-600 hover:bg-brand-primary-700 shadow-sm"
+                        variant="outline"
+                        className="w-full h-32 border-2 border-dashed border-neutral-300 hover:border-brand-primary-300 hover:bg-brand-primary-50/50 transition-colors duration-200 bg-transparent"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          fileInputRef.current?.click()
+                        }}
+                        disabled={uploading || uploadedFiles.length >= 7}
                       >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Tag
+                        <div className="flex flex-col items-center">
+                          <Upload className="h-8 w-8 text-neutral-400 mb-2" />
+                          <p className="text-sm text-neutral-600 mb-1">
+                            {uploading ? "Uploading..." : "Click to upload files"}
+                          </p>
+                          <p className="text-xs text-neutral-500">Up to 7 files, max 10MB each</p>
+                        </div>
                       </Button>
-                    </div>
 
-                    <div className="flex flex-wrap gap-2 mt-4 min-h-[40px] border-t pt-3 border-neutral-200">
-                      {formData.tags && formData.tags.length > 0 ? (
-                        formData.tags.map((tag, index) => (
-                          <Badge
-                            key={index}
-                            className="px-3 py-1.5 bg-brand-primary-100 text-brand-primary-700 hover:bg-brand-primary-200 flex items-center shadow-sm"
-                          >
-                            <span className="font-medium">{tag}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() => removeTag(tag)}
-                              className="ml-2 p-0 h-4 w-4 text-brand-primary-700 hover:text-red-600"
-                              title="Remove tag"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </Badge>
-                        ))
-                      ) : (
-                        <p className="text-sm text-neutral-500 italic">
-                          No tags added yet. Enter a tag above and click Add Tag.
-                        </p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.pdf"
+                        style={{ display: "none" }}
+                        onChange={handleFileUpload}
+                      />
+
+                      {uploadedFiles.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2">
+                          {uploadedFiles.map((url, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={url || "/placeholder.svg"}
+                                alt={`Upload ${index + 1}`}
+                                className="w-full h-20 object-cover rounded"
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
+                                }}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Media Upload */}
-              <Card className="card-flat">
-                <CardContent className="p-6">
-                  <h4 className="text-base font-semibold text-neutral-900 mb-4">Media Upload</h4>
-                  <div className="space-y-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full h-32 border-2 border-dashed border-neutral-300 hover:border-brand-primary-300 hover:bg-brand-primary-50/50 transition-colors duration-200 bg-transparent"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        fileInputRef.current?.click()
-                      }}
-                      disabled={uploading || uploadedFiles.length >= 7}
-                    >
-                      <div className="flex flex-col items-center">
-                        <Upload className="h-8 w-8 text-neutral-400 mb-2" />
-                        <p className="text-sm text-neutral-600 mb-1">
-                          {uploading ? "Uploading..." : "Click to upload files"}
-                        </p>
-                        <p className="text-xs text-neutral-500">Up to 7 files, max 10MB each</p>
-                      </div>
-                    </Button>
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.pdf"
-                      style={{ display: "none" }}
-                      onChange={handleFileUpload}
-                    />
-
-                    {uploadedFiles.length > 0 && (
-                      <div className="grid grid-cols-3 gap-2">
-                        {uploadedFiles.map((url, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={url || "/placeholder.svg"}
-                              alt={`Upload ${index + 1}`}
-                              className="w-full h-20 object-cover rounded"
-                            />
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
-                              }}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Right Column - Category Specific, Pricing & Availability, Extra Fields */}
             <div className="space-y-6">

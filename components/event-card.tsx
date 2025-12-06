@@ -107,6 +107,23 @@ export function EventCard({
   }
 
   if (event.category === "meal") {
+    const getMealLabel = (mealId: string): string => {
+      const labels: { [key: string]: string } = {
+        breakfast: "Breakfast",
+        lunch: "Lunch",
+        dinner: "Dinner",
+        highTea: "High Tea",
+        halfBoard: "Half Board",
+        fullBoard: "Full Board",
+        allInclusive: "All Inclusive",
+        others: event.customMealDescription || "Others"
+      };
+      return labels[mealId] || mealId;
+    };
+
+    const selectedMeals = Array.isArray(event.meals) ? event.meals : [];
+    const mealLabels = selectedMeals.map(getMealLabel).filter(Boolean);
+
     return (
       <Card
         className={cn("border-2 cursor-pointer hover:shadow-md transition-shadow relative", getEventColor(event.category))}
@@ -116,12 +133,12 @@ export function EventCard({
       >
         <EventSourceTags source={event.source || "manual"} isEdited={event.isEdited} />
         <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="font-normal">
-                {event.category}
-              </Badge>
-              <h3 className="font-semibold">{event.title}</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-sm font-medium text-gray-700">Meals:</span>
+              <span className="text-sm text-gray-800">
+                {mealLabels.length > 0 ? mealLabels.join(" | ") : "No meals selected"}
+              </span>
             </div>
             {(onEdit || onDelete) && (
               <DropdownMenu>
@@ -147,8 +164,6 @@ export function EventCard({
               </DropdownMenu>
             )}
           </div>
-          {event.description && <p className="text-sm text-gray-600 mb-3">{event.description}</p>}
-          {event.meals && <DayMeals meals={event.meals} onChange={onMealChange} data-no-edit />}
         </CardContent>
       </Card>
     )
@@ -274,7 +289,6 @@ export function EventCard({
                   {event.location}
                 </div>
               )}
-              {event.meals && <MealIndicators meals={event.meals} className="mt-3" />}
             </div>
             <div className="text-right">
               {event.price && event.price > 0 && (

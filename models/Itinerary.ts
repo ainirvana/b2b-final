@@ -92,27 +92,23 @@ export interface IItineraryDay {
   detailedDescription?: string
   events: IItineraryEvent[]
   nights?: number
-  meals: {
-    breakfast: boolean
-    lunch: boolean
-    dinner: boolean
-  }
+  meals?: string[] // Array of selected meals for the day
 }
 
 export interface IItineraryEvent {
   id: string
-  category: 
-    | "flight"
-    | "hotel"
-    | "activity"
-    | "transfer"
-    | "meal"
-    | "photo"
-    | "other"
-    | "heading"
-    | "paragraph"
-    | "list"
-    | "image"
+  category:
+  | "flight"
+  | "hotel"
+  | "activity"
+  | "transfer"
+  | "meal"
+  | "photo"
+  | "other"
+  | "heading"
+  | "paragraph"
+  | "list"
+  | "image"
   title: string
   description: string
   time?: string
@@ -160,11 +156,8 @@ export interface IItineraryEvent {
   imageCaption?: string
   imageAlt?: string
   // Meal specific
-  meals?: {
-    breakfast: boolean
-    lunch: boolean
-    dinner: boolean
-  }
+  meals?: string[] // Array of selected meals: "breakfast", "lunch", "dinner", "highTea", "halfBoard", "fullBoard", "allInclusive", "others"
+  customMealDescription?: string // Custom description when "others" is selected
   // Additional properties
   nights?: number
   images?: string[]
@@ -248,11 +241,7 @@ const ItineraryDaySchema = new mongoose.Schema({
   detailedDescription: String,
   events: [ItineraryEventSchema],
   nights: Number,
-  meals: {
-    breakfast: Boolean,
-    lunch: Boolean,
-    dinner: Boolean,
-  },
+  meals: [String],
 })
 
 const ItinerarySchema = new mongoose.Schema(

@@ -4,55 +4,44 @@ import { UtensilsCrossed, Coffee, Wine } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface DayMealsProps {
-  meals: {
-    breakfast: boolean;
-    lunch: boolean;
-    dinner: boolean;
-  }
+  meals: string[] | { breakfast?: boolean; lunch?: boolean; dinner?: boolean }
   onChange?: (meal: 'breakfast' | 'lunch' | 'dinner', value: boolean) => void
   className?: string
 }
 
 export function DayMeals({ meals, onChange, className }: DayMealsProps) {
+  // Convert old format to new format if needed
+  const mealsArray = Array.isArray(meals)
+    ? meals
+    : Object.entries(meals || {}).filter(([_, value]) => value).map(([key]) => key);
+
+  const getMealLabel = (mealId: string): string => {
+    const labels: { [key: string]: string } = {
+      breakfast: "Breakfast",
+      lunch: "Lunch",
+      dinner: "Dinner",
+      highTea: "High Tea",
+      halfBoard: "Half Board",
+      fullBoard: "Full Board",
+      allInclusive: "All Inclusive",
+      others: "Others"
+    };
+    return labels[mealId] || mealId;
+  };
+
+  const mealLabels = mealsArray.map(getMealLabel).filter(Boolean);
+
+  if (mealLabels.length === 0) {
+    return null;
+  }
+
   return (
-    <div className={cn("bg-[#FFF8E7] p-3 rounded-md flex items-center justify-between gap-4 mt-2", className)}>
-      {/* Breakfast */}
-      <div className="flex items-center gap-2 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => onChange?.('breakfast', !meals.breakfast)}>
-        <Coffee className="h-4 w-4 text-gray-700" />
-        <span className="text-sm font-medium text-gray-800">Breakfast</span>
-        <span className={cn(
-          "ml-auto text-lg font-bold",
-          meals.breakfast ? "text-green-600" : "text-red-500"
-        )}>
-          {meals.breakfast ? "✓" : "✗"}
-        </span>
-      </div>
-
-      <div className="h-6 w-px bg-[#E5DBC4]" />
-
-      {/* Lunch */}
-      <div className="flex items-center gap-2 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => onChange?.('lunch', !meals.lunch)}>
+    <div className={cn("bg-[#FFF8E7] p-3 rounded-md", className)}>
+      <div className="flex items-center gap-2">
         <UtensilsCrossed className="h-4 w-4 text-gray-700" />
-        <span className="text-sm font-medium text-gray-800">Lunch</span>
-        <span className={cn(
-          "ml-auto text-lg font-bold",
-          meals.lunch ? "text-green-600" : "text-red-500"
-        )}>
-          {meals.lunch ? "✓" : "✗"}
-        </span>
-      </div>
-
-      <div className="h-6 w-px bg-[#E5DBC4]" />
-
-      {/* Dinner */}
-      <div className="flex items-center gap-2 flex-1 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => onChange?.('dinner', !meals.dinner)}>
-        <Wine className="h-4 w-4 text-gray-700" />
-        <span className="text-sm font-medium text-gray-800">Dinner</span>
-        <span className={cn(
-          "ml-auto text-lg font-bold",
-          meals.dinner ? "text-green-600" : "text-red-500"
-        )}>
-          {meals.dinner ? "✓" : "✗"}
+        <span className="text-sm font-medium text-gray-700">Meals:</span>
+        <span className="text-sm text-gray-800">
+          {mealLabels.join(" | ")}
         </span>
       </div>
     </div>

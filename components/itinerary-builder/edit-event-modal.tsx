@@ -48,7 +48,8 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       nights: event?.nights ? Number(event.nights) : 0,
       highlights: event?.highlights ? [...event.highlights] : [],
       listItems: event?.listItems ? [...event.listItems] : [],
-      meals: event?.meals ? { ...event.meals } : undefined,
+      meals: event?.meals ? [...event.meals] : [],
+      customMealDescription: event?.customMealDescription || "",
       hotelName: event?.hotelName || "",
       roomCategory: event?.roomCategory || "",
       hotelRating: event?.hotelRating || 0,
@@ -84,7 +85,8 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
         nights: event?.nights ? Number(event.nights) : 0,
         highlights: event?.highlights ? [...event.highlights] : [],
         listItems: event?.listItems ? [...event.listItems] : [],
-        meals: event?.meals ? { ...event.meals } : undefined,
+        meals: event?.meals ? [...event.meals] : [],
+        customMealDescription: event?.customMealDescription || "",
         hotelName: event?.hotelName || "",
         roomCategory: event?.roomCategory || "",
         hotelRating: event?.hotelRating || 0,
@@ -237,9 +239,9 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       fieldsToValidate.push("location", "duration", "capacity")
     }
 
-      if (!isManualSource && event.category === "hotel") {
-        fieldsToValidate.push("location", "nights", "hotelName", "roomCategory", "hotelRating", "mealPlan")
-      }
+    if (!isManualSource && event.category === "hotel") {
+      fieldsToValidate.push("location", "nights", "hotelName", "roomCategory", "hotelRating", "mealPlan")
+    }
 
     if (!isManualSource && event.category === "image") {
       fieldsToValidate.push("imageUrl", "imageAlt")
@@ -329,7 +331,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       capacity: editedEvent.capacity || 0,
       highlights: editedEvent.highlights ? [...editedEvent.highlights] : [],
       listItems: editedEvent.listItems ? [...editedEvent.listItems] : [],
-      meals: editedEvent.meals ? { ...editedEvent.meals } : undefined,
+      meals: editedEvent.meals ? [...editedEvent.meals] : [],
       additionalInfoSections: editedEvent.additionalInfoSections ? [...editedEvent.additionalInfoSections] : [],
       libraryItemId: event?.libraryItemId,
       componentSource: event?.componentSource || "manual"
@@ -845,6 +847,71 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
           </>
         )
 
+      case "meal":
+        const mealOptions = [
+          { id: "breakfast", label: "Breakfast" },
+          { id: "lunch", label: "Lunch" },
+          { id: "dinner", label: "Dinner" },
+          { id: "highTea", label: "High Tea" },
+          { id: "halfBoard", label: "Half Board (Breakfast + Lunch or Dinner)" },
+          { id: "fullBoard", label: "Full Board (Breakfast + Lunch + Dinner)" },
+          { id: "allInclusive", label: "All inclusive (All meals + snacks and drinks*)" },
+          { id: "others", label: "Others" },
+        ];
+
+        const handleMealToggle = (mealId: string) => {
+          const currentMeals = Array.isArray(editedEvent.meals) ? editedEvent.meals : [];
+          const isSelected = currentMeals.includes(mealId);
+
+          if (isSelected) {
+            handleFieldChange("meals", currentMeals.filter(m => m !== mealId));
+            // Clear custom description if removing "others"
+            if (mealId === "others") {
+              handleFieldChange("customMealDescription", "");
+            }
+          } else {
+            handleFieldChange("meals", [...currentMeals, mealId]);
+          }
+        };
+
+        return (
+          <>
+            <div className="space-y-3">
+              <Label className="text-label-md">Select Meal Options (Multi-select)</Label>
+              <div className="space-y-2">
+                {mealOptions.map((option) => (
+                  <div key={option.id} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={option.id}
+                      checked={Array.isArray(editedEvent.meals) && editedEvent.meals.includes(option.id)}
+                      onChange={() => handleMealToggle(option.id)}
+                      className="rounded"
+                    />
+                    <label htmlFor={option.id} className="text-sm cursor-pointer">
+                      {option.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {Array.isArray(editedEvent.meals) && editedEvent.meals.includes("others") && (
+              <div className="grid gap-2">
+                <Label htmlFor="customMealDescription" className="text-label-md">
+                  Please specify
+                </Label>
+                <Input
+                  id="customMealDescription"
+                  value={editedEvent.customMealDescription || ""}
+                  onChange={(e) => handleFieldChange("customMealDescription", e.target.value)}
+                  placeholder="Enter custom meal description..."
+                  className="input-field"
+                />
+              </div>
+            )}
+          </>
+        )
+
       case "image":
         return (
           <>
@@ -976,64 +1043,66 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
           {renderFields()}
 
           {/* Additional Information Section */}
-          <div className="border rounded-md p-4">
-            <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
-            {editedEvent.additionalInfoSections && editedEvent.additionalInfoSections.length > 0 ? (
-              editedEvent.additionalInfoSections.map((section, index) => (
-                <div key={index} className="mb-4 border p-3 rounded-md relative">
-                  <Input
-                    placeholder="Section Heading"
-                    value={section.heading}
-                    onChange={(e) => {
-                      const newSections = [...(editedEvent.additionalInfoSections || [])]
-                      newSections[index] = { ...newSections[index], heading: e.target.value }
-                      setEditedEvent({ ...editedEvent, additionalInfoSections: newSections })
-                    }}
-                    className="mb-2"
-                  />
-                  <Textarea
-                    placeholder="Section Content"
-                    value={section.content}
-                    onChange={(e) => {
-                      const newSections = [...(editedEvent.additionalInfoSections || [])]
-                      newSections[index] = { ...newSections[index], content: e.target.value }
-                      setEditedEvent({ ...editedEvent, additionalInfoSections: newSections })
-                    }}
-                    rows={4}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newSections = [...(editedEvent.additionalInfoSections || [])]
-                      newSections.splice(index, 1)
-                      setEditedEvent({ ...editedEvent, additionalInfoSections: newSections })
-                    }}
-                    className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                    aria-label="Remove section"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No additional information sections added.</p>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                const newSections = [...(editedEvent.additionalInfoSections || [])]
-                newSections.push({ heading: "", content: "" })
-                setEditedEvent({ ...editedEvent, additionalInfoSections: newSections })
-              }}
-            >
-              Add Section
-            </Button>
-          </div>
+          {editedEvent.category !== "meal" && (
+            <div className="border rounded-md p-4">
+              <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
+              {editedEvent.additionalInfoSections && editedEvent.additionalInfoSections.length > 0 ? (
+                editedEvent.additionalInfoSections.map((section, index) => (
+                  <div key={index} className="mb-4 border p-3 rounded-md relative">
+                    <Input
+                      placeholder="Section Heading"
+                      value={section.heading}
+                      onChange={(e) => {
+                        const newSections = [...(editedEvent.additionalInfoSections || [])]
+                        newSections[index] = { ...newSections[index], heading: e.target.value }
+                        setEditedEvent({ ...editedEvent, additionalInfoSections: newSections })
+                      }}
+                      className="mb-2"
+                    />
+                    <Textarea
+                      placeholder="Section Content"
+                      value={section.content}
+                      onChange={(e) => {
+                        const newSections = [...(editedEvent.additionalInfoSections || [])]
+                        newSections[index] = { ...newSections[index], content: e.target.value }
+                        setEditedEvent({ ...editedEvent, additionalInfoSections: newSections })
+                      }}
+                      rows={4}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newSections = [...(editedEvent.additionalInfoSections || [])]
+                        newSections.splice(index, 1)
+                        setEditedEvent({ ...editedEvent, additionalInfoSections: newSections })
+                      }}
+                      className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                      aria-label="Remove section"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No additional information sections added.</p>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const newSections = [...(editedEvent.additionalInfoSections || [])]
+                  newSections.push({ heading: "", content: "" })
+                  setEditedEvent({ ...editedEvent, additionalInfoSections: newSections })
+                }}
+              >
+                Add Section
+              </Button>
+            </div>
+          )}
 
           {renderFieldWithValidation(
             "price",
-            "Price (USD)",
+            "Price",
             <Input
               id="price"
               type="number"

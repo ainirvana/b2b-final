@@ -334,6 +334,31 @@ export function ComponentSourceModal({
   const [manualVehicleType, setManualVehicleType] = useState("")
   const [manualAmenities, setManualAmenities] = useState<string[]>([""])
   const [manualHighlights, setManualHighlights] = useState<string[]>([""])
+  const [manualMeals, setManualMeals] = useState<string[]>([])
+  const [manualCustomMealDescription, setManualCustomMealDescription] = useState("")
+
+  const mealOptions = [
+    { id: "breakfast", label: "Breakfast" },
+    { id: "lunch", label: "Lunch" },
+    { id: "dinner", label: "Dinner" },
+    { id: "highTea", label: "High Tea" },
+    { id: "halfBoard", label: "Half Board (Breakfast + Lunch or Dinner)" },
+    { id: "fullBoard", label: "Full Board (Breakfast + Lunch + Dinner)" },
+    { id: "allInclusive", label: "All inclusive (All meals + snacks and drinks*)" },
+    { id: "others", label: "Others" },
+  ]
+
+  const handleMealToggle = (mealId: string) => {
+    const isSelected = manualMeals.includes(mealId)
+    if (isSelected) {
+      setManualMeals(manualMeals.filter((m) => m !== mealId))
+      if (mealId === "others") {
+        setManualCustomMealDescription("")
+      }
+    } else {
+      setManualMeals([...manualMeals, mealId])
+    }
+  }
 
   const handleManualBulletChange = (index: number, value: string) => {
     const copy = [...manualBullets]
@@ -417,6 +442,8 @@ export function ComponentSourceModal({
     if (manualImageAlt) payload.imageAlt = manualImageAlt
     if (manualVehicleType) payload.vehicleType = manualVehicleType
     if (cleanedAmenities.length) payload.amenities = cleanedAmenities
+    if (manualMeals.length) payload.meals = manualMeals
+    if (manualCustomMealDescription) payload.customMealDescription = manualCustomMealDescription
 
     onSelectManual(payload)
     onClose()
@@ -447,6 +474,8 @@ export function ComponentSourceModal({
     setManualVehicleType("")
     setManualAmenities([""])
     setManualHighlights([""])
+    setManualMeals([])
+    setManualCustomMealDescription("")
   }
 
   const handleSelectTemplate = (template: ComponentTemplate) => {
@@ -665,6 +694,55 @@ export function ComponentSourceModal({
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              ) : componentType.toLowerCase() === "meal" ? (
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium">Select Meal Options (Multi-select)</label>
+                    <div className="space-y-2">
+                      {mealOptions.map((option) => (
+                        <div key={option.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={option.id}
+                            checked={manualMeals.includes(option.id)}
+                            onChange={() => handleMealToggle(option.id)}
+                            className="rounded"
+                          />
+                          <label htmlFor={option.id} className="text-sm cursor-pointer">
+                            {option.label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {manualMeals.includes("others") && (
+                    <div className="grid gap-2">
+                      <label htmlFor="customMealDescription" className="text-sm font-medium">
+                        Please specify
+                      </label>
+                      <Input
+                        id="customMealDescription"
+                        value={manualCustomMealDescription}
+                        onChange={(e) => setManualCustomMealDescription(e.target.value)}
+                        placeholder="Enter custom meal description..."
+                        className="input-field"
+                      />
+                    </div>
+                  )}
+                  <div className="grid gap-2">
+                    <label htmlFor="manualPrice" className="text-sm font-medium">
+                      Price
+                    </label>
+                    <Input
+                      id="manualPrice"
+                      type="number"
+                      value={manualPrice}
+                      onChange={(e) => setManualPrice(Number(e.target.value) || "")}
+                      placeholder="0.00"
+                      className="input-field"
+                    />
                   </div>
                 </div>
               ) : (
@@ -964,6 +1042,8 @@ export function ComponentSourceModal({
                 setManualMainPoint("")
                 setManualAmenities([""])
                 setManualHighlights([""])
+                setManualMeals([])
+                setManualCustomMealDescription("")
               }}>Cancel</Button>
               <Button onClick={handleSubmitManual}>Create</Button>
             </div>

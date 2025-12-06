@@ -878,6 +878,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         highlights: (manualData && manualData.highlights) || [],
       }),
       ...(component.category === "meal" && {
+        meals: (manualData && manualData.meals) || [],
+        customMealDescription: (manualData && manualData.customMealDescription) || "",
       }),
       ...(component.category === "heading" && {
         title: (manualData && manualData.title) || "Enter heading text",
@@ -1473,6 +1475,12 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   return (
     <div className="flex h-screen">
       <div className="flex-1 p-3 overflow-y-auto h-full">
+        {/* Editor mode banner for customized-package when creating new or editing */}
+        {(itineraryTypeParam === 'customized-package' && (isNewMode || currentItineraryId)) && (
+          <div className="mb-3 inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md text-sm font-semibold">
+            EDITOR MODE
+          </div>
+        )}
         {/* Header Card */}
         <div className="bg-white rounded-xl shadow-sm border mb-4 p-3 flex flex-col gap-0">
           {/* Itinerary Title - Biggest Font Size */}
