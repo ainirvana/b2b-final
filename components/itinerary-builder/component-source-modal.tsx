@@ -345,6 +345,13 @@ export function ComponentSourceModal({
   const [manualAirline, setManualAirline] = useState("")
   const [manualClass, setManualClass] = useState("")
   const [manualEndTime, setManualEndTime] = useState("")
+  // Hotel specific fields
+  const [manualAdults, setManualAdults] = useState<number | "">("")
+  const [manualChildren, setManualChildren] = useState<number | "">("")
+  const [manualPropertyType, setManualPropertyType] = useState("")
+  const [manualAddress, setManualAddress] = useState("")
+  const [manualHotelLink, setManualHotelLink] = useState("")
+  const [manualConfirmationNumber, setManualConfirmationNumber] = useState("")
 
   const mealOptions = [
     { id: "breakfast", label: "Breakfast" },
@@ -461,7 +468,15 @@ export function ComponentSourceModal({
     if (manualFlightNumber) payload.flightNumber = manualFlightNumber
     if (manualAirline) payload.airlines = manualAirline
     if (manualClass) payload.flightClass = manualClass
+    if (manualClass) payload.flightClass = manualClass
     if (manualEndTime) payload.endTime = manualEndTime
+    // Hotel specific payload
+    if (manualAdults) payload.adults = Number(manualAdults)
+    if (manualChildren) payload.children = Number(manualChildren)
+    if (manualPropertyType) payload.propertyType = manualPropertyType
+    if (manualAddress) payload.address = manualAddress
+    if (manualHotelLink) payload.hotelLink = manualHotelLink
+    if (manualConfirmationNumber) payload.confirmationNumber = manualConfirmationNumber
 
     onSelectManual(payload)
     onClose()
@@ -502,6 +517,12 @@ export function ComponentSourceModal({
     setManualAirline("")
     setManualClass("")
     setManualEndTime("")
+    setManualAdults("")
+    setManualChildren("")
+    setManualPropertyType("")
+    setManualAddress("")
+    setManualHotelLink("")
+    setManualConfirmationNumber("")
   }
 
   const handleSelectTemplate = (template: ComponentTemplate) => {
@@ -865,6 +886,124 @@ export function ComponentSourceModal({
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">Description</label>
                         <Input value={manualDescription} onChange={(e) => setManualDescription(e.target.value)} placeholder="Add description" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : componentType.toLowerCase() === "hotel" ? (
+                <div className="space-y-4">
+                  {/* Mandatory Fields */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                      Mandatory Fields
+                    </h4>
+                    <div className="space-y-4 pl-4 border-l-2 border-red-200">
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Hotel Title</label>
+                        <Input value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder="Title for Hotel" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Room Type</label>
+                        <Input value={manualRoomCategory} onChange={(e) => setManualRoomCategory(e.target.value)} placeholder="e.g. Deluxe" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Location</label>
+                        <Input value={manualLocation} onChange={(e) => setManualLocation(e.target.value)} placeholder="City / Area" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Hotel rating(stars)</label>
+                        <Input type="number" value={manualHotelRating as any} onChange={(e) => setManualHotelRating(Number(e.target.value) || "")} placeholder="e.g. 5" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Price</label>
+                        <Input type="number" value={manualPrice as any} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="0.00" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">No. of Adult</label>
+                          <Input type="number" value={manualAdults as any} onChange={(e) => setManualAdults(Number(e.target.value) || "")} placeholder="Adults" />
+                        </div>
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">No. of Child</label>
+                          <Input type="number" value={manualChildren as any} onChange={(e) => setManualChildren(Number(e.target.value) || "")} placeholder="Children" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional Fields */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                      Optional Fields
+                    </h4>
+                    <div className="space-y-4 pl-4 border-l-2 border-gray-200">
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">No. of Nights</label>
+                        <Input type="number" value={manualNights as any} onChange={(e) => setManualNights(Number(e.target.value) || "")} placeholder="No. of nights" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">Checkin date</label>
+                          <Input type="date" value={manualCheckIn} onChange={(e) => setManualCheckIn(e.target.value)} />
+                        </div>
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">Check out date</label>
+                          <Input type="date" value={manualCheckOut} onChange={(e) => setManualCheckOut(e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Property Type</label>
+                        <Input value={manualPropertyType} onChange={(e) => setManualPropertyType(e.target.value)} placeholder="e.g. Resort, Villa" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Amenities</label>
+                        <div className="space-y-2">
+                          {manualAmenities.map((a, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <Input value={a} onChange={(e) => handleManualAmenitiesChange(idx, e.target.value)} placeholder="Add amenity" />
+                              <Button variant="ghost" size="sm" onClick={() => handleRemoveManualAmenity(idx)}>Remove</Button>
+                            </div>
+                          ))}
+                          <Button size="sm" onClick={handleAddManualAmenity} variant="outline">Add Amenity</Button>
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Tags</label>
+                        <div className="space-y-2">
+                          {manualHighlights.map((h, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <Input value={h} onChange={(e) => handleManualHighlightsChange(idx, e.target.value)} placeholder="Add tag" />
+                              <Button variant="ghost" size="sm" onClick={() => handleRemoveManualHighlight(idx)}>Remove</Button>
+                            </div>
+                          ))}
+                          <Button size="sm" onClick={handleAddManualHighlight} variant="outline">Add Tag</Button>
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Image (Media Add)</label>
+                        <Input value={manualImageUrl} onChange={(e) => setManualImageUrl(e.target.value)} placeholder="Image URL" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Refundable Non refundable</label>
+                        <Input value={manualRefundable} onChange={(e) => setManualRefundable(e.target.value)} placeholder="e.g. Refundable" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Address</label>
+                        <Input value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="Full address" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Hotel Link</label>
+                        <Input value={manualHotelLink} onChange={(e) => setManualHotelLink(e.target.value)} placeholder="https://..." />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Description</label>
+                        <Input value={manualDescription} onChange={(e) => setManualDescription(e.target.value)} placeholder="Description (optional)" />
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Confirmation No.</label>
+                        <Input value={manualConfirmationNumber} onChange={(e) => setManualConfirmationNumber(e.target.value)} placeholder="Confirmation Number" />
                       </div>
                     </div>
                   </div>

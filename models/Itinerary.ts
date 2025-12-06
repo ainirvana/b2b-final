@@ -137,6 +137,12 @@ export interface IItineraryEvent {
   hotelRating?: number
   mealPlan?: string // BLD format (Breakfast, Lunch, Dinner)
   hotelNotes?: string
+  adults?: number
+  children?: number
+  propertyType?: string
+  address?: string
+  hotelLink?: string
+  confirmationNumber?: string
   // Flight specific
   fromCity?: string
   toCity?: string

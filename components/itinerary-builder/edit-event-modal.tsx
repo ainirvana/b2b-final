@@ -105,6 +105,13 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
         airlines: event?.airlines || "",
         flightClass: event?.flightClass || "",
         endTime: event?.endTime || "",
+        // Hotel specific
+        adults: event?.adults ? Number(event.adults) : 0,
+        children: event?.children ? Number(event.children) : 0,
+        propertyType: event?.propertyType || "",
+        address: event?.address || "",
+        hotelLink: event?.hotelLink || "",
+        confirmationNumber: event?.confirmationNumber || "",
       })
       setValidationErrors({})
     }
@@ -355,6 +362,13 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       airlines: editedEvent.airlines,
       flightClass: editedEvent.flightClass,
       endTime: editedEvent.endTime,
+      // Hotel specific
+      adults: editedEvent.adults,
+      children: editedEvent.children,
+      propertyType: editedEvent.propertyType,
+      address: editedEvent.address,
+      hotelLink: editedEvent.hotelLink,
+      confirmationNumber: editedEvent.confirmationNumber,
       libraryItemId: event?.libraryItemId,
       componentSource: event?.componentSource || "manual"
     }
@@ -477,154 +491,332 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
 
       case "hotel":
         return (
-          <>
-            {renderFieldWithValidation(
-              "title",
-              "Hotel Name",
-              <Input
-                id="title"
-                value={editedEvent.title || ""}
-                onChange={(e) => handleFieldChange("title", e.target.value)}
-                placeholder="Enter hotel name"
-                className={validationErrors.title ? "border-red-500" : ""}
-              />,
-              true,
-            )}
-            {renderFieldWithValidation(
-              "location",
-              "Location",
-              <Input
-                id="location"
-                value={editedEvent.location || ""}
-                onChange={(e) => handleFieldChange("location", e.target.value)}
-                placeholder="Hotel location"
-                className={validationErrors.location ? "border-red-500" : ""}
-              />,
-              true,
-            )}
-            {renderFieldWithValidation(
-              "mainPoint",
-              "Main Point",
-              <Input
-                id="mainPoint"
-                value={editedEvent.mainPoint || ""}
-                onChange={(e) => handleFieldChange("mainPoint", e.target.value)}
-                placeholder="Hotel highlights or features"
-                className={validationErrors.mainPoint ? "border-red-500" : ""}
-              />,
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              {renderFieldWithValidation(
-                "checkIn",
-                "Check In",
-                <Input
-                  id="checkIn"
-                  type="time"
-                  value={editedEvent.checkIn || ""}
-                  onChange={(e) => handleFieldChange("checkIn", e.target.value)}
-                  className={validationErrors.checkIn ? "border-red-500" : ""}
-                />,
-              )}
-              {renderFieldWithValidation(
-                "checkOut",
-                "Check Out",
-                <Input
-                  id="checkOut"
-                  type="time"
-                  value={editedEvent.checkOut || ""}
-                  onChange={(e) => handleFieldChange("checkOut", e.target.value)}
-                  className={validationErrors.checkOut ? "border-red-500" : ""}
-                />,
-              )}
+          <div className="space-y-6">
+            {/* Mandatory Fields */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                Mandatory Fields
+              </h4>
+              <div className="space-y-4 pl-4 border-l-2 border-red-200">
+                {renderFieldWithValidation(
+                  "title",
+                  "Hotel Title",
+                  <Input
+                    id="title"
+                    value={editedEvent.title || ""}
+                    onChange={(e) => handleFieldChange("title", e.target.value)}
+                    placeholder="Title for Hotel"
+                    className={validationErrors.title ? "border-red-500" : ""}
+                  />,
+                  true
+                )}
+                {renderFieldWithValidation(
+                  "roomCategory",
+                  "Room Type",
+                  <Input
+                    id="roomCategory"
+                    value={editedEvent.roomCategory || ""}
+                    onChange={(e) => handleFieldChange("roomCategory", e.target.value)}
+                    placeholder="e.g. Deluxe"
+                    className={validationErrors.roomCategory ? "border-red-500" : ""}
+                  />,
+                  true
+                )}
+                {renderFieldWithValidation(
+                  "location",
+                  "Location",
+                  <Input
+                    id="location"
+                    value={editedEvent.location || ""}
+                    onChange={(e) => handleFieldChange("location", e.target.value)}
+                    placeholder="City / Area"
+                    className={validationErrors.location ? "border-red-500" : ""}
+                  />,
+                  true
+                )}
+                {renderFieldWithValidation(
+                  "hotelRating",
+                  "Hotel rating(stars)",
+                  <Input
+                    id="hotelRating"
+                    type="number"
+                    value={editedEvent.hotelRating || ""}
+                    onChange={(e) => handleFieldChange("hotelRating", Number(e.target.value))}
+                    placeholder="e.g. 5"
+                    className={validationErrors.hotelRating ? "border-red-500" : ""}
+                  />,
+                  true
+                )}
+                {renderFieldWithValidation(
+                  "price",
+                  "Price",
+                  <Input
+                    id="price"
+                    type="number"
+                    value={editedEvent.price || ""}
+                    onChange={(e) => handleFieldChange("price", Number(e.target.value))}
+                    placeholder="0.00"
+                    className={validationErrors.price ? "border-red-500" : ""}
+                  />,
+                  true
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                  {renderFieldWithValidation(
+                    "adults",
+                    "No. of Adult",
+                    <Input
+                      id="adults"
+                      type="number"
+                      value={editedEvent.adults || ""}
+                      onChange={(e) => handleFieldChange("adults", Number(e.target.value))}
+                      placeholder="Adults"
+                    />
+                  )}
+                  {renderFieldWithValidation(
+                    "children",
+                    "No. of Child",
+                    <Input
+                      id="children"
+                      type="number"
+                      value={editedEvent.children || ""}
+                      onChange={(e) => handleFieldChange("children", Number(e.target.value))}
+                      placeholder="Children"
+                    />
+                  )}
+                </div>
+              </div>
             </div>
-            {renderFieldWithValidation(
-              "nights",
-              "Number of Nights",
-              <Input
-                id="nights"
-                type="number"
-                min="1"
-                max="365"
-                value={editedEvent.nights || ""}
-                onChange={(e) => handleNumericInput(e, "nights")}
-                placeholder="1"
-                className={validationErrors.nights ? "border-red-500" : ""}
-              />,
-              true,
-            )}
-            {renderFieldWithValidation(
-              "hotelName",
-              "Hotel Name",
-              <Input
-                id="hotelName"
-                value={editedEvent.hotelName || ""}
-                onChange={(e) => handleFieldChange("hotelName", e.target.value)}
-                placeholder="Enter hotel name"
-                className={validationErrors.hotelName ? "border-red-500" : ""}
-              />,
-              true,
-            )}
-            {renderFieldWithValidation(
-              "roomCategory",
-              "Room Category",
-              <Input
-                id="roomCategory"
-                value={editedEvent.roomCategory || ""}
-                onChange={(e) => handleFieldChange("roomCategory", e.target.value)}
-                placeholder="e.g., Deluxe, Standard"
-                className={validationErrors.roomCategory ? "border-red-500" : ""}
-              />,
-              true,
-            )}
-            {renderFieldWithValidation(
-              "hotelRating",
-              "Hotel Rating",
-              <Input
-                id="hotelRating"
-                type="number"
-                min="1"
-                max="5"
-                step="0.1"
-                value={editedEvent.hotelRating || ""}
-                onChange={(e) => handleFieldChange("hotelRating", Number(e.target.value))}
-                placeholder="4.5"
-                className={validationErrors.hotelRating ? "border-red-500" : ""}
-              />,
-              true,
-            )}
-            {renderFieldWithValidation(
-              "mealPlan",
-              "Meal Plan",
-              <Select
-                value={editedEvent.mealPlan || ""}
-                onValueChange={(value) => handleFieldChange("mealPlan", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select meal plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="room-only">Room Only</SelectItem>
-                  <SelectItem value="bed-breakfast">Bed & Breakfast</SelectItem>
-                  <SelectItem value="half-board">Half Board</SelectItem>
-                  <SelectItem value="full-board">Full Board</SelectItem>
-                  <SelectItem value="all-inclusive">All Inclusive</SelectItem>
-                </SelectContent>
-              </Select>,
-              true,
-            )}
-            {renderFieldWithValidation(
-              "hotelNotes",
-              "Hotel Notes",
-              <Textarea
-                id="hotelNotes"
-                value={editedEvent.hotelNotes || ""}
-                onChange={(e) => handleFieldChange("hotelNotes", e.target.value)}
-                placeholder="Additional hotel notes..."
-                rows={3}
-                className={validationErrors.hotelNotes ? "border-red-500" : ""}
-              />,
-            )}
-          </>
+
+            {/* Optional Fields */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                Optional Fields
+              </h4>
+              <div className="space-y-4 pl-4 border-l-2 border-gray-200">
+                {renderFieldWithValidation(
+                  "nights",
+                  "No. of Nights",
+                  <Input
+                    id="nights"
+                    type="number"
+                    value={editedEvent.nights || ""}
+                    onChange={(e) => handleFieldChange("nights", Number(e.target.value))}
+                    placeholder="No. of nights"
+                  />
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                  {renderFieldWithValidation(
+                    "checkIn",
+                    "Checkin date",
+                    <Input
+                      id="checkIn"
+                      type="date"
+                      value={editedEvent.checkIn || ""}
+                      onChange={(e) => handleFieldChange("checkIn", e.target.value)}
+                    />
+                  )}
+                  {renderFieldWithValidation(
+                    "checkOut",
+                    "Check out date",
+                    <Input
+                      id="checkOut"
+                      type="date"
+                      value={editedEvent.checkOut || ""}
+                      onChange={(e) => handleFieldChange("checkOut", e.target.value)}
+                    />
+                  )}
+                </div>
+                {renderFieldWithValidation(
+                  "propertyType",
+                  "Property Type",
+                  <Input
+                    id="propertyType"
+                    value={editedEvent.propertyType || ""}
+                    onChange={(e) => handleFieldChange("propertyType", e.target.value)}
+                    placeholder="e.g. Resort, Villa"
+                  />
+                )}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Amenities</label>
+                  <div className="space-y-2">
+                    {(editedEvent.amenities || []).map((amenity, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input
+                          value={amenity}
+                          onChange={(e) => {
+                            const newAmenities = [...(editedEvent.amenities || [])];
+                            newAmenities[idx] = e.target.value;
+                            handleFieldChange("amenities", newAmenities);
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newAmenities = (editedEvent.amenities || []).filter((_, i) => i !== idx);
+                            handleFieldChange("amenities", newAmenities);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add amenity"
+                        value={newAmenity}
+                        onChange={(e) => setNewAmenity(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (newAmenity.trim()) {
+                              const current = editedEvent.amenities || [];
+                              handleFieldChange("amenities", [...current, newAmenity.trim()]);
+                              setNewAmenity("");
+                            }
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          if (newAmenity.trim()) {
+                            const current = editedEvent.amenities || [];
+                            handleFieldChange("amenities", [...current, newAmenity.trim()]);
+                            setNewAmenity("");
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Tags</label>
+                  <div className="space-y-2">
+                    {(editedEvent.highlights || []).map((tag, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input
+                          value={tag}
+                          onChange={(e) => {
+                            const newTags = [...(editedEvent.highlights || [])];
+                            newTags[idx] = e.target.value;
+                            handleFieldChange("highlights", newTags);
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newTags = (editedEvent.highlights || []).filter((_, i) => i !== idx);
+                            handleFieldChange("highlights", newTags);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Add tag"
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (newTag.trim()) {
+                              const current = editedEvent.highlights || [];
+                              handleFieldChange("highlights", [...current, newTag.trim()]);
+                              setNewTag("");
+                            }
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          if (newTag.trim()) {
+                            const current = editedEvent.highlights || [];
+                            handleFieldChange("highlights", [...current, newTag.trim()]);
+                            setNewTag("");
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                {renderFieldWithValidation(
+                  "imageUrl",
+                  "Image (Media Add)",
+                  <Input
+                    id="imageUrl"
+                    value={editedEvent.imageUrl || ""}
+                    onChange={(e) => handleFieldChange("imageUrl", e.target.value)}
+                    placeholder="Image URL"
+                  />
+                )}
+                {renderFieldWithValidation(
+                  "refundable",
+                  "Refundable Non refundable",
+                  <Input
+                    id="refundable"
+                    value={editedEvent.refundable || ""}
+                    onChange={(e) => handleFieldChange("refundable", e.target.value)}
+                    placeholder="e.g. Refundable"
+                  />
+                )}
+                {renderFieldWithValidation(
+                  "address",
+                  "Address",
+                  <Input
+                    id="address"
+                    value={editedEvent.address || ""}
+                    onChange={(e) => handleFieldChange("address", e.target.value)}
+                    placeholder="Full address"
+                  />
+                )}
+                {renderFieldWithValidation(
+                  "hotelLink",
+                  "Hotel Link",
+                  <Input
+                    id="hotelLink"
+                    value={editedEvent.hotelLink || ""}
+                    onChange={(e) => handleFieldChange("hotelLink", e.target.value)}
+                    placeholder="https://..."
+                  />
+                )}
+                {renderFieldWithValidation(
+                  "description",
+                  "Description",
+                  <Input
+                    id="description"
+                    value={editedEvent.description || ""}
+                    onChange={(e) => handleFieldChange("description", e.target.value)}
+                    placeholder="Description (optional)"
+                  />
+                )}
+                {renderFieldWithValidation(
+                  "confirmationNumber",
+                  "Confirmation No.",
+                  <Input
+                    id="confirmationNumber"
+                    value={editedEvent.confirmationNumber || ""}
+                    onChange={(e) => handleFieldChange("confirmationNumber", e.target.value)}
+                    placeholder="Confirmation Number"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
         )
 
       case "transfer":
@@ -967,7 +1159,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
           {renderFields()}
 
           {/* Additional Information Section */}
-          {editedEvent.category !== "meal" && editedEvent.category !== "flight" && (
+          {editedEvent.category !== "meal" && editedEvent.category !== "flight" && editedEvent.category !== "hotel" && (
             <div className="border rounded-md p-4">
               <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
               {editedEvent.additionalInfoSections && editedEvent.additionalInfoSections.length > 0 ? (
@@ -1024,7 +1216,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
             </div>
           )}
 
-          {!["meal", "flight"].includes(editedEvent.category) && renderFieldWithValidation(
+          {!["meal", "flight", "hotel"].includes(editedEvent.category) && renderFieldWithValidation(
             "price",
             "Price",
             <Input
