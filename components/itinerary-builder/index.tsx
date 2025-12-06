@@ -109,30 +109,10 @@ const COMPONENT_TEMPLATES = [
     icon: UtensilsCrossed,
     color: "bg-yellow-50 border-yellow-200",
   },
-  {
-    category: "heading",
-    title: "Heading",
-    icon: FileText,
-    color: "bg-gray-50 border-gray-200",
-  },
-  {
-    category: "paragraph",
-    title: "Paragraph",
-    icon: FileText,
-    color: "bg-gray-50 border-gray-200",
-  },
-  {
-    category: "list",
-    title: "List",
-    icon: FileText,
-    color: "bg-gray-50 border-gray-200",
-  },
-  {
-    category: "transport",
-    title: "Transport",
-    icon: Train,
-    color: "bg-indigo-50 border-indigo-200",
-  },
+
+
+
+
   {
     category: "cruise",
     title: "Cruise",
@@ -151,12 +131,7 @@ const COMPONENT_TEMPLATES = [
     icon: Shield,
     color: "bg-emerald-50 border-emerald-200",
   },
-  {
-    category: "guide",
-    title: "Tour Guide",
-    icon: MapPin,
-    color: "bg-pink-50 border-pink-200",
-  },
+
   {
     category: "additionalInformation",
     title: "Additional Information",
@@ -175,18 +150,8 @@ const COMPONENT_TEMPLATES = [
     icon: Car,
     color: "bg-violet-50 border-violet-200",
   },
-  {
-    category: "meeting",
-    title: "Meeting Room",
-    icon: Calendar,
-    color: "bg-slate-50 border-slate-200",
-  },
-  {
-    category: "image",
-    title: "Image",
-    icon: Camera,
-    color: "bg-pink-50 border-pink-200",
-  },
+
+
 ]
 
 export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuilderProps) {
