@@ -83,6 +83,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
         imageCaption: event?.imageCaption || "",
         imageAlt: event?.imageAlt || "",
         price: event?.price ? Number(event.price) : 0,
+        currency: event?.currency || "INR", // Default to INR if missing
         capacity: event?.capacity ? Number(event.capacity) : 0,
         nights: event?.nights ? Number(event.nights) : 0,
         highlights: event?.highlights ? [...event.highlights] : [],
@@ -346,6 +347,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
     const updatedEvent: IItineraryEvent = {
       ...editedEvent,
       price: editedEvent.price || 0,
+      currency: editedEvent.currency || "INR",
       nights: editedEvent.nights || 0,
       capacity: editedEvent.capacity || 0,
       highlights: editedEvent.highlights ? [...editedEvent.highlights] : [],
@@ -412,7 +414,32 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
                   {renderFieldWithValidation("duration", "Flight Duration", <Input id="duration" value={editedEvent.duration || ""} onChange={(e) => handleFieldChange("duration", e.target.value)} placeholder="e.g. 2h 30m" />, true)}
                   {renderFieldWithValidation("airlines", "Airline Name", <Input id="airlines" value={editedEvent.airlines || ""} onChange={(e) => handleFieldChange("airlines", e.target.value)} placeholder="e.g. Emirates" />, true)}
                   {renderFieldWithValidation("flightClass", "Class", <Input id="flightClass" value={editedEvent.flightClass || ""} onChange={(e) => handleFieldChange("flightClass", e.target.value)} placeholder="e.g. Economy" />, true)}
-                  {renderFieldWithValidation("price", "Price", <Input id="price" type="number" value={editedEvent.price || ""} onChange={(e) => handleNumericInput(e, "price")} placeholder="0.00" />, true)}
+                  {renderFieldWithValidation("flightClass", "Class", <Input id="flightClass" value={editedEvent.flightClass || ""} onChange={(e) => handleFieldChange("flightClass", e.target.value)} placeholder="e.g. Economy" />, true)}
+                  <div className="grid gap-2">
+                    <Label htmlFor="price">Price</Label>
+                    <div className="flex gap-2">
+                      <Select value={editedEvent.currency || "INR"} onValueChange={(value) => handleFieldChange("currency", value)}>
+                        <SelectTrigger className="w-[100px]">
+                          <SelectValue placeholder="Currency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="INR">INR (₹)</SelectItem>
+                          <SelectItem value="USD">USD ($)</SelectItem>
+                          <SelectItem value="EUR">EUR (€)</SelectItem>
+                          <SelectItem value="GBP">GBP (£)</SelectItem>
+                          <SelectItem value="AED">AED (د.إ)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        id="price"
+                        type="number"
+                        value={editedEvent.price || ""}
+                        onChange={(e) => handleNumericInput(e, "price")}
+                        placeholder="0.00"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     {renderFieldWithValidation("time", "Departure Time", <Input id="time" type="time" value={editedEvent.time || ""} onChange={(e) => handleFieldChange("time", e.target.value)} />, true)}
                     {renderFieldWithValidation("endTime", "Arrival Time", <Input id="endTime" type="time" value={editedEvent.endTime || ""} onChange={(e) => handleFieldChange("endTime", e.target.value)} />, true)}
@@ -548,19 +575,37 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
                   />,
                   true
                 )}
-                {renderFieldWithValidation(
-                  "price",
-                  "Price",
-                  <Input
-                    id="price"
-                    type="number"
-                    value={editedEvent.price || ""}
-                    onChange={(e) => handleFieldChange("price", Number(e.target.value))}
-                    placeholder="0.00"
-                    className={validationErrors.price ? "border-red-500" : ""}
-                  />,
-                  true
-                )}
+                <div className="grid gap-2">
+                  <Label htmlFor="price">Price</Label>
+                  <div className="flex gap-2">
+                    <Select value={editedEvent.currency || "INR"} onValueChange={(value) => handleFieldChange("currency", value)}>
+                      <SelectTrigger className="w-[100px]">
+                        <SelectValue placeholder="Currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="INR">INR (₹)</SelectItem>
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                        <SelectItem value="GBP">GBP (£)</SelectItem>
+                        <SelectItem value="AED">AED (د.إ)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={editedEvent.price || ""}
+                      onChange={(e) => handleFieldChange("price", Number(e.target.value))}
+                      placeholder="0.00"
+                      className={validationErrors.price ? "border-red-500 flex-1" : "flex-1"}
+                    />
+                  </div>
+                  {validationErrors.price && (
+                    <div className="flex items-center gap-1 text-red-500 text-sm">
+                      <AlertCircle className="h-3 w-3" />
+                      <span>{validationErrors.price}</span>
+                    </div>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   {renderFieldWithValidation(
                     "adults",
@@ -1216,20 +1261,41 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
             </div>
           )}
 
-          {!["meal", "flight", "hotel"].includes(editedEvent.category) && renderFieldWithValidation(
-            "price",
-            "Price",
-            <Input
-              id="price"
-              type="number"
-              min="0"
-              max="1000000"
-              step="0.01"
-              value={editedEvent.price || ""}
-              onChange={(e) => handleNumericInput(e, "price")}
-              placeholder="0.00"
-              className={validationErrors.price ? "border-red-500" : ""}
-            />,
+          {!["meal", "flight", "hotel"].includes(editedEvent.category) && (
+            <div className="grid gap-2">
+              <Label htmlFor="price">Price</Label>
+              <div className="flex gap-2">
+                <Select value={editedEvent.currency || "INR"} onValueChange={(value) => handleFieldChange("currency", value)}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR (₹)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="AED">AED (د.إ)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="price"
+                  type="number"
+                  min="0"
+                  max="1000000"
+                  step="0.01"
+                  value={editedEvent.price || ""}
+                  onChange={(e) => handleNumericInput(e, "price")}
+                  placeholder="0.00"
+                  className={validationErrors.price ? "border-red-500 flex-1" : "flex-1"}
+                />
+              </div>
+              {validationErrors.price && (
+                <div className="flex items-center gap-1 text-red-500 text-sm">
+                  <AlertCircle className="h-3 w-3" />
+                  <span>{validationErrors.price}</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
         <div className="flex justify-end gap-3">

@@ -38,12 +38,12 @@ export function convertCurrency(
   if (fromCurrency === baseCurrency) {
     return amount * toRate;
   }
-  
+
   // If toCurrency is baseCurrency, we can directly divide by fromRate
   if (toCurrency === baseCurrency) {
     return amount / fromRate;
   }
-  
+
   // Otherwise, convert to baseCurrency first, then to target currency
   const amountInBaseCurrency = amount / fromRate;
   return amountInBaseCurrency * toRate;
@@ -66,11 +66,12 @@ export function formatCurrencyWithSymbol(amount: number, currency: string): stri
     AUD: "A$",
     CAD: "C$",
     SGD: "S$",
+    AED: "د.إ",
     // Add more currencies as needed
   };
 
   const symbol = symbols[currency] || currency;
-  
+
   // Format with 2 decimal places by default
   return `${symbol}${amount.toFixed(2)}`;
 }
@@ -88,7 +89,7 @@ export function convertQuotationPrices(quotation: any, toCurrency: string): any 
   }
 
   const { baseCurrency, exchangeRates } = quotation.currencySettings;
-  
+
   // If the target currency is the same as base currency, no conversion needed
   if (baseCurrency === toCurrency) {
     return {
@@ -102,10 +103,10 @@ export function convertQuotationPrices(quotation: any, toCurrency: string): any 
 
   // Create a deep copy of the quotation
   const converted = JSON.parse(JSON.stringify(quotation));
-  
+
   // Set the display currency
   converted.currencySettings.displayCurrency = toCurrency;
-  
+
   // Convert top-level price fields
   if (converted.subtotal !== undefined) {
     converted.displaySubtotal = convertCurrency(
@@ -116,7 +117,7 @@ export function convertQuotationPrices(quotation: any, toCurrency: string): any 
       baseCurrency
     );
   }
-  
+
   if (converted.markup !== undefined) {
     converted.displayMarkup = convertCurrency(
       converted.markup,
@@ -126,7 +127,7 @@ export function convertQuotationPrices(quotation: any, toCurrency: string): any 
       baseCurrency
     );
   }
-  
+
   if (converted.total !== undefined) {
     converted.displayTotal = convertCurrency(
       converted.total,
@@ -136,7 +137,7 @@ export function convertQuotationPrices(quotation: any, toCurrency: string): any 
       baseCurrency
     );
   }
-  
+
   // Convert pricing options
   if (converted.pricingOptions) {
     if (converted.pricingOptions.originalTotalPrice !== undefined) {
@@ -148,7 +149,7 @@ export function convertQuotationPrices(quotation: any, toCurrency: string): any 
         baseCurrency
       );
     }
-    
+
     if (converted.pricingOptions.finalTotalPrice !== undefined) {
       converted.pricingOptions.displayFinalTotalPrice = convertCurrency(
         converted.pricingOptions.finalTotalPrice,
@@ -158,7 +159,7 @@ export function convertQuotationPrices(quotation: any, toCurrency: string): any 
         baseCurrency
       );
     }
-    
+
     // If using fixed markup, convert the markup value
     if (converted.pricingOptions.markupType === "fixed" && converted.pricingOptions.markupValue !== undefined) {
       converted.pricingOptions.displayMarkupValue = convertCurrency(
@@ -170,7 +171,7 @@ export function convertQuotationPrices(quotation: any, toCurrency: string): any 
       );
     }
   }
-  
+
   // Convert event prices if they exist
   if (converted.days && Array.isArray(converted.days)) {
     converted.days.forEach((day: any) => {
@@ -189,6 +190,6 @@ export function convertQuotationPrices(quotation: any, toCurrency: string): any 
       }
     });
   }
-  
+
   return converted;
 }

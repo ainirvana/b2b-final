@@ -320,6 +320,7 @@ export function ComponentSourceModal({
   const [manualCheckIn, setManualCheckIn] = useState("")
   const [manualCheckOut, setManualCheckOut] = useState("")
   const [manualPrice, setManualPrice] = useState<number | "">("")
+  const [manualCurrency, setManualCurrency] = useState("INR") // Default currency
   const [manualCapacity, setManualCapacity] = useState<number | "">("")
   const [manualDuration, setManualDuration] = useState("")
   const [manualDifficulty, setManualDifficulty] = useState("Easy")
@@ -444,7 +445,10 @@ export function ComponentSourceModal({
     if (manualNights) payload.nights = Number(manualNights)
     if (manualCheckIn) payload.checkIn = manualCheckIn
     if (manualCheckOut) payload.checkOut = manualCheckOut
-    if (manualPrice) payload.price = Number(manualPrice)
+    if (manualPrice) {
+      payload.price = Number(manualPrice)
+      payload.currency = manualCurrency
+    }
     if (manualCapacity) payload.capacity = Number(manualCapacity)
     if (manualDuration) payload.duration = manualDuration
     if (manualDifficulty) payload.difficulty = manualDifficulty
@@ -493,6 +497,7 @@ export function ComponentSourceModal({
     setManualCheckIn("")
     setManualCheckOut("")
     setManualPrice("")
+    setManualCurrency("INR")
     setManualCapacity("")
     setManualDuration("")
     setManualDifficulty("Easy")
@@ -782,14 +787,28 @@ export function ComponentSourceModal({
                     <label htmlFor="manualPrice" className="text-sm font-medium">
                       Price
                     </label>
-                    <Input
-                      id="manualPrice"
-                      type="number"
-                      value={manualPrice}
-                      onChange={(e) => setManualPrice(Number(e.target.value) || "")}
-                      placeholder="0.00"
-                      className="input-field"
-                    />
+                    <div className="flex gap-2">
+                      <Select value={manualCurrency} onValueChange={setManualCurrency}>
+                        <SelectTrigger className="w-[100px]">
+                          <SelectValue placeholder="Currency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="INR">INR (₹)</SelectItem>
+                          <SelectItem value="USD">USD ($)</SelectItem>
+                          <SelectItem value="EUR">EUR (€)</SelectItem>
+                          <SelectItem value="GBP">GBP (£)</SelectItem>
+                          <SelectItem value="AED">AED (د.إ)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        id="manualPrice"
+                        type="number"
+                        value={manualPrice}
+                        onChange={(e) => setManualPrice(Number(e.target.value) || "")}
+                        placeholder="0.00"
+                        className="flex-1"
+                      />
+                    </div>
                   </div>
                 </div>
               ) : componentType.toLowerCase() === "flight" ? (
@@ -825,7 +844,21 @@ export function ComponentSourceModal({
                       </div>
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">Price</label>
-                        <Input type="number" value={manualPrice} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="0.00" />
+                        <div className="flex gap-2">
+                          <Select value={manualCurrency} onValueChange={setManualCurrency}>
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue placeholder="Currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="INR">INR (₹)</SelectItem>
+                              <SelectItem value="USD">USD ($)</SelectItem>
+                              <SelectItem value="EUR">EUR (€)</SelectItem>
+                              <SelectItem value="GBP">GBP (£)</SelectItem>
+                              <SelectItem value="AED">AED (د.إ)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input type="number" value={manualPrice} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="0.00" className="flex-1" />
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
@@ -917,7 +950,21 @@ export function ComponentSourceModal({
                       </div>
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">Price</label>
-                        <Input type="number" value={manualPrice as any} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="0.00" />
+                        <div className="flex gap-2">
+                          <Select value={manualCurrency} onValueChange={setManualCurrency}>
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue placeholder="Currency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="INR">INR (₹)</SelectItem>
+                              <SelectItem value="USD">USD ($)</SelectItem>
+                              <SelectItem value="EUR">EUR (€)</SelectItem>
+                              <SelectItem value="GBP">GBP (£)</SelectItem>
+                              <SelectItem value="AED">AED (د.إ)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input type="number" value={manualPrice as any} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="0.00" className="flex-1" />
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
@@ -1167,7 +1214,21 @@ export function ComponentSourceModal({
                           </div>
                           <div>
                             <label className="text-sm font-medium">Price per Person</label>
-                            <Input type="number" value={manualPrice as any} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="Per person" />
+                            <div className="flex gap-2">
+                              <Select value={manualCurrency} onValueChange={setManualCurrency}>
+                                <SelectTrigger className="w-[100px]">
+                                  <SelectValue placeholder="Currency" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="INR">INR (₹)</SelectItem>
+                                  <SelectItem value="USD">USD ($)</SelectItem>
+                                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                                  <SelectItem value="GBP">GBP (£)</SelectItem>
+                                  <SelectItem value="AED">AED (د.إ)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input type="number" value={manualPrice as any} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="Per person" className="flex-1" />
+                            </div>
                           </div>
                         </>
                       )}
@@ -1207,7 +1268,21 @@ export function ComponentSourceModal({
                           </div>
                           <div>
                             <label className="text-sm font-medium">Price</label>
-                            <Input type="number" value={manualPrice as any} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="Total price" />
+                            <div className="flex gap-2">
+                              <Select value={manualCurrency} onValueChange={setManualCurrency}>
+                                <SelectTrigger className="w-[100px]">
+                                  <SelectValue placeholder="Currency" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="INR">INR (₹)</SelectItem>
+                                  <SelectItem value="USD">USD ($)</SelectItem>
+                                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                                  <SelectItem value="GBP">GBP (£)</SelectItem>
+                                  <SelectItem value="AED">AED (د.إ)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input type="number" value={manualPrice as any} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="Total price" className="flex-1" />
+                            </div>
                           </div>
                         </>
                       )}

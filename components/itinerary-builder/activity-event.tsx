@@ -124,7 +124,10 @@ export function ActivityEvent({ event, isDetailedView = true, onEdit, onDelete }
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-600">Activity</span>
             <div className="text-right">
-              <span className="text-sm font-bold text-green-600">${event.price}</span>
+              <span className="text-sm font-bold text-green-600">
+                {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
+                {event.price}
+              </span>
               <span className="text-xs text-gray-500 block leading-none">per person</span>
             </div>
           </div>

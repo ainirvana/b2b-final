@@ -48,7 +48,7 @@ export function FlightEvent({ event, isDetailedView = true }: FlightEventProps) 
         {/* Highlights */}
         {event.highlights?.length > 0 && (
           <div className="pl-3 flex flex-wrap gap-1">
-            {event.highlights.map((highlight, index) => (
+            {event.highlights?.map((highlight, index) => (
               <span key={index} className="inline-flex items-center px-1.5 py-0 rounded-md bg-gray-100 text-xs text-gray-700">
                 {highlight}
               </span>
@@ -56,6 +56,22 @@ export function FlightEvent({ event, isDetailedView = true }: FlightEventProps) 
           </div>
         )}
       </div>
+
+      {/* Price */}
+      {event.price && (
+        <div className="mt-1.5 p-1.5 bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-600">Flight</span>
+            <div className="text-right">
+              <span className="text-sm font-bold text-gray-700">
+                {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
+                {event.price}
+              </span>
+              <span className="text-xs text-gray-500 block leading-none">per person</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

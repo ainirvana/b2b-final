@@ -114,6 +114,7 @@ export interface IItineraryEvent {
   time?: string
   location?: string
   price?: number
+  currency?: string // NEW: Currency for the price
   componentSource?: "manual" | "my-library" | "global-library" | "my-library-edited" | "global-library-edited"
   libraryItemId?: string
   originalLibraryId?: string
@@ -220,6 +221,7 @@ const ItineraryEventSchema = new mongoose.Schema({
   checkOut: String,
   images: [String],
   price: { type: Number, default: 0 },
+  currency: { type: String, default: "INR" }, // NEW: Default to INR
   libraryItemId: String,
   componentSource: {
     type: String,

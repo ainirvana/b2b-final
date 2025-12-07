@@ -170,7 +170,10 @@ export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNigh
       {/* Price */}
       {event.price && (
         <div className="mt-1.5 text-right">
-          <span className="text-sm font-bold text-blue-600">${event.price}</span>
+          <span className="text-sm font-bold text-blue-600">
+            {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
+            {event.price}
+          </span>
           <span className="text-xs text-gray-500 ml-0.5">per night</span>
         </div>
       )}

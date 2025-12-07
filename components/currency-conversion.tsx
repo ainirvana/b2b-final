@@ -37,32 +37,32 @@ export function CurrencyConversion({
       INR: 83.36
     }
   })
-  
+
   // Available currencies
-  const currencies = ["USD", "EUR", "INR"]
-  
+  const currencies = ["INR", "USD", "GBP", "EUR", "AED"]
+
   // Initialize settings from props
   useEffect(() => {
     if (currencySettings) {
       setSettings(currencySettings)
     }
   }, [currencySettings])
-  
+
   // Handle display currency change
   const handleDisplayCurrencyChange = (currency: string) => {
     setSettings({
       ...settings,
       displayCurrency: currency
     })
-    
+
     onUpdateDisplayCurrency(currency)
   }
-  
+
   // Handle exchange rate change
   const handleExchangeRateChange = (currency: string, value: string) => {
     const rate = parseFloat(value)
     if (isNaN(rate) || rate <= 0) return
-    
+
     setSettings({
       ...settings,
       exchangeRates: {
@@ -71,7 +71,7 @@ export function CurrencyConversion({
       }
     })
   }
-  
+
   // Save exchange rates
   const handleSaveExchangeRates = async () => {
     try {
@@ -89,7 +89,7 @@ export function CurrencyConversion({
       })
     }
   }
-  
+
   return (
     <Card className="mb-4 shadow-sm">
       <CardHeader className="pb-2">
@@ -104,7 +104,7 @@ export function CurrencyConversion({
           </Button>
         </CardTitle>
       </CardHeader>
-      
+
       {isExpanded && (
         <CardContent>
           <div className="space-y-4">
@@ -127,7 +127,7 @@ export function CurrencyConversion({
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="w-1/2">
                 <Label htmlFor="base-currency">Base Currency (Storage)</Label>
                 <Input
@@ -138,7 +138,7 @@ export function CurrencyConversion({
                 />
               </div>
             </div>
-            
+
             <div>
               <h4 className="font-medium mb-2">Exchange Rates (relative to {settings.baseCurrency})</h4>
               <div className="space-y-2">
@@ -163,7 +163,7 @@ export function CurrencyConversion({
                   ))}
               </div>
             </div>
-            
+
             <Button onClick={handleSaveExchangeRates}>
               Save Exchange Rates
             </Button>

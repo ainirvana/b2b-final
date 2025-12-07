@@ -56,7 +56,7 @@ export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }
       <div className="space-y-1.5">
         {/* Route */}
         <div className="flex items-center gap-1.5">
-          <div className="w-0.5 h-4 bg-purple-200 rounded-full\"></div>
+          <div className="w-0.5 h-4 bg-purple-200 rounded-full"></div>
           <div className="flex-1">
             <div className="text-xs font-medium text-gray-800">
               {event.fromLocation || "Pick-up location"} → {event.toLocation || "Drop-off location"}
@@ -65,10 +65,10 @@ export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }
         </div>
 
         <div className="flex items-start gap-1.5 pl-2">
-          <div className="w-3 h-3 border-l-2 border-b-2 border-purple-200 rounded-bl-lg mt-0.5\"></div>
+          <div className="w-3 h-3 border-l-2 border-b-2 border-purple-200 rounded-bl-lg mt-0.5"></div>
           <div className="flex-1">
             <p className="text-xs text-gray-600">{event.description || "Transfer details"}</p>
-            {event.vehicleType && <p className="text-xs text-purple-600 mt-0.5 font-medium\">{event.vehicleType}</p>}
+            {event.vehicleType && <p className="text-xs text-purple-600 mt-0.5 font-medium">{event.vehicleType}</p>}
           </div>
         </div>
 
@@ -102,16 +102,7 @@ export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }
           </div>
         )}
       </div>
-
-      {/* Price */}
-      {event.price && (
-        <div className="mt-1.5 p-1.5 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-600">Transfer</span>
-            <span className="text-sm font-bold text-purple-600\">${event.price}</span>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
+

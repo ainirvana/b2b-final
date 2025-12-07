@@ -7,6 +7,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import {
+  Building2,
+  Tent,
+  Info,
+  CreditCard,
+  Wallet,
   ArrowLeft,
   Plus,
   Save,
@@ -94,13 +99,15 @@ const COMPONENT_TEMPLATES = [
   {
     category: "hotel",
     title: "Hotel",
-    icon: Sun,
+
+    icon: Building2,
     color: "bg-blue-50 border-blue-200",
   },
   {
     category: "activity",
     title: "Activity",
-    icon: Camera,
+
+    icon: Tent,
     color: "bg-green-50 border-green-200",
   },
   {
@@ -135,21 +142,18 @@ const COMPONENT_TEMPLATES = [
   {
     category: "additionalInformation",
     title: "Additional Information",
-    icon: Briefcase,
+
+    icon: Info,
     color: "bg-indigo-100 border-indigo-300",
   },
   {
     category: "ancillaries",
+
     title: "Ancillaries",
-    icon: Briefcase,
+    icon: CreditCard,
     color: "bg-amber-50 border-amber-200",
   },
-  {
-    category: "rental",
-    title: "Car Rental",
-    icon: Car,
-    color: "bg-violet-50 border-violet-200",
-  },
+
 
 
 ]
@@ -1804,8 +1808,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                   <option value="USD">US Dollar ($)</option>
                   <option value="EUR">Euro (€)</option>
                   <option value="GBP">British Pound (£)</option>
-                  <option value="AUD">Australian Dollar (A$)</option>
-                  <option value="CAD">Canadian Dollar (C$)</option>
+                  <option value="AED">UAE Dirham (د.إ)</option>
                   <option value="dual" disabled>Dual Currency (Coming Soon)</option>
                 </select>
               </div>
@@ -2018,7 +2021,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
               <div>
                 <div className="text-lg font-bold text-gray-800">Total Price</div>
                 <div className="text-2xl font-extrabold text-green-700 mt-1">
-                  {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AUD' ? 'A$' : pricingCurrency === 'CAD' ? 'C$' : ''}
+                  {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''}
                   {days.reduce((sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0), 0).toLocaleString()}
                 </div>
               </div>
@@ -2033,7 +2036,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           <div key={eventIndex} className="flex justify-between w-64 text-sm">
                             <span className="font-medium text-gray-700">{event.title || 'Event'}:</span>
                             <span className="font-semibold text-green-700">
-                              {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AUD' ? 'A$' : pricingCurrency === 'CAD' ? 'C$' : ''}
+                              {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''}
                               {event.price.toLocaleString()}
                             </span>
                           </div>
@@ -2044,7 +2047,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                 </div>
                 <div className="mt-2 text-lg font-bold text-gray-800">Total Price</div>
                 <div className="text-2xl font-extrabold text-green-700 mt-1">
-                  {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AUD' ? 'A$' : pricingCurrency === 'CAD' ? 'C$' : ''}
+                  {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''}
                   {days.reduce((sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0), 0).toLocaleString()}
                 </div>
               </div>
