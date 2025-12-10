@@ -16,6 +16,7 @@ import { useLibrary } from "@/hooks/use-library"
 import { LibraryToItineraryConverter } from "@/lib/library-converter"
 import { TransferForms } from "./transfer-forms"
 import { AncillariesForms } from "./ancillaries-forms"
+import { OthersForms } from "./others-forms"
 
 interface ComponentSourceModalProps {
   isOpen: boolean
@@ -206,6 +207,12 @@ export function ComponentSourceModal({
     { id: "visa", label: "Visa", icon: "📋" },
     { id: "forex", label: "Forex", icon: "💱" },
     { id: "travel-insurance", label: "Travel Insurance", icon: "🛡️" },
+  ]
+
+  // Subcategory options for Others
+  const othersSubCategories = [
+    { id: "gift-cards", label: "Gift Cards", icon: "🎁" },
+    { id: "travel-gears", label: "Travel Gears", icon: "🧳" },
   ]
 
   useEffect(() => {
@@ -435,6 +442,21 @@ export function ComponentSourceModal({
   const [manualNotes, setManualNotes] = useState("") // Optional
   const [manualSumInsured, setManualSumInsured] = useState<number | "">("")  // Optional
 
+  // Others specific fields
+  const [manualGiftAmount, setManualGiftAmount] = useState<number | "">("")
+  const [manualServiceCharge, setManualServiceCharge] = useState<number | "">("")
+  const [manualProducts, setManualProducts] = useState<Array<{ name: string; price: number | ""; description: string }>>([
+    { name: "", price: "", description: "" },
+  ])
+
+  const handleAddProduct = () => setManualProducts([...manualProducts, { name: "", price: "", description: "" }])
+  const handleRemoveProduct = (index: number) => setManualProducts(manualProducts.filter((_, i) => i !== index))
+  const handleProductChange = (index: number, field: string, value: any) => {
+    const copy = [...manualProducts]
+    ;(copy as any)[index] = { ...(copy as any)[index], [field]: value }
+    setManualProducts(copy)
+  }
+
 
   const mealOptions = [
     { id: "breakfast", label: "Breakfast" },
@@ -628,6 +650,19 @@ export function ComponentSourceModal({
     // Add subcategory for Transfer and Ancillaries
     if (selectedSubCategory) payload.subCategory = selectedSubCategory
 
+    // Others specific payload
+    if (componentType.toLowerCase() === "others") {
+      if (selectedSubCategory === "gift-cards") {
+        payload.giftCard = {
+          title: manualTitle || payload.title,
+          amount: manualGiftAmount || 0,
+          serviceCharge: manualServiceCharge || 0,
+        }
+      } else if (selectedSubCategory === "travel-gears") {
+        payload.travelGears = manualProducts.map((p) => ({ name: p.name, price: p.price || 0, description: p.description || "" }))
+      }
+    }
+
     onSelectManual(payload)
     onClose()
     setSelectedSource(null)
@@ -676,6 +711,10 @@ export function ComponentSourceModal({
     setManualHotelLink("")
     setManualConfirmationNumber("")
     setManualNoteContent("") // Reset note content
+    // Reset others fields
+    setManualGiftAmount("")
+    setManualServiceCharge("")
+    setManualProducts([{ name: "", price: "", description: "" }])
   }
 
   const handleSelectTemplate = (template: ComponentTemplate) => {
@@ -1266,6 +1305,46 @@ export function ComponentSourceModal({
                         setManualNotes={setManualNotes}
                         manualSumInsured={manualSumInsured}
                         setManualSumInsured={setManualSumInsured}
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : componentType.toLowerCase() === "others" ? (
+                /* Others Component - Show Subcategory Selection */
+                <div className="space-y-4">
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Sub-Category</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {othersSubCategories.map((subCat) => (
+                        <button
+                          key={subCat.id}
+                          onClick={() => setSelectedSubCategory(subCat.id)}
+                          className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${selectedSubCategory === subCat.id
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                            }`}
+                        >
+                          <span className="text-2xl mb-2">{subCat.icon}</span>
+                          <span className="text-xs text-center font-medium">{subCat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {selectedSubCategory && (
+                    <div className="space-y-4">
+                      <OthersForms
+                        selectedSubCategory={selectedSubCategory}
+                        manualTitle={manualTitle}
+                        setManualTitle={setManualTitle}
+                        manualGiftAmount={manualGiftAmount}
+                        setManualGiftAmount={setManualGiftAmount}
+                        manualServiceCharge={manualServiceCharge}
+                        setManualServiceCharge={setManualServiceCharge}
+                        manualProducts={manualProducts}
+                        handleAddProduct={handleAddProduct}
+                        handleRemoveProduct={handleRemoveProduct}
+                        handleProductChange={handleProductChange}
                       />
                     </div>
                   )}

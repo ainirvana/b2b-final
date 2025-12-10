@@ -158,6 +158,14 @@ const COMPONENT_TEMPLATES = [
 
 
   {
+    category: "others",
+    title: "Others",
+    icon: Briefcase,
+    color: "bg-slate-50 border-slate-200",
+  },
+ 
+ 
+  {
     category: "note",
     title: "Notes",
     icon: StickyNote,
