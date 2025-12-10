@@ -182,7 +182,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [isDetailedView, setIsDetailedView] = useState(true)
   const [showDates, setShowDates] = useState(true)
   const [serviceSlots, setServiceSlots] = useState<Array<{ id: string; title: string; events: IItineraryEvent[] }>>([])
-  const [ancillarySlots, setAncillarySlots] = useState<Array<{ id: string; title: string; events: IItineraryEvent[] }>>([])
+
   const [editingEvent, setEditingEvent] = useState<{
     event: IItineraryEvent
     dayIndex: number
@@ -761,36 +761,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       return
     }
 
-    if (component.category === "ancillaries") {
-      console.log("[DEBUG] Creating ancillary slot (manual) from modal")
-      const title = (manualData && manualData.title) || `Ancillaries ${ancillarySlots.length + 1}`
-      // Support both `bullets` and `listItems` fields
-      const bullets: string[] = (manualData && Array.isArray(manualData.bullets)) ? manualData.bullets : (manualData && Array.isArray(manualData.listItems)) ? manualData.listItems : []
 
-      const listEvent: IItineraryEvent = {
-        id: `event-${Date.now()}`,
-        category: "list",
-        title,
-        description: "",
-        listItems: bullets,
-        componentSource: "manual",
-        versionHistory: [],
-        highlights: [],
-        time: "",
-      } as unknown as IItineraryEvent
-
-      const newSlot = {
-        id: `ancillary-slot-${Date.now()}`,
-        title,
-        events: bullets.length ? [listEvent] : [] as IItineraryEvent[],
-      }
-
-      setAncillarySlots([...ancillarySlots, newSlot])
-      setDraggedItem(null)
-      setDropTarget(null)
-      setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
-      return
-    }
 
     // Fallback: create a manual event in days if a drop target exists
     if (!componentSourceModal.dropTarget) {
@@ -999,46 +970,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       return
     }
 
-    if (component.category === "ancillaries") {
-      console.log("[DEBUG] Creating ancillary slot from library item")
-      // Try to extract relevant bullets from extraFields for ancillaries
-      const maybeBullets = () => {
-        const ef = libraryItem.extraFields || {}
-        if (Array.isArray(ef.ancillaries) && ef.ancillaries.length) return ef.ancillaries.map((s: any) => String(s))
-        if (Array.isArray(ef.ancillary) && ef.ancillary.length) return ef.ancillary.map((s: any) => String(s))
-        if (Array.isArray(ef.additionalInfo) && ef.additionalInfo.length) return ef.additionalInfo.map((s: any) => String(s))
-        if (typeof ef.ancillaries === 'string' && ef.ancillaries.trim()) return [ef.ancillaries.trim()]
-        if (typeof ef.additionalInfo === 'string' && ef.additionalInfo.trim()) return [ef.additionalInfo.trim()]
-        // Fall back to notes split by lines
-        if (libraryItem.notes && typeof libraryItem.notes === 'string') return libraryItem.notes.split('\n').map((s: string) => s.trim()).filter(Boolean)
-        return []
-      }
-
-      const bullets = maybeBullets()
-      const listEvent: IItineraryEvent = {
-        id: `event-${Date.now()}`,
-        category: "list",
-        title: libraryItem.title || "Ancillary",
-        description: libraryItem.notes || "",
-        listItems: bullets,
-        componentSource: "my-library",
-        libraryItemId: libraryItem._id,
-        highlights: [],
-        time: "",
-      } as unknown as IItineraryEvent
-
-      const newSlot = {
-        id: `ancillary-slot-${Date.now()}`,
-        title: libraryItem.title || `Ancillaries ${ancillarySlots.length + 1}`,
-        events: [listEvent],
-      }
-
-      setAncillarySlots([...ancillarySlots, newSlot])
-      setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
-      setDraggedItem(null)
-      setDropTarget(null)
-      return
-    }
 
     // Non-additionalInformation: convert and insert into days if a dropTarget is present
     const dropTargetLocal = componentSourceModal.dropTarget
@@ -1107,7 +1038,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         totalPrice,
         generatedAt: formatDate(new Date()),
         serviceSlots,
-        ancillarySlots,
         gallery,
         previewConfig: config,
         itineraryId: effectiveItineraryId ? effectiveItineraryId.toString() : null,
@@ -1206,7 +1136,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         gallery, // Include gallery in save data
         branding,
         serviceSlots,
-        ancillarySlots,
       }
 
       console.log("[v0] Saving itinerary data:", itineraryData)
