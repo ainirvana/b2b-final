@@ -14,6 +14,8 @@ import { Search, Plus, Library, Star, Clock, Filter, Copy, Heart, StickyNote } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLibrary } from "@/hooks/use-library"
 import { LibraryToItineraryConverter } from "@/lib/library-converter"
+import { TransferForms } from "./transfer-forms"
+import { AncillariesForms } from "./ancillaries-forms"
 
 interface ComponentSourceModalProps {
   isOpen: boolean
@@ -185,10 +187,32 @@ export function ComponentSourceModal({
   const [recentComponents, setRecentComponents] = useState<string[]>([])
   const [favoriteComponents, setFavoriteComponents] = useState<string[]>([])
 
+  // Subcategory selection state for Transfer and Ancillaries
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string>("")
+
+  // Subcategory options for Transfer (2-level hierarchy)
+  const transferSubCategories = [
+    { id: "airport-transfer", label: "Airport Transfer", icon: "✈️" },
+    { id: "car-hire-hourly", label: "Car Hire - Hourly", icon: "🚗" },
+    { id: "car-hire-outstation", label: "Car Hire - Outstation (One Way)", icon: "🚗" },
+    { id: "car-hire-roundtrip", label: "Car Hire - Round Trip", icon: "🚗" },
+    { id: "car-hire-selfdrive", label: "Car Hire - Self Drive", icon: "🚗" },
+    { id: "bus", label: "Bus", icon: "🚌" },
+    { id: "train", label: "Train", icon: "🚆" },
+  ]
+
+  // Subcategory options for Ancillaries
+  const ancillariesSubCategories = [
+    { id: "visa", label: "Visa", icon: "📋" },
+    { id: "forex", label: "Forex", icon: "💱" },
+    { id: "travel-insurance", label: "Travel Insurance", icon: "🛡️" },
+  ]
+
   useEffect(() => {
     if (!isOpen) {
       setSelectedSource(null)
       setSearchQuery("")
+      setSelectedSubCategory("") // Reset subcategory when modal closes
     }
   }, [isOpen])
 
@@ -356,6 +380,62 @@ export function ComponentSourceModal({
   const [manualHotelLink, setManualHotelLink] = useState("")
   const [manualConfirmationNumber, setManualConfirmationNumber] = useState("")
 
+  // Transfer specific fields
+  // Airport Transfer & On Demand Transfer
+  const [manualPickupDrop, setManualPickupDrop] = useState<"pickup" | "drop">("pickup") // Toggle
+  const [manualAirportName, setManualAirportName] = useState("")
+  const [manualTransferType, setManualTransferType] = useState<"private" | "shared">("private")
+  const [manualVehicleCapacity, setManualVehicleCapacity] = useState<number | "">(3) // Default 3
+  const [manualPricePerPax, setManualPricePerPax] = useState<number | "">("")  // Calculated
+  const [manualStopsList, setManualStopsList] = useState<string[]>([]) // Optional stops
+  const [manualAdditionalVehicles, setManualAdditionalVehicles] = useState<Array<{ vehicleType: string, capacity: number, price: number }>>([])
+
+  // Car Hire specific
+  const [manualPickupTime, setManualPickupTime] = useState("")
+  const [manualDropTime, setManualDropTime] = useState("")
+  const [manualNoOfHours, setManualNoOfHours] = useState<number | "">("")
+  const [manualNoOfDays, setManualNoOfDays] = useState<number | "">("")
+  const [manualCarType, setManualCarType] = useState("")
+  const [manualFuelType, setManualFuelType] = useState("") // Optional
+  const [manualCarModel, setManualCarModel] = useState("") // Optional
+  const [manualTransmission, setManualTransmission] = useState<"automatic" | "manual" | "">("")  // Optional
+
+  // Bus & Train specific
+  const [manualTravelDuration, setManualTravelDuration] = useState("")
+  const [manualDepartureTime, setManualDepartureTime] = useState("")
+  const [manualArrivalTime, setManualArrivalTime] = useState("")
+  const [manualBusNumber, setManualBusNumber] = useState("") // Optional
+  const [manualTrainNumber, setManualTrainNumber] = useState("") // Optional
+  const [manualLink, setManualLink] = useState("") // Optional
+  const [manualPhotos, setManualPhotos] = useState<string[]>([]) // Optional, up to 3
+
+  // Ancillaries specific fields
+  // Visa
+  const [manualCountry, setManualCountry] = useState("")
+  const [manualVisaType, setManualVisaType] = useState("")
+  const [manualVisaDuration, setManualVisaDuration] = useState("")
+  const [manualServiceFee, setManualServiceFee] = useState<number | "">("")
+  const [manualTotalFee, setManualTotalFee] = useState<number | "">("")  // Auto calculated
+  const [manualLengthOfStay, setManualLengthOfStay] = useState("") // Optional
+  const [manualEntryMethod, setManualEntryMethod] = useState("") // Optional
+  const [manualDepartureDate, setManualDepartureDate] = useState("") // Optional
+  const [manualReturnDate, setManualReturnDate] = useState("") // Optional
+
+  // Forex
+  const [manualForexCurrency, setManualForexCurrency] = useState("")
+  const [manualBaseCurrency, setManualBaseCurrency] = useState("INR")
+  const [manualAmount, setManualAmount] = useState<number | "">("")
+
+  // Travel Insurance
+  const [manualDestinations, setManualDestinations] = useState<string[]>([""]) // Multiple
+  const [manualStartDate, setManualStartDate] = useState("")
+  const [manualEndDate, setManualEndDate] = useState("")
+  const [manualNoOfTravellers, setManualNoOfTravellers] = useState<number | "">("")
+  const [manualInsuranceType, setManualInsuranceType] = useState("")
+  const [manualNotes, setManualNotes] = useState("") // Optional
+  const [manualSumInsured, setManualSumInsured] = useState<number | "">("")  // Optional
+
+
   const mealOptions = [
     { id: "breakfast", label: "Breakfast" },
     { id: "lunch", label: "Lunch" },
@@ -413,6 +493,63 @@ export function ComponentSourceModal({
   const handleRemoveManualHighlight = (index: number) => {
     const copy = manualHighlights.filter((_, i) => i !== index)
     setManualHighlights(copy.length ? copy : [""])
+  }
+
+  // Auto-calculate Price Per Pax for Transfer
+  useEffect(() => {
+    if (manualPrice && manualVehicleCapacity && manualTransferType === "shared") {
+      const priceNum = typeof manualPrice === "number" ? manualPrice : 0
+      const capacityNum = typeof manualVehicleCapacity === "number" ? manualVehicleCapacity : 1
+      setManualPricePerPax(Math.round((priceNum / capacityNum) * 100) / 100)
+    } else {
+      setManualPricePerPax("")
+    }
+  }, [manualPrice, manualVehicleCapacity, manualTransferType])
+
+  // Auto-calculate Total Fee for Visa
+  useEffect(() => {
+    if (manualPrice && manualServiceFee) {
+      const priceNum = typeof manualPrice === "number" ? manualPrice : 0
+      const feeNum = typeof manualServiceFee === "number" ? manualServiceFee : 0
+      setManualTotalFee(priceNum + feeNum)
+    } else {
+      setManualTotalFee("")
+    }
+  }, [manualPrice, manualServiceFee])
+
+  // Helper functions for Transfer
+  const handleAddStop = () => setManualStopsList([...manualStopsList, ""])
+  const handleRemoveStop = (index: number) => {
+    setManualStopsList(manualStopsList.filter((_, i) => i !== index))
+  }
+  const handleStopChange = (index: number, value: string) => {
+    const copy = [...manualStopsList]
+    copy[index] = value
+    setManualStopsList(copy)
+  }
+
+  const handleAddVehicle = () => {
+    setManualAdditionalVehicles([...manualAdditionalVehicles, { vehicleType: "", capacity: 3, price: 0 }])
+  }
+  const handleRemoveVehicle = (index: number) => {
+    setManualAdditionalVehicles(manualAdditionalVehicles.filter((_, i) => i !== index))
+  }
+  const handleVehicleChange = (index: number, field: string, value: any) => {
+    const copy = [...manualAdditionalVehicles]
+    copy[index] = { ...copy[index], [field]: value }
+    setManualAdditionalVehicles(copy)
+  }
+
+  // Helper functions for Travel Insurance destinations
+  const handleAddDestination = () => setManualDestinations([...manualDestinations, ""])
+  const handleRemoveDestination = (index: number) => {
+    const copy = manualDestinations.filter((_, i) => i !== index)
+    setManualDestinations(copy.length ? copy : [""])
+  }
+  const handleDestinationChange = (index: number, value: string) => {
+    const copy = [...manualDestinations]
+    copy[index] = value
+    setManualDestinations(copy)
   }
 
   const handleSubmitManual = () => {
@@ -488,9 +625,13 @@ export function ComponentSourceModal({
     if (manualHotelLink) payload.hotelLink = manualHotelLink
     if (manualConfirmationNumber) payload.confirmationNumber = manualConfirmationNumber
 
+    // Add subcategory for Transfer and Ancillaries
+    if (selectedSubCategory) payload.subCategory = selectedSubCategory
+
     onSelectManual(payload)
     onClose()
     setSelectedSource(null)
+    setSelectedSubCategory("") // Reset subcategory
     // Reset all manual fields
     setManualTitle("")
     setManualBullets([""])
@@ -706,7 +847,430 @@ export function ComponentSourceModal({
         {selectedSource === "manual" && (
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4">
-              {(componentType.toLowerCase() === "additionalinformation" || componentType.toLowerCase().includes("ancill")) ? (
+              {/* Transfer Component - Show Subcategory Selection */}
+              {componentType.toLowerCase() === "transfer" ? (
+                <div className="space-y-4">
+                  {/* Subcategory Selection */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Sub-Category</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {transferSubCategories.map((subCat) => (
+                        <button
+                          key={subCat.id}
+                          onClick={() => setSelectedSubCategory(subCat.id)}
+                          className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${selectedSubCategory === subCat.id
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                            }`}
+                        >
+                          <span className="text-2xl mb-2">{subCat.icon}</span>
+                          <span className="text-xs text-center font-medium">{subCat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Show form fields only if subcategory is selected */}
+                  {selectedSubCategory && (
+                    <div className="space-y-4">
+                      {/* AIRPORT TRANSFER FIELDS */}
+                      {selectedSubCategory === "airport-transfer" && (
+                        <>
+                          {/* Mandatory Fields */}
+                          <div className="mb-6">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                              Mandatory Fields
+                            </h4>
+                            <div className="space-y-4 pl-4 border-l-2 border-red-200">
+                              {/* Pickup/Drop Toggle */}
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Pickup/Drop</label>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setManualPickupDrop("pickup")}
+                                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all text-sm ${manualPickupDrop === "pickup"
+                                      ? "bg-black text-white border-black"
+                                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                                      }`}
+                                  >
+                                    Pickup
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setManualPickupDrop("drop")}
+                                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all text-sm ${manualPickupDrop === "drop"
+                                      ? "bg-black text-white border-black"
+                                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                                      }`}
+                                  >
+                                    Drop
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Airport Name */}
+                              <div>
+                                <label className="text-sm font-medium">Airport Name</label>
+                                <Input
+                                  value={manualAirportName}
+                                  onChange={(e) => setManualAirportName(e.target.value)}
+                                  placeholder="e.g., Indira Gandhi International Airport"
+                                />
+                              </div>
+
+                              {/* From */}
+                              <div>
+                                <label className="text-sm font-medium">From</label>
+                                <Input
+                                  value={manualFromCity}
+                                  onChange={(e) => setManualFromCity(e.target.value)}
+                                  placeholder={manualPickupDrop === "pickup" ? manualAirportName || "Airport" : "Location"}
+                                />
+                              </div>
+
+                              {/* To */}
+                              <div>
+                                <label className="text-sm font-medium">To</label>
+                                <Input
+                                  value={manualToCity}
+                                  onChange={(e) => setManualToCity(e.target.value)}
+                                  placeholder={manualPickupDrop === "drop" ? manualAirportName || "Airport" : "Destination"}
+                                />
+                              </div>
+
+                              {/* Title */}
+                              <div>
+                                <label className="text-sm font-medium">Title</label>
+                                <Input
+                                  value={manualTitle}
+                                  onChange={(e) => setManualTitle(e.target.value)}
+                                  placeholder="Transfer title"
+                                />
+                              </div>
+
+                              {/* Type of Transfer */}
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Type of Transfer</label>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setManualTransferType("private")}
+                                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all text-sm ${manualTransferType === "private"
+                                      ? "bg-black text-white border-black"
+                                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                                      }`}
+                                  >
+                                    Private
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setManualTransferType("shared")}
+                                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all text-sm ${manualTransferType === "shared"
+                                      ? "bg-black text-white border-black"
+                                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                                      }`}
+                                  >
+                                    Shared
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Type of Vehicle */}
+                              <div>
+                                <label className="text-sm font-medium">Type of Vehicle</label>
+                                <Input
+                                  value={manualVehicleType}
+                                  onChange={(e) => setManualVehicleType(e.target.value)}
+                                  placeholder="e.g., Sedan, SUV, Van"
+                                />
+                              </div>
+
+                              {/* Vehicle Capacity */}
+                              <div>
+                                <label className="text-sm font-medium">Vehicle Capacity</label>
+                                <Input
+                                  type="number"
+                                  value={manualVehicleCapacity}
+                                  onChange={(e) => setManualVehicleCapacity(Number(e.target.value) || "")}
+                                  placeholder="Default: 3"
+                                />
+                              </div>
+
+                              {/* Price */}
+                              <div>
+                                <label className="text-sm font-medium">Price</label>
+                                <div className="flex gap-2">
+                                  <Select value={manualCurrency} onValueChange={setManualCurrency}>
+                                    <SelectTrigger className="w-[100px]">
+                                      <SelectValue placeholder="Currency" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="INR">INR (₹)</SelectItem>
+                                      <SelectItem value="USD">USD ($)</SelectItem>
+                                      <SelectItem value="EUR">EUR (€)</SelectItem>
+                                      <SelectItem value="GBP">GBP (£)</SelectItem>
+                                      <SelectItem value="AED">AED (د.إ)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <Input
+                                    type="number"
+                                    value={manualPrice}
+                                    onChange={(e) => setManualPrice(Number(e.target.value) || "")}
+                                    placeholder="0.00"
+                                    className="flex-1"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Price Per Pax (Auto-calculated for Shared) */}
+                              {manualTransferType === "shared" && manualPricePerPax && (
+                                <div className="bg-blue-50 p-3 rounded-lg">
+                                  <label className="text-sm font-medium text-blue-900">Price Per Pax (Calculated)</label>
+                                  <p className="text-lg font-semibold text-blue-900 mt-1">
+                                    {manualCurrency === "INR" ? "₹" : manualCurrency === "USD" ? "$" : manualCurrency === "EUR" ? "€" : manualCurrency === "GBP" ? "£" : ""}
+                                    {manualPricePerPax}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Optional Fields */}
+                          <div className="mb-6">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                              <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                              Optional Fields
+                            </h4>
+                            <div className="space-y-4 pl-4 border-l-2 border-gray-200">
+                              {/* Add Stops */}
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Add Stops (if any)</label>
+                                <div className="space-y-2">
+                                  {manualStopsList.map((stop, idx) => (
+                                    <div key={idx} className="flex gap-2">
+                                      <Input
+                                        value={stop}
+                                        onChange={(e) => handleStopChange(idx, e.target.value)}
+                                        placeholder={`Stop ${idx + 1}`}
+                                        className="flex-1"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemoveStop(idx)}
+                                      >
+                                        Remove
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  <Button type="button" variant="outline" size="sm" onClick={handleAddStop}>
+                                    + Add Stop
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Add Vehicles Manually */}
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Add Vehicles Manually</label>
+                                <div className="space-y-3">
+                                  {manualAdditionalVehicles.map((vehicle, idx) => (
+                                    <div key={idx} className="p-3 bg-gray-50 rounded-lg space-y-2">
+                                      <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs font-medium text-gray-600">Vehicle {idx + 1}</span>
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleRemoveVehicle(idx)}
+                                        >
+                                          Remove
+                                        </Button>
+                                      </div>
+                                      <Input
+                                        value={vehicle.vehicleType}
+                                        onChange={(e) => handleVehicleChange(idx, "vehicleType", e.target.value)}
+                                        placeholder="Type of Vehicle"
+                                      />
+                                      <Input
+                                        type="number"
+                                        value={vehicle.capacity}
+                                        onChange={(e) => handleVehicleChange(idx, "capacity", Number(e.target.value) || 0)}
+                                        placeholder="Capacity"
+                                      />
+                                      <Input
+                                        type="number"
+                                        value={vehicle.price}
+                                        onChange={(e) => handleVehicleChange(idx, "price", Number(e.target.value) || 0)}
+                                        placeholder="Price"
+                                      />
+                                    </div>
+                                  ))}
+                                  <Button type="button" variant="outline" size="sm" onClick={handleAddVehicle}>
+                                    + Add Vehicle
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* TRANSFER FORMS - Car Hire, Bus, Train */}
+                      <TransferForms
+                        selectedSubCategory={selectedSubCategory}
+                        manualTitle={manualTitle}
+                        setManualTitle={setManualTitle}
+                        manualFromCity={manualFromCity}
+                        setManualFromCity={setManualFromCity}
+                        manualToCity={manualToCity}
+                        setManualToCity={setManualToCity}
+                        manualPrice={manualPrice}
+                        setManualPrice={setManualPrice}
+                        manualCurrency={manualCurrency}
+                        setManualCurrency={setManualCurrency}
+                        manualDescription={manualDescription}
+                        setManualDescription={setManualDescription}
+                        manualPickupDrop={manualPickupDrop}
+                        setManualPickupDrop={setManualPickupDrop}
+                        manualAirportName={manualAirportName}
+                        setManualAirportName={setManualAirportName}
+                        manualTransferType={manualTransferType}
+                        setManualTransferType={setManualTransferType}
+                        manualVehicleType={manualVehicleType}
+                        setManualVehicleType={setManualVehicleType}
+                        manualVehicleCapacity={manualVehicleCapacity}
+                        setManualVehicleCapacity={setManualVehicleCapacity}
+                        manualPricePerPax={manualPricePerPax}
+                        manualStopsList={manualStopsList}
+                        handleAddStop={handleAddStop}
+                        handleRemoveStop={handleRemoveStop}
+                        handleStopChange={handleStopChange}
+                        manualAdditionalVehicles={manualAdditionalVehicles}
+                        handleAddVehicle={handleAddVehicle}
+                        handleRemoveVehicle={handleRemoveVehicle}
+                        handleVehicleChange={handleVehicleChange}
+                        manualPickupTime={manualPickupTime}
+                        setManualPickupTime={setManualPickupTime}
+                        manualDropTime={manualDropTime}
+                        setManualDropTime={setManualDropTime}
+                        manualNoOfHours={manualNoOfHours}
+                        setManualNoOfHours={setManualNoOfHours}
+                        manualNoOfDays={manualNoOfDays}
+                        setManualNoOfDays={setManualNoOfDays}
+                        manualCarType={manualCarType}
+                        setManualCarType={setManualCarType}
+                        manualFuelType={manualFuelType}
+                        setManualFuelType={setManualFuelType}
+                        manualCarModel={manualCarModel}
+                        setManualCarModel={setManualCarModel}
+                        manualTransmission={manualTransmission}
+                        setManualTransmission={setManualTransmission}
+                        manualTravelDuration={manualTravelDuration}
+                        setManualTravelDuration={setManualTravelDuration}
+                        manualDepartureTime={manualDepartureTime}
+                        setManualDepartureTime={setManualDepartureTime}
+                        manualArrivalTime={manualArrivalTime}
+                        setManualArrivalTime={setManualArrivalTime}
+                        manualClass={manualClass}
+                        setManualClass={setManualClass}
+                        manualBusNumber={manualBusNumber}
+                        setManualBusNumber={setManualBusNumber}
+                        manualTrainNumber={manualTrainNumber}
+                        setManualTrainNumber={setManualTrainNumber}
+                        manualPnr={manualPnr}
+                        setManualPnr={setManualPnr}
+                        manualRefundable={manualRefundable}
+                        setManualRefundable={setManualRefundable}
+                        manualLink={manualLink}
+                        setManualLink={setManualLink}
+                        manualAmenities={manualAmenities}
+                        setManualAmenities={setManualAmenities}
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : componentType.toLowerCase() === "ancillaries" ? (
+                /* Ancillaries Component - Show Subcategory Selection */
+                <div className="space-y-4">
+                  {/* Subcategory Selection */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Sub-Category</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {ancillariesSubCategories.map((subCat) => (
+                        <button
+                          key={subCat.id}
+                          onClick={() => setSelectedSubCategory(subCat.id)}
+                          className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${selectedSubCategory === subCat.id
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                            }`}
+                        >
+                          <span className="text-2xl mb-2">{subCat.icon}</span>
+                          <span className="text-xs text-center font-medium">{subCat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Show form fields only if subcategory is selected */}
+                  {selectedSubCategory && (
+                    <div className="space-y-4">
+                      {/* ANCILLARIES FORMS - Visa, Forex, Travel Insurance */}
+                      <AncillariesForms
+                        selectedSubCategory={selectedSubCategory}
+                        manualTitle={manualTitle}
+                        setManualTitle={setManualTitle}
+                        manualPrice={manualPrice}
+                        setManualPrice={setManualPrice}
+                        manualCurrency={manualCurrency}
+                        setManualCurrency={setManualCurrency}
+                        manualCountry={manualCountry}
+                        setManualCountry={setManualCountry}
+                        manualVisaType={manualVisaType}
+                        setManualVisaType={setManualVisaType}
+                        manualVisaDuration={manualVisaDuration}
+                        setManualVisaDuration={setManualVisaDuration}
+                        manualServiceFee={manualServiceFee}
+                        setManualServiceFee={setManualServiceFee}
+                        manualTotalFee={manualTotalFee}
+                        manualLengthOfStay={manualLengthOfStay}
+                        setManualLengthOfStay={setManualLengthOfStay}
+                        manualEntryMethod={manualEntryMethod}
+                        setManualEntryMethod={setManualEntryMethod}
+                        manualDepartureDate={manualDepartureDate}
+                        setManualDepartureDate={setManualDepartureDate}
+                        manualReturnDate={manualReturnDate}
+                        setManualReturnDate={setManualReturnDate}
+                        manualForexCurrency={manualForexCurrency}
+                        setManualForexCurrency={setManualForexCurrency}
+                        manualBaseCurrency={manualBaseCurrency}
+                        setManualBaseCurrency={setManualBaseCurrency}
+                        manualAmount={manualAmount}
+                        setManualAmount={setManualAmount}
+                        manualDestinations={manualDestinations}
+                        handleAddDestination={handleAddDestination}
+                        handleRemoveDestination={handleRemoveDestination}
+                        handleDestinationChange={handleDestinationChange}
+                        manualStartDate={manualStartDate}
+                        setManualStartDate={setManualStartDate}
+                        manualEndDate={manualEndDate}
+                        setManualEndDate={setManualEndDate}
+                        manualNoOfTravellers={manualNoOfTravellers}
+                        setManualNoOfTravellers={setManualNoOfTravellers}
+                        manualInsuranceType={manualInsuranceType}
+                        setManualInsuranceType={setManualInsuranceType}
+                        manualNotes={manualNotes}
+                        setManualNotes={setManualNotes}
+                        manualSumInsured={manualSumInsured}
+                        setManualSumInsured={setManualSumInsured}
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (componentType.toLowerCase() === "additionalinformation" || componentType.toLowerCase().includes("ancill")) ? (
                 // Additional Information and Ancillaries special case
                 <div className="space-y-4">
                   <div className="mb-6">
