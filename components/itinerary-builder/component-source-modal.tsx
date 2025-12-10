@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Library, Star, Clock, Filter, Copy, Heart } from "lucide-react"
+import { Search, Plus, Library, Star, Clock, Filter, Copy, Heart, StickyNote } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLibrary } from "@/hooks/use-library"
 import { LibraryToItineraryConverter } from "@/lib/library-converter"
@@ -346,6 +346,8 @@ export function ComponentSourceModal({
   const [manualAirline, setManualAirline] = useState("")
   const [manualClass, setManualClass] = useState("")
   const [manualEndTime, setManualEndTime] = useState("")
+  // Note specific fields
+  const [manualNoteContent, setManualNoteContent] = useState("")
   // Hotel specific fields
   const [manualAdults, setManualAdults] = useState<number | "">("")
   const [manualChildren, setManualChildren] = useState<number | "">("")
@@ -464,6 +466,10 @@ export function ComponentSourceModal({
     if (cleanedAmenities.length) payload.amenities = cleanedAmenities
     if (manualMeals.length) payload.meals = manualMeals
     if (manualCustomMealDescription) payload.customMealDescription = manualCustomMealDescription
+    // Note specific payload
+    if (componentType === "note") {
+      payload.description = manualNoteContent
+    }
     // Flight specific payload
     if (manualBaggage) payload.baggage = manualBaggage
     if (manualStops) payload.stops = manualStops
@@ -528,6 +534,7 @@ export function ComponentSourceModal({
     setManualAddress("")
     setManualHotelLink("")
     setManualConfirmationNumber("")
+    setManualNoteContent("") // Reset note content
   }
 
   const handleSelectTemplate = (template: ComponentTemplate) => {
@@ -746,6 +753,18 @@ export function ComponentSourceModal({
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              ) : componentType.toLowerCase() === "note" ? (
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium">Note Content</label>
+                    <Textarea
+                      value={manualNoteContent}
+                      onChange={(e) => setManualNoteContent(e.target.value)}
+                      placeholder="Enter your note here..."
+                      className="min-h-[100px]"
+                    />
                   </div>
                 </div>
               ) : componentType.toLowerCase() === "meal" ? (
@@ -1653,6 +1672,6 @@ export function ComponentSourceModal({
           </div>
         )}
       </DialogContent>
-    </Dialog>
+    </Dialog >
   )
 }

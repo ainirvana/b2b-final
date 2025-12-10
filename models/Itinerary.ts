@@ -108,7 +108,9 @@ export interface IItineraryEvent {
   | "heading"
   | "paragraph"
   | "list"
+  | "list"
   | "image"
+  | "note"
   title: string
   description: string
   time?: string
@@ -199,7 +201,9 @@ const ItineraryEventSchema = new mongoose.Schema({
       "heading",
       "paragraph",
       "list",
+      "list",
       "image",
+      "note",
     ],
     required: true,
   },

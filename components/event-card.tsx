@@ -169,6 +169,45 @@ export function EventCard({
     )
   }
 
+  if (event.category === "note") {
+    return (
+      <div
+        className="group relative py-3 px-4 hover:bg-gray-50 rounded-md transition-colors cursor-pointer border border-transparent hover:border-gray-200"
+        draggable={!!onDragStart}
+        onDragStart={onDragStart}
+        onClick={handleCardClick}
+      >
+        <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">{event.description || "Add a note..."}</p>
+
+        {(onEdit || onDelete) && (
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-gray-200" data-no-edit>
+                  <MoreVertical className="h-3 w-3 text-gray-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {onEdit && (
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <DropdownMenuItem onClick={onDelete} className="text-red-600">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <Card
       className={cn(

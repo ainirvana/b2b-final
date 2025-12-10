@@ -34,6 +34,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronLeft,
+  StickyNote,
   Trash2,
   Briefcase,
   Copy,
@@ -156,6 +157,12 @@ const COMPONENT_TEMPLATES = [
 
 
 
+  {
+    category: "note",
+    title: "Notes",
+    icon: StickyNote,
+    color: "bg-yellow-100 border-yellow-300",
+  },
 ]
 
 export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuilderProps) {
@@ -438,11 +445,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         return
       }
 
-      if (draggedItem.item.category === "ancillaries") {
-        console.log("[DEBUG] Opening component source modal for Ancillaries")
-        setComponentSourceModal({ isOpen: true, component: draggedItem.item, dropTarget: null })
-        return
-      }
+
 
       // Skip modal for drops in Additional Information section (dayIndex === -1)
       if (dayIndex === -1) {
@@ -452,13 +455,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         return
       }
 
-      // Skip modal for drops in Ancillaries section (dayIndex === -2)
-      if (dayIndex === -2) {
-        console.log("[DEBUG] Dropped in Ancillaries section but not Ancillaries component")
-        setDraggedItem(null)
-        setDropTarget(null)
-        return
-      }
+
 
       console.log("[DEBUG] Opening component source modal")
       setComponentSourceModal({ isOpen: true, component: draggedItem.item, dropTarget: { dayIndex, position } })
@@ -532,6 +529,14 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     }
 
     console.log("[DEBUG] Setting new days state")
+
+    // Sort events: Notes first
+    newDays[dayIndex].events.sort((a, b) => {
+      if (a.category === 'note' && b.category !== 'note') return -1
+      if (a.category !== 'note' && b.category === 'note') return 1
+      return 0
+    })
+
     setDays(newDays)
     setDraggedItem(null)
     setDropTarget(null)
@@ -891,6 +896,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         imageCaption: (manualData && manualData.imageCaption) || "",
         imageAlt: (manualData && manualData.imageAlt) || "",
       }),
+      ...(component.category === "note" && {
+        title: "Note",
+        description: (manualData && manualData.description) || "",
+      }),
     }
 
     newDays[dayIndex].events.splice(position, 0, newEvent)
@@ -940,6 +949,13 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         newDays[nextDayIndex].events.push(nightEvent)
       }
     }
+
+    // Sort events: Notes first
+    newDays[dayIndex].events.sort((a, b) => {
+      if (a.category === 'note' && b.category !== 'note') return -1
+      if (a.category !== 'note' && b.category === 'note') return 1
+      return 0
+    })
 
     setDays(newDays)
     setDraggedItem(null)
@@ -2099,55 +2115,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                             const newSlots = [...serviceSlots]
                             newSlots[slotIndex].events[eventIndex] = updatedEvent
                             setServiceSlots(newSlots)
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-
-        <div className="mt-0 mb-0" onDragOver={(e) => { e.preventDefault(); handleDragOver(-2, 0) }} onDrop={() => handleDrop(-2, 0)}>
-          <h3 className="text-xs font-semibold mb-0.5 text-gray-700">Ancillaries</h3>
-
-          <div className="space-y-0">
-            {ancillarySlots.length === 0 && (
-              <div className="text-xs text-gray-400 p-0.5 border border-dashed border-gray-200 rounded bg-gray-50">Drag here</div>
-            )}
-
-            {ancillarySlots.map((slot, slotIndex) => (
-              <Card key={slot.id} className="border border-dashed border-gray-200 rounded-sm">
-                <CardContent className="p-0.5">
-                  <div className="space-y-0">
-                    {slot.events.map((event, eventIndex) => (
-                      <div key={event.id}>
-                        <EventCard
-                          event={event}
-                          isDetailedView={isDetailedView}
-                          onDragStart={() => handleDragStart("event", event)}
-                          onEdit={() => {
-                            const dayIndex = days.findIndex((day) =>
-                              day.events.some((e) => e.id === event.id),
-                            )
-                            const eventIndex = days[dayIndex]?.events.findIndex((e) => e.id === event.id) ?? -1
-                            if (eventIndex >= 0) {
-                              handleEditEvent(dayIndex, eventIndex)
-                            }
-                          }}
-                          onDelete={() => {
-                            const newSlots = [...ancillarySlots]
-                            newSlots[slotIndex].events.splice(eventIndex, 1)
-                            setAncillarySlots(newSlots)
-                          }}
-                          onMealChange={() => { }}
-                          onUpdate={(updatedEvent) => {
-                            const newSlots = [...ancillarySlots]
-                            newSlots[slotIndex].events[eventIndex] = updatedEvent
-                            setAncillarySlots(newSlots)
                           }}
                         />
                       </div>

@@ -395,6 +395,25 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
   )
 
   const renderFields = () => {
+    // Simple text-only interface for notes
+    if (event.category === "note") {
+      return (
+        <div className="space-y-4">
+          <div className="grid gap-2">
+            <Label htmlFor="description">Note</Label>
+            <Textarea
+              id="description"
+              value={editedEvent.description || ""}
+              onChange={(e) => handleFieldChange("description", e.target.value)}
+              placeholder="Enter your note here..."
+              className="min-h-[200px]"
+              rows={10}
+            />
+          </div>
+        </div>
+      )
+    }
+
     switch (event.category) {
       case "flight":
         return (
@@ -1204,7 +1223,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
           {renderFields()}
 
           {/* Additional Information Section */}
-          {editedEvent.category !== "meal" && editedEvent.category !== "flight" && editedEvent.category !== "hotel" && (
+          {editedEvent.category !== "meal" && editedEvent.category !== "flight" && editedEvent.category !== "hotel" && editedEvent.category !== "note" && (
             <div className="border rounded-md p-4">
               <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
               {editedEvent.additionalInfoSections && editedEvent.additionalInfoSections.length > 0 ? (
@@ -1261,7 +1280,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
             </div>
           )}
 
-          {!["meal", "flight", "hotel"].includes(editedEvent.category) && (
+          {!["meal", "flight", "hotel", "note"].includes(editedEvent.category) && (
             <div className="grid gap-2">
               <Label htmlFor="price">Price</Label>
               <div className="flex gap-2">
