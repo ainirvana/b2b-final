@@ -453,7 +453,7 @@ export function ComponentSourceModal({
   const handleRemoveProduct = (index: number) => setManualProducts(manualProducts.filter((_, i) => i !== index))
   const handleProductChange = (index: number, field: string, value: any) => {
     const copy = [...manualProducts]
-    ;(copy as any)[index] = { ...(copy as any)[index], [field]: value }
+      ; (copy as any)[index] = { ...(copy as any)[index], [field]: value }
     setManualProducts(copy)
   }
 
@@ -516,17 +516,6 @@ export function ComponentSourceModal({
     const copy = manualHighlights.filter((_, i) => i !== index)
     setManualHighlights(copy.length ? copy : [""])
   }
-
-  // Auto-calculate Price Per Pax for Transfer
-  useEffect(() => {
-    if (manualPrice && manualVehicleCapacity && manualTransferType === "shared") {
-      const priceNum = typeof manualPrice === "number" ? manualPrice : 0
-      const capacityNum = typeof manualVehicleCapacity === "number" ? manualVehicleCapacity : 1
-      setManualPricePerPax(Math.round((priceNum / capacityNum) * 100) / 100)
-    } else {
-      setManualPricePerPax("")
-    }
-  }, [manualPrice, manualVehicleCapacity, manualTransferType])
 
   // Auto-calculate Total Fee for Visa
   useEffect(() => {
@@ -606,10 +595,13 @@ export function ComponentSourceModal({
     if (manualNights) payload.nights = Number(manualNights)
     if (manualCheckIn) payload.checkIn = manualCheckIn
     if (manualCheckOut) payload.checkOut = manualCheckOut
+
+    // Always save currency (not just when price exists)
+    payload.currency = manualCurrency || "INR"
     if (manualPrice) {
       payload.price = Number(manualPrice)
-      payload.currency = manualCurrency
     }
+
     if (manualCapacity) payload.capacity = Number(manualCapacity)
     if (manualDuration) payload.duration = manualDuration
     if (manualDifficulty) payload.difficulty = manualDifficulty
@@ -622,6 +614,14 @@ export function ComponentSourceModal({
     if (manualImageCaption) payload.imageCaption = manualImageCaption
     if (manualImageAlt) payload.imageAlt = manualImageAlt
     if (manualVehicleType) payload.vehicleType = manualVehicleType
+
+    // Transfer specific fields (CRITICAL for pricing calculator)
+    if (manualTransferType) payload.transferType = manualTransferType
+    if (selectedSubCategory && componentType.toLowerCase() === "transfer") {
+      payload.transferCategory = selectedSubCategory
+    }
+    if (manualVehicleCapacity) payload.capacity = Number(manualVehicleCapacity)
+
     if (cleanedAmenities.length) payload.amenities = cleanedAmenities
     if (manualMeals.length) payload.meals = manualMeals
     if (manualCustomMealDescription) payload.customMealDescription = manualCustomMealDescription
@@ -1062,17 +1062,6 @@ export function ComponentSourceModal({
                                   />
                                 </div>
                               </div>
-
-                              {/* Price Per Pax (Auto-calculated for Shared) */}
-                              {manualTransferType === "shared" && manualPricePerPax && (
-                                <div className="bg-blue-50 p-3 rounded-lg">
-                                  <label className="text-sm font-medium text-blue-900">Price Per Pax (Calculated)</label>
-                                  <p className="text-lg font-semibold text-blue-900 mt-1">
-                                    {manualCurrency === "INR" ? "₹" : manualCurrency === "USD" ? "$" : manualCurrency === "EUR" ? "€" : manualCurrency === "GBP" ? "£" : ""}
-                                    {manualPricePerPax}
-                                  </p>
-                                </div>
-                              )}
                             </div>
                           </div>
 

@@ -4,13 +4,34 @@ import { Plane } from "lucide-react"
 import { IItineraryEvent } from "@/models/Itinerary"
 import { EventSourceBadge } from "./source-badge"
 import { Badge } from "@/components/ui/badge"
+import { calculateFlightPrice } from "@/lib/pricing-calculator"
 
 interface FlightEventProps {
   event: IItineraryEvent
   isDetailedView?: boolean
+  pricingEnabled?: boolean
+  pricingAdults?: number
+  pricingChildren?: number
+  pricingCurrency?: string
 }
 
-export function FlightEvent({ event, isDetailedView = true }: FlightEventProps) {
+export function FlightEvent({
+  event,
+  isDetailedView = true,
+  pricingEnabled = false,
+  pricingAdults = 2,
+  pricingChildren = 0,
+  pricingCurrency = "INR"
+}: FlightEventProps) {
+  // Calculate pricing if enabled
+  const priceResult = pricingEnabled && event.price
+    ? calculateFlightPrice(event, {
+      adults: pricingAdults,
+      children: pricingChildren,
+      targetCurrency: pricingCurrency
+    })
+    : null
+
   if (!isDetailedView) {
     // Summary view: show only fromCity -> toCity
     return (
@@ -61,13 +82,28 @@ export function FlightEvent({ event, isDetailedView = true }: FlightEventProps) 
       {event.price && (
         <div className="mt-1.5 p-1.5 bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-600">Flight</span>
+            <span className="text-xs text-gray-600">
+              {priceResult ? priceResult.breakdown : "Flight"}
+            </span>
             <div className="text-right">
-              <span className="text-sm font-bold text-gray-700">
-                {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
-                {event.price}
-              </span>
-              <span className="text-xs text-gray-500 block leading-none">per person</span>
+              {priceResult ? (
+                <>
+                  <span className="text-sm font-bold text-gray-700">
+                    {priceResult.displayPrice}
+                  </span>
+                  <span className="text-xs text-gray-400 block leading-none opacity-60">
+                    {priceResult.originalDisplayPrice} / person
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-bold text-gray-700">
+                    {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
+                    {event.price}
+                  </span>
+                  <span className="text-xs text-gray-500 block leading-none">per person</span>
+                </>
+              )}
             </div>
           </div>
         </div>

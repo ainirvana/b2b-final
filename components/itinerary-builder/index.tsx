@@ -163,8 +163,8 @@ const COMPONENT_TEMPLATES = [
     icon: Briefcase,
     color: "bg-slate-50 border-slate-200",
   },
- 
- 
+
+
   {
     category: "note",
     title: "Notes",
@@ -795,6 +795,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       highlights: (manualData && manualData.highlights) || [],
       listItems: (manualData && manualData.listItems) || [],
       price: (manualData && manualData.price) || 0,
+      currency: (manualData && manualData.currency) || "INR", // CRITICAL: Save selected currency
       componentSource: "manual",
       versionHistory: [
         {
@@ -1867,6 +1868,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           nightIndex={event.hotelNightIndex}
                           totalNights={event.hotelTotalNights}
                           dayNumber={dayIndex + 1}
+                          pricingEnabled={pricingEnabled}
+                          pricingAdults={pricingAdults}
+                          pricingChildren={pricingChildren}
+                          pricingCurrency={pricingCurrency}
                           onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
                           onEdit={() => handleEditEvent(dayIndex, eventIndex)}
                           onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
@@ -1936,6 +1941,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                             nightIndex={event.hotelNightIndex}
                             totalNights={event.hotelTotalNights}
                             dayNumber={dayIndex + 1}
+                            pricingEnabled={pricingEnabled}
+                            pricingAdults={pricingAdults}
+                            pricingChildren={pricingChildren}
+                            pricingCurrency={pricingCurrency}
                             onDragStart={() => handleDragStart("event", event)}
                             onEdit={() => {
                               const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)

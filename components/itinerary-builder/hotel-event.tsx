@@ -4,6 +4,7 @@ import { Hotel, Moon, Wifi, Car, UtensilsCrossed, Dumbbell, Clock } from "lucide
 import { Badge } from "@/components/ui/badge"
 import type { IItineraryEvent } from "@/models/Itinerary"
 import { EventSourceBadge } from "./source-badge"
+import { calculateHotelPrice } from "@/lib/pricing-calculator"
 
 interface HotelEventProps {
   event: IItineraryEvent
@@ -13,9 +14,25 @@ interface HotelEventProps {
   dayNumber?: number // Actual day number (1, 2, 3, etc.)
   onEdit?: () => void
   onDelete?: () => void
+  pricingEnabled?: boolean
+  pricingAdults?: number
+  pricingChildren?: number
+  pricingCurrency?: string
 }
 
-export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNights, dayNumber, onEdit, onDelete }: HotelEventProps) {
+export function HotelEvent({
+  event,
+  isDetailedView = true,
+  nightIndex,
+  totalNights,
+  dayNumber,
+  onEdit,
+  onDelete,
+  pricingEnabled = false,
+  pricingAdults = 2,
+  pricingChildren = 0,
+  pricingCurrency = "INR"
+}: HotelEventProps) {
   const getAmenityIcon = (amenity: string) => {
     switch (amenity.toLowerCase()) {
       case "wifi":
@@ -45,6 +62,15 @@ export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNigh
   const isCheckInDay = nightIndex === 1
   // Checkout day is when nightIndex equals totalNights + 1 (the day after the last night)
   const isCheckOutDay = nightIndex !== undefined && totalNights !== undefined && nightIndex === totalNights + 1
+
+  // Calculate pricing if enabled (AFTER isCheckOutDay is defined)
+  const priceResult = pricingEnabled && event.price
+    ? calculateHotelPrice(event, {
+      adults: pricingAdults,
+      children: pricingChildren,
+      targetCurrency: pricingCurrency
+    }, isCheckOutDay)
+    : null
 
   if (!isDetailedView) {
     // Summary view: show only hotel name with night indicator
@@ -169,12 +195,32 @@ export function HotelEvent({ event, isDetailedView = true, nightIndex, totalNigh
 
       {/* Price */}
       {event.price && (
-        <div className="mt-1.5 text-right">
-          <span className="text-sm font-bold text-blue-600">
-            {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
-            {event.price}
-          </span>
-          <span className="text-xs text-gray-500 ml-0.5">per night</span>
+        <div className="mt-1.5 p-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-600">
+              {priceResult ? priceResult.breakdown : "Hotel"}
+            </span>
+            <div className="text-right">
+              {priceResult ? (
+                <>
+                  <span className="text-sm font-bold text-blue-600">
+                    {priceResult.displayPrice}
+                  </span>
+                  <span className="text-xs text-gray-400 block leading-none opacity-60">
+                    {priceResult.originalDisplayPrice} / night
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-bold text-blue-600">
+                    {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
+                    {event.price}
+                  </span>
+                  <span className="text-xs text-gray-500 ml-0.5">per night</span>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

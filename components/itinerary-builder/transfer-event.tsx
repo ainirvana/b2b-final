@@ -4,15 +4,37 @@ import { Car, Clock, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import type { IItineraryEvent } from "@/models/Itinerary"
 import { EventSourceBadge } from "./source-badge"
+import { calculateTransferPrice } from "@/lib/pricing-calculator"
 
 interface TransferEventProps {
   event: IItineraryEvent
   isDetailedView?: boolean
   onEdit?: () => void
   onDelete?: () => void
+  pricingEnabled?: boolean
+  pricingAdults?: number
+  pricingChildren?: number
+  pricingCurrency?: string
 }
 
-export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }: TransferEventProps) {
+export function TransferEvent({
+  event,
+  isDetailedView = true,
+  onEdit,
+  onDelete,
+  pricingEnabled = false,
+  pricingAdults = 2,
+  pricingChildren = 0,
+  pricingCurrency = "INR"
+}: TransferEventProps) {
+  // Calculate pricing if enabled (transfers use special shared/private logic)
+  const priceResult = pricingEnabled && event.price
+    ? calculateTransferPrice(event, {
+      adults: pricingAdults,
+      children: pricingChildren,
+      targetCurrency: pricingCurrency
+    }, (event as any).transferCategory || "transfer")
+    : null
   const getVehicleIcon = (vehicleType?: string) => {
     // You could expand this with different vehicle icons
     return <Car className="h-3.5 w-3.5 text-purple-600" />
@@ -102,6 +124,37 @@ export function TransferEvent({ event, isDetailedView = true, onEdit, onDelete }
           </div>
         )}
       </div>
+
+      {/* Price */}
+      {event.price && (
+        <div className="mt-1.5 p-1.5 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-600">
+              {priceResult ? priceResult.breakdown : "Transfer"}
+            </span>
+            <div className="text-right">
+              {priceResult ? (
+                <>
+                  <span className="text-sm font-bold text-purple-600">
+                    {priceResult.displayPrice}
+                  </span>
+                  <span className="text-xs text-gray-400 block leading-none opacity-60">
+                    {priceResult.originalDisplayPrice} / person
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-bold text-purple-600">
+                    {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
+                    {event.price}
+                  </span>
+                  <span className="text-xs text-gray-500 ml-0.5">per person</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

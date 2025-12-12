@@ -164,6 +164,8 @@ export interface IItineraryEvent {
   fromLocation?: string
   toLocation?: string
   vehicleType?: string
+  transferType?: "private" | "shared" // Type of transfer for pricing
+  transferCategory?: string // Subcategory: airport-transfer, car-hire-hourly, train, bus, etc.
   // Image specific
   imageUrl?: string
   imageCaption?: string
@@ -244,9 +246,48 @@ const ItineraryEventSchema = new mongoose.Schema({
   imageAlt: String,
   listItems: [String],
   subtitle: String,
+  // Transfer fields
+  fromLocation: String,
+  toLocation: String,
+  vehicleType: String,
+  transferType: { type: String, enum: ["private", "shared"] },
+  transferCategory: String,
+  // Activity fields
+  duration: String,
+  difficulty: String,
+  capacity: Number,
+  // Hotel fields
+  amenities: [String],
+  hotelName: String,
+  roomCategory: String,
+  hotelRating: Number,
+  mealPlan: String,
+  hotelNotes: String,
+  adults: Number,
+  children: Number,
+  propertyType: String,
+  address: String,
+  hotelLink: String,
+  confirmationNumber: String,
+  // Meal fields
+  meals: [String],
+  customMealDescription: String,
+  // Flight fields
+  baggage: String,
+  stops: String,
+  pnr: String,
+  refundable: String,
+  // Multi-night hotel tracking
   hotelGroupId: String, // Unique ID to group related hotel instances across days
   hotelNightIndex: Number, // Which night this is (1, 2, 3, etc.)
   hotelTotalNights: Number, // Total nights for the stay
+  // Additional info sections
+  additionalInfoSections: [
+    {
+      heading: String,
+      content: String,
+    },
+  ],
 })
 
 const ItineraryDaySchema = new mongoose.Schema({

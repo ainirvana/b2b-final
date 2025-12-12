@@ -239,15 +239,6 @@ export function TransferForms(props: TransferFormsProps) {
                                     <Input type="number" value={manualPrice} onChange={(e) => setManualPrice(Number(e.target.value) || "")} placeholder="0.00" className="flex-1" />
                                 </div>
                             </div>
-                            {manualTransferType === "shared" && manualPricePerPax && (
-                                <div className="bg-blue-50 p-3 rounded-lg">
-                                    <label className="text-sm font-medium text-blue-900">Price Per Pax (Calculated)</label>
-                                    <p className="text-lg font-semibold text-blue-900 mt-1">
-                                        {manualCurrency === "INR" ? "₹" : manualCurrency === "USD" ? "$" : manualCurrency === "EUR" ? "€" : manualCurrency === "GBP" ? "£" : ""}
-                                        {manualPricePerPax}
-                                    </p>
-                                </div>
-                            )}
                         </div>
                     </div>
                     <div className="mb-6">

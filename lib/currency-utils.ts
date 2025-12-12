@@ -77,6 +77,29 @@ export function formatCurrencyWithSymbol(amount: number, currency: string): stri
 }
 
 /**
+ * Get currency symbol for a given currency code
+ * 
+ * @param currency The currency code (USD, EUR, INR, etc.)
+ * @returns Currency symbol
+ */
+export function getCurrencySymbol(currency: string): string {
+  const symbols: Record<string, string> = {
+    USD: "$",
+    EUR: "€",
+    INR: "₹",
+    GBP: "£",
+    JPY: "¥",
+    AUD: "A$",
+    CAD: "C$",
+    SGD: "S$",
+    AED: "د.إ",
+    // Add more currencies as needed
+  };
+
+  return symbols[currency] || currency;
+}
+
+/**
  * Convert all price-related fields in a quotation to a different currency
  * 
  * @param quotation The quotation object

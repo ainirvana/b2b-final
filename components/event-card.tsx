@@ -29,6 +29,11 @@ interface EventCardProps {
   nightIndex?: number // Current night for multi-night hotels (1, 2, 3, etc.)
   totalNights?: number // Total nights for the hotel stay
   dayNumber?: number // Actual day number (1, 2, 3, etc.)
+  // Pricing configuration
+  pricingEnabled?: boolean
+  pricingAdults?: number
+  pricingChildren?: number
+  pricingCurrency?: string
 }
 
 export function EventCard({
@@ -42,6 +47,10 @@ export function EventCard({
   nightIndex,
   totalNights,
   dayNumber,
+  pricingEnabled = false,
+  pricingAdults = 2,
+  pricingChildren = 0,
+  pricingCurrency = "INR",
 }: EventCardProps) {
   const getEventColor = (category: string) => {
     if (!category) return "bg-gray-50 border-gray-200"
@@ -220,13 +229,44 @@ export function EventCard({
     >
       <CardContent className="p-4 relative">
         {event.category === "flight" ? (
-          <FlightEvent event={event} isDetailedView={isDetailedView} />
+          <FlightEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            pricingEnabled={pricingEnabled}
+            pricingAdults={pricingAdults}
+            pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+          />
         ) : event.category === "hotel" ? (
-          <HotelEvent event={event} isDetailedView={isDetailedView} nightIndex={nightIndex} totalNights={totalNights} dayNumber={dayNumber} />
+          <HotelEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            nightIndex={nightIndex}
+            totalNights={totalNights}
+            dayNumber={dayNumber}
+            pricingEnabled={pricingEnabled}
+            pricingAdults={pricingAdults}
+            pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+          />
         ) : event.category === "transfer" ? (
-          <TransferEvent event={event} isDetailedView={isDetailedView} />
+          <TransferEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            pricingEnabled={pricingEnabled}
+            pricingAdults={pricingAdults}
+            pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+          />
         ) : event.category === "activity" ? (
-          <ActivityEvent event={event} isDetailedView={isDetailedView} />
+          <ActivityEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            pricingEnabled={pricingEnabled}
+            pricingAdults={pricingAdults}
+            pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+          />
         ) : event.category === "heading" ? (
           <div className="py-2">
             <div className="flex items-center gap-2 mb-2">

@@ -4,15 +4,37 @@ import { Camera, Clock, Users, Star, MapPin, Calendar } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import type { IItineraryEvent } from "@/models/Itinerary"
 import { EventSourceBadge } from "./source-badge"
+import { calculateAncillaryPrice } from "@/lib/pricing-calculator"
 
 interface ActivityEventProps {
   event: IItineraryEvent
   isDetailedView?: boolean
   onEdit?: () => void
   onDelete?: () => void
+  pricingEnabled?: boolean
+  pricingAdults?: number
+  pricingChildren?: number
+  pricingCurrency?: string
 }
 
-export function ActivityEvent({ event, isDetailedView = true, onEdit, onDelete }: ActivityEventProps) {
+export function ActivityEvent({
+  event,
+  isDetailedView = true,
+  onEdit,
+  onDelete,
+  pricingEnabled = false,
+  pricingAdults = 2,
+  pricingChildren = 0,
+  pricingCurrency = "INR"
+}: ActivityEventProps) {
+  // Calculate pricing if enabled (activities are per person)
+  const priceResult = pricingEnabled && event.price
+    ? calculateAncillaryPrice(event, {
+      adults: pricingAdults,
+      children: pricingChildren,
+      targetCurrency: pricingCurrency
+    })
+    : null
   const getDifficultyColor = (difficulty?: string) => {
     switch (difficulty?.toLowerCase()) {
       case "easy":
@@ -122,13 +144,28 @@ export function ActivityEvent({ event, isDetailedView = true, onEdit, onDelete }
       {event.price && (
         <div className="mt-1.5 p-1.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-600">Activity</span>
+            <span className="text-xs text-gray-600">
+              {priceResult ? priceResult.breakdown : "Activity"}
+            </span>
             <div className="text-right">
-              <span className="text-sm font-bold text-green-600">
-                {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
-                {event.price}
-              </span>
-              <span className="text-xs text-gray-500 block leading-none">per person</span>
+              {priceResult ? (
+                <>
+                  <span className="text-sm font-bold text-green-600">
+                    {priceResult.displayPrice}
+                  </span>
+                  <span className="text-xs text-gray-400 block leading-none opacity-60">
+                    {priceResult.originalDisplayPrice} / person
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-bold text-green-600">
+                    {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
+                    {event.price}
+                  </span>
+                  <span className="text-xs text-gray-500 block leading-none">per person</span>
+                </>
+              )}
             </div>
           </div>
         </div>
