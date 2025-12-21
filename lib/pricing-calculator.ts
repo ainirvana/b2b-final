@@ -40,9 +40,9 @@ export function getExchangeRates(): { rates: Record<string, number>; baseCurrenc
         console.error("Failed to load exchange rates:", error)
     }
 
-    // Default fallback
+    // Default fallback - rates represent 1 INR = X OTHER_CURRENCY
     return {
-        rates: { INR: 1, USD: 83, EUR: 90, GBP: 105, AED: 22.5 },
+        rates: { INR: 1, USD: 0.012, EUR: 0.011, GBP: 0.0095, AED: 0.044 },
         baseCurrency: "INR"
     }
 }
