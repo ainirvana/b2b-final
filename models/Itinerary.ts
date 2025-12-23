@@ -157,10 +157,18 @@ export interface IItineraryEvent {
   endTime?: string
   flightClass?: string
   flightNotes?: string
-  baggage?: string
-  stops?: string
+  baggage?: string // Legacy field - kept for backward compatibility
+  stops?: string // Legacy field - kept for backward compatibility
   pnr?: string
   refundable?: string
+  // Flight luggage - granular fields
+  checkinBags?: number
+  checkinBagWeight?: string // e.g., "23kg"
+  cabinBags?: number
+  cabinBagWeight?: string // e.g., "7kg"
+  // Flight stops - structured data
+  numberOfStops?: number
+  stopLocations?: string[] // Array of stop city names
   // Transfer specific
   fromLocation?: string
   toLocation?: string
@@ -312,10 +320,18 @@ const ItineraryEventSchema = new mongoose.Schema({
   meals: [String],
   customMealDescription: String,
   // Flight fields
-  baggage: String,
-  stops: String,
+  baggage: String, // Legacy field
+  stops: String, // Legacy field
   pnr: String,
   refundable: String,
+  // Flight luggage - granular fields
+  checkinBags: Number,
+  checkinBagWeight: String,
+  cabinBags: Number,
+  cabinBagWeight: String,
+  // Flight stops - structured data
+  numberOfStops: Number,
+  stopLocations: [String],
   // Multi-night hotel tracking
   hotelGroupId: String, // Unique ID to group related hotel instances across days
   hotelNightIndex: Number, // Which night this is (1, 2, 3, etc.)

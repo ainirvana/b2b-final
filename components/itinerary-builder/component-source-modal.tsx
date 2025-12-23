@@ -369,14 +369,22 @@ export function ComponentSourceModal({
   const [manualMeals, setManualMeals] = useState<string[]>([])
   const [manualCustomMealDescription, setManualCustomMealDescription] = useState("")
   // Flight specific fields
-  const [manualBaggage, setManualBaggage] = useState("")
-  const [manualStops, setManualStops] = useState("")
+  const [manualBaggage, setManualBaggage] = useState("") // Legacy - kept for compatibility
+  const [manualStops, setManualStops] = useState("") // Legacy - kept for compatibility
   const [manualPnr, setManualPnr] = useState("")
   const [manualRefundable, setManualRefundable] = useState("")
   const [manualFlightNumber, setManualFlightNumber] = useState("")
   const [manualAirline, setManualAirline] = useState("")
   const [manualClass, setManualClass] = useState("")
   const [manualEndTime, setManualEndTime] = useState("")
+  // Flight luggage - granular fields
+  const [manualCheckinBags, setManualCheckinBags] = useState<number | "">("")
+  const [manualCheckinBagWeight, setManualCheckinBagWeight] = useState("")
+  const [manualCabinBags, setManualCabinBags] = useState<number | "">("")
+  const [manualCabinBagWeight, setManualCabinBagWeight] = useState("")
+  // Flight stops - structured data
+  const [manualNumberOfStops, setManualNumberOfStops] = useState<number | "">(0)
+  const [manualStopLocations, setManualStopLocations] = useState<string[]>([])
   // Note specific fields
   const [manualNoteContent, setManualNoteContent] = useState("")
   // Hotel specific fields
@@ -563,6 +571,69 @@ export function ComponentSourceModal({
     setManualDestinations(copy)
   }
 
+  // Helper functions for Flight stops
+  const handleAddStopLocation = () => setManualStopLocations([...manualStopLocations, ""])
+  const handleRemoveStopLocation = (index: number) => {
+    setManualStopLocations(manualStopLocations.filter((_, i) => i !== index))
+  }
+  const handleStopLocationChange = (index: number, value: string) => {
+    const copy = [...manualStopLocations]
+    copy[index] = value
+    setManualStopLocations(copy)
+  }
+
+  // Helper function to calculate flight duration
+  const calculateFlightDuration = (startTime: string, endTime: string): string => {
+    if (!startTime || !endTime) return ""
+
+    try {
+      // Parse times (format: "HH:MM")
+      const [startHour, startMin] = startTime.split(":").map(Number)
+      const [endHour, endMin] = endTime.split(":").map(Number)
+
+      // Convert to minutes since midnight
+      let startMinutes = startHour * 60 + startMin
+      let endMinutes = endHour * 60 + endMin
+
+      // If end time is earlier than start time, assume next day
+      if (endMinutes < startMinutes) {
+        endMinutes += 24 * 60
+      }
+
+      // Calculate duration in minutes
+      const durationMinutes = endMinutes - startMinutes
+      const hours = Math.floor(durationMinutes / 60)
+      const minutes = durationMinutes % 60
+
+      // Format output
+      if (hours === 0) {
+        return `${minutes}m`
+      } else if (minutes === 0) {
+        return `${hours}h`
+      } else {
+        return `${hours}h ${minutes}m`
+      }
+    } catch (error) {
+      return ""
+    }
+  }
+
+  // Update stop locations when number of stops changes
+  useEffect(() => {
+    const numStops = typeof manualNumberOfStops === "number" ? manualNumberOfStops : 0
+    if (numStops > manualStopLocations.length) {
+      // Add more stops
+      const newStops = [...manualStopLocations]
+      while (newStops.length < numStops) {
+        newStops.push("")
+      }
+      setManualStopLocations(newStops)
+    } else if (numStops < manualStopLocations.length) {
+      // Remove excess stops
+      setManualStopLocations(manualStopLocations.slice(0, numStops))
+    }
+  }, [manualNumberOfStops])
+
   const handleSubmitManual = () => {
     const cleanedBullets = manualBullets.map((b) => (b || "").toString()).map((s) => s.trim()).filter(Boolean)
     const cleanedAmenities = manualAmenities.map((a) => (a || "").toString()).map((s) => s.trim()).filter(Boolean)
@@ -652,15 +723,36 @@ export function ComponentSourceModal({
       payload.description = manualNoteContent
     }
     // Flight specific payload
-    if (manualBaggage) payload.baggage = manualBaggage
-    if (manualStops) payload.stops = manualStops
+    if (manualBaggage) payload.baggage = manualBaggage // Legacy field
+    if (manualStops) payload.stops = manualStops // Legacy field
     if (manualPnr) payload.pnr = manualPnr
     if (manualRefundable) payload.refundable = manualRefundable
     if (manualFlightNumber) payload.flightNumber = manualFlightNumber
     if (manualAirline) payload.airlines = manualAirline
     if (manualClass) payload.flightClass = manualClass
-    if (manualClass) payload.flightClass = manualClass
     if (manualEndTime) payload.endTime = manualEndTime
+    // Flight luggage - granular fields
+    if (manualCheckinBags) payload.checkinBags = Number(manualCheckinBags)
+    if (manualCheckinBagWeight) payload.checkinBagWeight = manualCheckinBagWeight
+    if (manualCabinBags) payload.cabinBags = Number(manualCabinBags)
+    if (manualCabinBagWeight) payload.cabinBagWeight = manualCabinBagWeight
+    // Flight stops - structured data
+    if (manualNumberOfStops !== "" && manualNumberOfStops !== null) {
+      payload.numberOfStops = Number(manualNumberOfStops)
+    }
+    if (manualStopLocations && manualStopLocations.length > 0) {
+      const cleanedStops = manualStopLocations.filter(s => s && s.trim())
+      if (cleanedStops.length > 0) {
+        payload.stopLocations = cleanedStops
+      }
+    }
+    // Calculate and add flight duration (for display purposes)
+    if (manualTime && manualEndTime) {
+      const duration = calculateFlightDuration(manualTime, manualEndTime)
+      if (duration) {
+        payload.duration = duration
+      }
+    }
     // Hotel specific payload
     if (manualAdults) payload.adults = Number(manualAdults)
     if (manualChildren) payload.children = Number(manualChildren)
@@ -726,6 +818,13 @@ export function ComponentSourceModal({
     setManualAirline("")
     setManualClass("")
     setManualEndTime("")
+    // Reset flight granular fields
+    setManualCheckinBags("")
+    setManualCheckinBagWeight("")
+    setManualCabinBags("")
+    setManualCabinBagWeight("")
+    setManualNumberOfStops(0)
+    setManualStopLocations([])
     setManualAdults("")
     setManualChildren("")
     setManualPropertyType("")
@@ -1520,8 +1619,13 @@ export function ComponentSourceModal({
                         </div>
                       </div>
                       <div className="grid gap-2">
-                        <label className="text-sm font-medium">Flight Duration</label>
-                        <Input value={manualDuration} onChange={(e) => setManualDuration(e.target.value)} placeholder="e.g. 2h 30m" />
+                        <label className="text-sm font-medium">Flight Duration (Auto-calculated)</label>
+                        <Input
+                          value={calculateFlightDuration(manualTime, manualEndTime) || "Enter times to calculate"}
+                          readOnly
+                          placeholder="Calculated from departure & arrival"
+                          className="bg-gray-50 cursor-not-allowed"
+                        />
                       </div>
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">Airline Name</label>
@@ -1570,17 +1674,66 @@ export function ComponentSourceModal({
                     </h4>
                     <div className="space-y-4 pl-4 border-l-2 border-gray-200">
                       <div className="grid gap-2">
-                        <label className="text-sm font-medium">Check in, cabin luggage</label>
-                        <Input value={manualBaggage} onChange={(e) => setManualBaggage(e.target.value)} placeholder="e.g. 20kg check-in, 7kg cabin" />
+                        <label className="text-sm font-medium">Check-in Luggage</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="number"
+                            value={manualCheckinBags}
+                            onChange={(e) => setManualCheckinBags(Number(e.target.value) || "")}
+                            placeholder="No. of bags"
+                          />
+                          <Input
+                            value={manualCheckinBagWeight}
+                            onChange={(e) => setManualCheckinBagWeight(e.target.value)}
+                            placeholder="Weight each (e.g. 23kg)"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid gap-2">
+                        <label className="text-sm font-medium">Cabin Luggage</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="number"
+                            value={manualCabinBags}
+                            onChange={(e) => setManualCabinBags(Number(e.target.value) || "")}
+                            placeholder="No. of bags"
+                          />
+                          <Input
+                            value={manualCabinBagWeight}
+                            onChange={(e) => setManualCabinBagWeight(e.target.value)}
+                            placeholder="Weight each (e.g. 7kg)"
+                          />
+                        </div>
                       </div>
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">Flight Title</label>
                         <Input value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder="e.g. Flight to Paris" />
                       </div>
                       <div className="grid gap-2">
-                        <label className="text-sm font-medium">Stops</label>
-                        <Input value={manualStops} onChange={(e) => setManualStops(e.target.value)} placeholder="e.g. Non-stop" />
+                        <label className="text-sm font-medium">Number of Stops</label>
+                        <Input
+                          type="number"
+                          value={manualNumberOfStops}
+                          onChange={(e) => setManualNumberOfStops(Number(e.target.value) || 0)}
+                          placeholder="0 for non-stop"
+                          min="0"
+                        />
                       </div>
+                      {(typeof manualNumberOfStops === "number" && manualNumberOfStops > 0) && (
+                        <div className="grid gap-2">
+                          <label className="text-sm font-medium">Stop Locations</label>
+                          <div className="space-y-2">
+                            {manualStopLocations.map((stop, idx) => (
+                              <Input
+                                key={idx}
+                                value={stop}
+                                onChange={(e) => handleStopLocationChange(idx, e.target.value)}
+                                placeholder={`Stop ${idx + 1} location (e.g. Dubai)`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="grid gap-2">
                         <label className="text-sm font-medium">Flight No.</label>
                         <Input value={manualFlightNumber} onChange={(e) => setManualFlightNumber(e.target.value)} placeholder="e.g. EK123" />

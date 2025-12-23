@@ -36,6 +36,42 @@ const transferSubCategories = [
   { id: "train", label: "Train", icon: "🚆" },
 ]
 
+// Helper function to calculate flight duration
+const calculateFlightDuration = (startTime: string, endTime: string): string => {
+  if (!startTime || !endTime) return ""
+
+  try {
+    // Parse times (format: "HH:MM")
+    const [startHour, startMin] = startTime.split(":").map(Number)
+    const [endHour, endMin] = endTime.split(":").map(Number)
+
+    // Convert to minutes since midnight
+    let startMinutes = startHour * 60 + startMin
+    let endMinutes = endHour * 60 + endMin
+
+    // If end time is earlier than start time, assume next day
+    if (endMinutes < startMinutes) {
+      endMinutes += 24 * 60
+    }
+
+    // Calculate duration in minutes
+    const durationMinutes = endMinutes - startMinutes
+    const hours = Math.floor(durationMinutes / 60)
+    const minutes = durationMinutes % 60
+
+    // Format output
+    if (hours === 0) {
+      return `${minutes}m`
+    } else if (minutes === 0) {
+      return `${hours}h`
+    } else {
+      return `${hours}h ${minutes}m`
+    }
+  } catch (error) {
+    return ""
+  }
+}
+
 export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModalProps) {
   const [editedEvent, setEditedEvent] = useState<IItineraryEvent>(() => {
     if (!event) return {} as IItineraryEvent
@@ -112,14 +148,23 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
         amenities: event?.amenities ? [...event.amenities] : [],
         subCategory: event?.subCategory || "",
         // Flight specific
-        baggage: event?.baggage || "",
-        stops: event?.stops || "",
+        baggage: event?.baggage || "", // Legacy field
+        stops: event?.stops || "", // Legacy field
         pnr: event?.pnr || "",
         refundable: event?.refundable || "",
         flightNumber: event?.flightNumber || "",
         airlines: event?.airlines || "",
         flightClass: event?.flightClass || "",
         endTime: event?.endTime || "",
+        startTime: event?.startTime || event?.time || "",
+        // Flight luggage - granular fields
+        checkinBags: event?.checkinBags || 0,
+        checkinBagWeight: event?.checkinBagWeight || "",
+        cabinBags: event?.cabinBags || 0,
+        cabinBagWeight: event?.cabinBagWeight || "",
+        // Flight stops - structured data
+        numberOfStops: event?.numberOfStops || 0,
+        stopLocations: event?.stopLocations ? [...event.stopLocations] : [],
         // Hotel specific
         adults: event?.adults ? Number(event.adults) : 0,
         children: event?.children ? Number(event.children) : 0,
@@ -390,14 +435,27 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       amenities: editedEvent.amenities ? [...editedEvent.amenities] : [],
       subCategory: editedEvent.subCategory,
       // Flight specific
-      baggage: editedEvent.baggage,
-      stops: editedEvent.stops,
+      baggage: editedEvent.baggage, // Legacy field
+      stops: editedEvent.stops, // Legacy field
       pnr: editedEvent.pnr,
       refundable: editedEvent.refundable,
       flightNumber: editedEvent.flightNumber,
       airlines: editedEvent.airlines,
       flightClass: editedEvent.flightClass,
       endTime: editedEvent.endTime,
+      startTime: editedEvent.startTime || editedEvent.time,
+      // Flight luggage - granular fields
+      checkinBags: editedEvent.checkinBags,
+      checkinBagWeight: editedEvent.checkinBagWeight,
+      cabinBags: editedEvent.cabinBags,
+      cabinBagWeight: editedEvent.cabinBagWeight,
+      // Flight stops - structured data
+      numberOfStops: editedEvent.numberOfStops,
+      stopLocations: editedEvent.stopLocations ? [...editedEvent.stopLocations] : [],
+      // Calculate and update flight duration
+      duration: event.category === "flight" && editedEvent.startTime && editedEvent.endTime
+        ? calculateFlightDuration(editedEvent.startTime, editedEvent.endTime)
+        : editedEvent.duration,
       // Hotel specific
       adults: editedEvent.adults,
       children: editedEvent.children,
@@ -551,9 +609,15 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
                     {renderFieldWithValidation("fromCity", "From", <Input id="fromCity" value={editedEvent.fromCity || ""} onChange={(e) => handleFieldChange("fromCity", e.target.value)} placeholder="Origin" />, true)}
                     {renderFieldWithValidation("toCity", "To", <Input id="toCity" value={editedEvent.toCity || ""} onChange={(e) => handleFieldChange("toCity", e.target.value)} placeholder="Destination" />, true)}
                   </div>
-                  {renderFieldWithValidation("duration", "Flight Duration", <Input id="duration" value={editedEvent.duration || ""} onChange={(e) => handleFieldChange("duration", e.target.value)} placeholder="e.g. 2h 30m" />, true)}
+                  {renderFieldWithValidation("duration", "Flight Duration (Auto-calculated)",
+                    <Input
+                      id="duration"
+                      value={calculateFlightDuration(editedEvent.startTime || editedEvent.time || "", editedEvent.endTime || "") || "Enter times to calculate"}
+                      readOnly
+                      placeholder="Calculated from departure & arrival"
+                      className="bg-gray-50 cursor-not-allowed"
+                    />, true)}
                   {renderFieldWithValidation("airlines", "Airline Name", <Input id="airlines" value={editedEvent.airlines || ""} onChange={(e) => handleFieldChange("airlines", e.target.value)} placeholder="e.g. Emirates" />, true)}
-                  {renderFieldWithValidation("flightClass", "Class", <Input id="flightClass" value={editedEvent.flightClass || ""} onChange={(e) => handleFieldChange("flightClass", e.target.value)} placeholder="e.g. Economy" />, true)}
                   {renderFieldWithValidation("flightClass", "Class", <Input id="flightClass" value={editedEvent.flightClass || ""} onChange={(e) => handleFieldChange("flightClass", e.target.value)} placeholder="e.g. Economy" />, true)}
                   <div className="grid gap-2">
                     <Label htmlFor="price">Price</Label>
@@ -594,9 +658,82 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
                   Optional Fields
                 </h4>
                 <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                  {renderFieldWithValidation("baggage", "Check in, cabin luggage", <Input id="baggage" value={editedEvent.baggage || ""} onChange={(e) => handleFieldChange("baggage", e.target.value)} placeholder="e.g. 20kg check-in, 7kg cabin" />)}
+                  <div className="grid gap-2">
+                    <Label htmlFor="checkinBags">Check-in Luggage</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        value={editedEvent.checkinBags || ""}
+                        onChange={(e) => handleFieldChange("checkinBags", Number(e.target.value) || 0)}
+                        placeholder="No. of bags"
+                      />
+                      <Input
+                        value={editedEvent.checkinBagWeight || ""}
+                        onChange={(e) => handleFieldChange("checkinBagWeight", e.target.value)}
+                        placeholder="Weight each (e.g. 23kg)"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="cabinBags">Cabin Luggage</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="number"
+                        value={editedEvent.cabinBags || ""}
+                        onChange={(e) => handleFieldChange("cabinBags", Number(e.target.value) || 0)}
+                        placeholder="No. of bags"
+                      />
+                      <Input
+                        value={editedEvent.cabinBagWeight || ""}
+                        onChange={(e) => handleFieldChange("cabinBagWeight", e.target.value)}
+                        placeholder="Weight each (e.g. 7kg)"
+                      />
+                    </div>
+                  </div>
                   {renderFieldWithValidation("title", "Flight Title", <Input id="title" value={editedEvent.title || ""} onChange={(e) => handleFieldChange("title", e.target.value)} placeholder="e.g. Flight to Paris" />)}
-                  {renderFieldWithValidation("stops", "Stops", <Input id="stops" value={editedEvent.stops || ""} onChange={(e) => handleFieldChange("stops", e.target.value)} placeholder="e.g. Non-stop" />)}
+                  <div className="grid gap-2">
+                    <Label htmlFor="numberOfStops">Number of Stops</Label>
+                    <Input
+                      type="number"
+                      value={editedEvent.numberOfStops || 0}
+                      onChange={(e) => {
+                        const numStops = Number(e.target.value) || 0
+                        handleFieldChange("numberOfStops", numStops)
+                        // Adjust stopLocations array
+                        const currentLocations = editedEvent.stopLocations || []
+                        if (numStops > currentLocations.length) {
+                          const newLocations = [...currentLocations]
+                          while (newLocations.length < numStops) {
+                            newLocations.push("")
+                          }
+                          handleFieldChange("stopLocations", newLocations)
+                        } else if (numStops < currentLocations.length) {
+                          handleFieldChange("stopLocations", currentLocations.slice(0, numStops))
+                        }
+                      }}
+                      placeholder="0 for non-stop"
+                      min="0"
+                    />
+                  </div>
+                  {(editedEvent.numberOfStops && editedEvent.numberOfStops > 0) && (
+                    <div className="grid gap-2">
+                      <Label>Stop Locations</Label>
+                      <div className="space-y-2">
+                        {(editedEvent.stopLocations || []).map((stop, idx) => (
+                          <Input
+                            key={idx}
+                            value={stop}
+                            onChange={(e) => {
+                              const newLocations = [...(editedEvent.stopLocations || [])]
+                              newLocations[idx] = e.target.value
+                              handleFieldChange("stopLocations", newLocations)
+                            }}
+                            placeholder={`Stop ${idx + 1} location (e.g. Dubai)`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {renderFieldWithValidation("flightNumber", "Flight No.", <Input id="flightNumber" value={editedEvent.flightNumber || ""} onChange={(e) => handleFieldChange("flightNumber", e.target.value)} placeholder="e.g. EK123" />)}
                   {renderFieldWithValidation("pnr", "PNR Number", <Input id="pnr" value={editedEvent.pnr || ""} onChange={(e) => handleFieldChange("pnr", e.target.value)} placeholder="Enter PNR" />)}
 
