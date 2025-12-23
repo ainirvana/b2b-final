@@ -621,8 +621,30 @@ export function ComponentSourceModal({
       payload.transferCategory = selectedSubCategory
     }
     if (manualVehicleCapacity) payload.capacity = Number(manualVehicleCapacity)
+    if (manualVehicleType) payload.vehicleType = manualVehicleType || manualCarType
 
-    if (cleanedAmenities.length) payload.amenities = cleanedAmenities
+    if (selectedSubCategory && componentType.toLowerCase() === "transfer") {
+      payload.transferCategory = selectedSubCategory
+
+      // Extended Transfer Fields
+      if (manualPickupTime) payload.pickupTime = manualPickupTime
+      if (manualDropTime) payload.dropTime = manualDropTime
+      if (manualNoOfHours) payload.noOfHours = Number(manualNoOfHours)
+      if (manualNoOfDays) payload.noOfDays = Number(manualNoOfDays)
+      if (manualCarType) payload.vehicleType = manualCarType // Fallback or override
+      if (manualFuelType) payload.fuelType = manualFuelType
+      if (manualCarModel) payload.carModel = manualCarModel
+      if (manualTransmission) payload.transmission = manualTransmission
+      if (manualBusNumber) payload.busNumber = manualBusNumber
+      if (manualTrainNumber) payload.trainNumber = manualTrainNumber
+      if (manualClass) payload.transferClass = manualClass
+      if (manualLink) payload.transferLink = manualLink
+      if (manualTravelDuration) payload.duration = manualTravelDuration // Map travel duration to duration
+      if (manualDepartureTime) payload.pickupTime = manualDepartureTime // Map departure to pickup
+      if (manualArrivalTime) payload.dropTime = manualArrivalTime // Map arrival to drop
+      if (manualPnr) payload.pnr = manualPnr
+      if (manualRefundable) payload.refundable = manualRefundable
+    }
     if (manualMeals.length) payload.meals = manualMeals
     if (manualCustomMealDescription) payload.customMealDescription = manualCustomMealDescription
     // Note specific payload
@@ -715,6 +737,22 @@ export function ComponentSourceModal({
     setManualGiftAmount("")
     setManualServiceCharge("")
     setManualProducts([{ name: "", price: "", description: "" }])
+
+    // Reset transfer extended fields
+    setManualCarType("")
+    setManualCarModel("")
+    setManualFuelType("")
+    setManualTransmission("")
+    setManualPickupTime("")
+    setManualDropTime("")
+    setManualNoOfHours("")
+    setManualNoOfDays("")
+    setManualBusNumber("")
+    setManualTrainNumber("")
+    setManualLink("")
+    setManualTravelDuration("")
+    setManualDepartureTime("")
+    setManualArrivalTime("")
   }
 
   const handleSelectTemplate = (template: ComponentTemplate) => {

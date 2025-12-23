@@ -34,6 +34,7 @@ interface EventCardProps {
   pricingAdults?: number
   pricingChildren?: number
   pricingCurrency?: string
+  pricingMode?: 'individual' | 'total-only'
 }
 
 export function EventCard({
@@ -51,6 +52,7 @@ export function EventCard({
   pricingAdults = 2,
   pricingChildren = 0,
   pricingCurrency = "INR",
+  pricingMode = 'individual',
 }: EventCardProps) {
   const getEventColor = (category: string) => {
     if (!category) return "bg-gray-50 border-gray-200"
@@ -236,6 +238,7 @@ export function EventCard({
             pricingAdults={pricingAdults}
             pricingChildren={pricingChildren}
             pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
           />
         ) : event.category === "hotel" ? (
           <HotelEvent
@@ -247,7 +250,9 @@ export function EventCard({
             pricingEnabled={pricingEnabled}
             pricingAdults={pricingAdults}
             pricingChildren={pricingChildren}
+            pricingChildren={pricingChildren}
             pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
           />
         ) : event.category === "transfer" ? (
           <TransferEvent
@@ -257,6 +262,7 @@ export function EventCard({
             pricingAdults={pricingAdults}
             pricingChildren={pricingChildren}
             pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
           />
         ) : event.category === "activity" ? (
           <ActivityEvent
@@ -265,7 +271,9 @@ export function EventCard({
             pricingEnabled={pricingEnabled}
             pricingAdults={pricingAdults}
             pricingChildren={pricingChildren}
+            pricingChildren={pricingChildren}
             pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
           />
         ) : event.category === "heading" ? (
           <div className="py-2">
@@ -370,7 +378,7 @@ export function EventCard({
               )}
             </div>
             <div className="text-right">
-              {event.price && event.price > 0 && (
+              {event.price && event.price > 0 && pricingEnabled && pricingMode === 'individual' && (
                 <div className="flex items-center text-brand-primary font-semibold">
                   <DollarSign className="h-4 w-4" />
                   {event.price}
@@ -394,7 +402,7 @@ export function EventCard({
                   {event.time}
                 </div>
               )}
-              {event.price && event.price > 0 && (
+              {event.price && event.price > 0 && pricingEnabled && pricingMode === 'individual' && (
                 <div className="flex items-center text-brand-primary font-semibold">
                   <DollarSign className="h-4 w-4" />
                   {event.price}

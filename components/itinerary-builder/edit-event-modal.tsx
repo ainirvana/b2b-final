@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { X, Plus, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { TransferForms } from "./transfer-forms"
 
 interface EditEventModalProps {
   event: IItineraryEvent | null
@@ -23,6 +24,17 @@ interface EditEventModalProps {
 interface ValidationErrors {
   [key: string]: string
 }
+
+// Subcategory options for Transfer (2-level hierarchy)
+const transferSubCategories = [
+  { id: "airport-transfer", label: "Airport Transfer", icon: "✈️" },
+  { id: "car-hire-hourly", label: "Car Hire - Hourly", icon: "🚗" },
+  { id: "car-hire-outstation", label: "Car Hire - Outstation (One Way)", icon: "🚗" },
+  { id: "car-hire-roundtrip", label: "Car Hire - Round Trip", icon: "🚗" },
+  { id: "car-hire-selfdrive", label: "Car Hire - Self Drive", icon: "🚗" },
+  { id: "bus", label: "Bus", icon: "🚌" },
+  { id: "train", label: "Train", icon: "🚆" },
+]
 
 export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModalProps) {
   const [editedEvent, setEditedEvent] = useState<IItineraryEvent>(() => {
@@ -57,6 +69,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       hotelNotes: event?.hotelNotes || "",
       additionalInfoSections: event?.additionalInfoSections ? [...event.additionalInfoSections] : [],
       amenities: event?.amenities ? [...event.amenities] : [],
+      subCategory: event?.subCategory || "",
     };
   });
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
@@ -97,6 +110,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
         hotelNotes: event?.hotelNotes || "",
         additionalInfoSections: event?.additionalInfoSections ? [...event.additionalInfoSections] : [],
         amenities: event?.amenities ? [...event.amenities] : [],
+        subCategory: event?.subCategory || "",
         // Flight specific
         baggage: event?.baggage || "",
         stops: event?.stops || "",
@@ -113,6 +127,25 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
         address: event?.address || "",
         hotelLink: event?.hotelLink || "",
         confirmationNumber: event?.confirmationNumber || "",
+        // Transfer specific
+        fromLocation: event?.fromLocation || "",
+        toLocation: event?.toLocation || "",
+        vehicleType: event?.vehicleType || "",
+        transferType: event?.transferType || "private",
+        transferCategory: event?.transferCategory || "",
+        pickupTime: event?.pickupTime || "",
+        dropTime: event?.dropTime || "",
+        noOfHours: event?.noOfHours || 0,
+        noOfDays: event?.noOfDays || 0,
+        fuelType: event?.fuelType || "",
+        carModel: event?.carModel || "",
+        transmission: event?.transmission || "",
+        busNumber: event?.busNumber || "",
+        trainNumber: event?.trainNumber || "",
+        transferClass: event?.transferClass || "",
+        transferLink: event?.transferLink || "",
+        stopsList: event?.stopsList ? [...event.stopsList] : [],
+        additionalVehicles: event?.additionalVehicles ? [...event.additionalVehicles] : [],
       })
       setValidationErrors({})
     }
@@ -355,6 +388,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       meals: editedEvent.meals ? [...editedEvent.meals] : [],
       additionalInfoSections: editedEvent.additionalInfoSections ? [...editedEvent.additionalInfoSections] : [],
       amenities: editedEvent.amenities ? [...editedEvent.amenities] : [],
+      subCategory: editedEvent.subCategory,
       // Flight specific
       baggage: editedEvent.baggage,
       stops: editedEvent.stops,
@@ -371,6 +405,25 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       address: editedEvent.address,
       hotelLink: editedEvent.hotelLink,
       confirmationNumber: editedEvent.confirmationNumber,
+      // Transfer specific
+      fromLocation: editedEvent.fromLocation,
+      toLocation: editedEvent.toLocation,
+      vehicleType: editedEvent.vehicleType,
+      transferType: editedEvent.transferType,
+      transferCategory: editedEvent.transferCategory,
+      pickupTime: editedEvent.pickupTime,
+      dropTime: editedEvent.dropTime,
+      noOfHours: editedEvent.noOfHours,
+      noOfDays: editedEvent.noOfDays,
+      fuelType: editedEvent.fuelType,
+      carModel: editedEvent.carModel,
+      transmission: editedEvent.transmission,
+      busNumber: editedEvent.busNumber,
+      trainNumber: editedEvent.trainNumber,
+      transferClass: editedEvent.transferClass,
+      transferLink: editedEvent.transferLink,
+      stopsList: editedEvent.stopsList ? [...editedEvent.stopsList] : [],
+      additionalVehicles: editedEvent.additionalVehicles ? [...editedEvent.additionalVehicles] : [],
       libraryItemId: event?.libraryItemId,
       componentSource: event?.componentSource || "manual"
     }
@@ -954,41 +1007,229 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       case "transfer":
         return (
           <>
-            {renderFieldWithValidation(
-              "title",
-              "Transfer Title",
-              <Input
-                id="title"
-                value={editedEvent.title || ""}
-                onChange={(e) => handleFieldChange("title", e.target.value)}
-                placeholder="Enter transfer title"
-                className={validationErrors.title ? "border-red-500" : ""}
-              />,
-              true,
-            )}
-            {renderFieldWithValidation(
-              "description",
-              "Description",
-              <Input
-                id="description"
-                value={editedEvent.description || ""}
-                onChange={(e) => handleFieldChange("description", e.target.value)}
-                placeholder="e.g., Krabi Hotel to Phuket Hotel"
-                className={validationErrors.description ? "border-red-500" : ""}
-              />,
-              true,
-            )}
-            {renderFieldWithValidation(
-              "mainPoint",
-              "Transfer Type",
-              <Input
-                id="mainPoint"
-                value={editedEvent.mainPoint || ""}
-                onChange={(e) => handleFieldChange("mainPoint", e.target.value)}
-                placeholder="e.g., Private Transfer"
-                className={validationErrors.mainPoint ? "border-red-500" : ""}
-              />,
-            )}
+            {/* Common Fields */}
+            <div className="space-y-6">
+              {/* Subcategory Selection */}
+              <div>
+                <Label className="mb-2 block text-sm font-semibold text-gray-700">Transfer Category</Label>
+                <div className="flex flex-wrap gap-2">
+                  {transferSubCategories.map((subCat) => (
+                    <button
+                      key={subCat.id}
+                      type="button"
+                      onClick={() => handleFieldChange("transferCategory", subCat.id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all ${editedEvent.transferCategory === subCat.id
+                        ? "bg-black text-white border-black"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                        }`}
+                    >
+                      <span className="text-lg">{subCat.icon}</span>
+                      <span>{subCat.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Transfer Forms */}
+              {editedEvent.transferCategory && (
+                <TransferForms
+                  selectedSubCategory={editedEvent.transferCategory}
+                  // Common fields
+                  manualTitle={editedEvent.title || ""}
+                  setManualTitle={(val) => handleFieldChange("title", val)}
+                  manualFromCity={editedEvent.fromLocation || editedEvent.fromCity || ""}
+                  setManualFromCity={(val) => {
+                    handleFieldChange("fromLocation", val)
+                    handleFieldChange("fromCity", val)
+                  }}
+                  manualToCity={editedEvent.toLocation || editedEvent.toCity || ""}
+                  setManualToCity={(val) => {
+                    handleFieldChange("toLocation", val)
+                    handleFieldChange("toCity", val)
+                  }}
+                  manualPrice={editedEvent.price === 0 && editedEvent.price !== 0 ? "" : editedEvent.price}
+                  setManualPrice={(val) => handleFieldChange("price", val === "" ? 0 : val)}
+                  manualCurrency={editedEvent.currency || "INR"}
+                  setManualCurrency={(val) => handleFieldChange("currency", val)}
+                  manualDescription={editedEvent.description || ""}
+                  setManualDescription={(val) => handleFieldChange("description", val)}
+
+                  // Airport Transfer specific
+                  manualPickupDrop={editedEvent.fromLocation?.toLowerCase().includes("airport") ? "pickup" : "drop"}
+                  setManualPickupDrop={(val) => { }}
+                  manualAirportName={""}
+                  setManualAirportName={() => { }}
+                  manualTransferType={editedEvent.transferType || "private"}
+                  setManualTransferType={(val) => handleFieldChange("transferType", val)}
+                  manualVehicleType={editedEvent.vehicleType || ""}
+                  setManualVehicleType={(val) => handleFieldChange("vehicleType", val)}
+                  manualVehicleCapacity={editedEvent.capacity === 0 && editedEvent.capacity !== 0 ? "" : editedEvent.capacity}
+                  setManualVehicleCapacity={(val) => handleFieldChange("capacity", val === "" ? 0 : val)}
+                  manualPricePerPax={0}
+                  manualStopsList={editedEvent.stopsList || []}
+                  handleAddStop={() => {
+                    const current = editedEvent.stopsList || []
+                    handleFieldChange("stopsList", [...current, ""])
+                  }}
+                  handleRemoveStop={(idx) => {
+                    const current = editedEvent.stopsList || []
+                    handleFieldChange("stopsList", current.filter((_, i) => i !== idx))
+                  }}
+                  handleStopChange={(idx, val) => {
+                    const current = [...(editedEvent.stopsList || [])]
+                    current[idx] = val
+                    handleFieldChange("stopsList", current)
+                  }}
+                  manualAdditionalVehicles={editedEvent.additionalVehicles || []}
+                  handleAddVehicle={() => {
+                    const current = editedEvent.additionalVehicles || []
+                    handleFieldChange("additionalVehicles", [...current, { vehicleType: "", capacity: 4, price: 0 }])
+                  }}
+                  handleRemoveVehicle={(idx) => {
+                    const current = editedEvent.additionalVehicles || []
+                    handleFieldChange("additionalVehicles", current.filter((_, i) => i !== idx))
+                  }}
+                  handleVehicleChange={(idx, field, val) => {
+                    const current = [...(editedEvent.additionalVehicles || [])]
+                    current[idx] = { ...current[idx], [field]: val }
+                    handleFieldChange("additionalVehicles", current)
+                  }}
+
+                  // Car Hire specific
+                  manualPickupTime={editedEvent.pickupTime || ""}
+                  setManualPickupTime={(val) => handleFieldChange("pickupTime", val)}
+                  manualDropTime={editedEvent.dropTime || ""}
+                  setManualDropTime={(val) => handleFieldChange("dropTime", val)}
+                  manualNoOfHours={editedEvent.noOfHours === 0 && editedEvent.noOfHours !== 0 ? "" : editedEvent.noOfHours}
+                  setManualNoOfHours={(val) => handleFieldChange("noOfHours", val === "" ? 0 : val)}
+                  manualNoOfDays={editedEvent.noOfDays === 0 && editedEvent.noOfDays !== 0 ? "" : editedEvent.noOfDays}
+                  setManualNoOfDays={(val) => handleFieldChange("noOfDays", val === "" ? 0 : val)}
+                  manualCarType={editedEvent.vehicleType || ""}
+                  setManualCarType={(val) => handleFieldChange("vehicleType", val)}
+                  manualFuelType={editedEvent.fuelType || ""}
+                  setManualFuelType={(val) => handleFieldChange("fuelType", val)}
+                  manualCarModel={editedEvent.carModel || ""}
+                  setManualCarModel={(val) => handleFieldChange("carModel", val)}
+                  manualTransmission={(editedEvent.transmission as "automatic" | "manual" | "") || ""}
+                  setManualTransmission={(val) => handleFieldChange("transmission", val)}
+
+                  // Bus & Train specific
+                  manualTravelDuration={editedEvent.duration || ""}
+                  setManualTravelDuration={(val) => handleFieldChange("duration", val)}
+                  manualDepartureTime={editedEvent.pickupTime || ""}
+                  setManualDepartureTime={(val) => handleFieldChange("pickupTime", val)}
+                  manualArrivalTime={editedEvent.dropTime || ""}
+                  setManualArrivalTime={(val) => handleFieldChange("dropTime", val)}
+                  manualClass={editedEvent.transferClass || ""}
+                  setManualClass={(val) => handleFieldChange("transferClass", val)}
+                  manualBusNumber={editedEvent.busNumber || ""}
+                  setManualBusNumber={(val) => handleFieldChange("busNumber", val)}
+                  manualTrainNumber={editedEvent.trainNumber || ""}
+                  setManualTrainNumber={(val) => handleFieldChange("trainNumber", val)}
+                  manualPnr={editedEvent.pnr || ""}
+                  setManualPnr={(val) => handleFieldChange("pnr", val)}
+                  manualRefundable={editedEvent.refundable || ""}
+                  setManualRefundable={(val) => handleFieldChange("refundable", val)}
+                  manualLink={editedEvent.transferLink || ""}
+                  setManualLink={(val) => handleFieldChange("transferLink", val)}
+                  manualAmenities={editedEvent.amenities || []}
+                  setManualAmenities={(val) => handleFieldChange("amenities", val)}
+                />
+              )}
+            </div>
+
+            {/* Route Details */}
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                Route & Schedule
+              </h4>
+              <div className="space-y-4 pl-4 border-l-2 border-blue-200">
+                <div className="grid grid-cols-2 gap-4">
+                  {renderFieldWithValidation("fromLocation", "From Location", <Input id="fromLocation" value={editedEvent.fromLocation || ""} onChange={(e) => handleFieldChange("fromLocation", e.target.value)} placeholder="Starting point" />)}
+                  {renderFieldWithValidation("toLocation", "To Location", <Input id="toLocation" value={editedEvent.toLocation || ""} onChange={(e) => handleFieldChange("toLocation", e.target.value)} placeholder="Destination" />)}
+                </div>
+
+                {/* Specifics based on Category */}
+                {(editedEvent.transferCategory === 'bus' || editedEvent.transferCategory === 'train') ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      {renderFieldWithValidation("pickupTime", "Departure Time", <Input type="time" id="pickupTime" value={editedEvent.pickupTime || ""} onChange={(e) => handleFieldChange("pickupTime", e.target.value)} />)}
+                      {renderFieldWithValidation("dropTime", "Arrival Time", <Input type="time" id="dropTime" value={editedEvent.dropTime || ""} onChange={(e) => handleFieldChange("dropTime", e.target.value)} />)}
+                    </div>
+                    {renderFieldWithValidation("duration", "Travel Duration", <Input id="duration" value={editedEvent.duration || ""} onChange={(e) => handleFieldChange("duration", e.target.value)} placeholder="e.g. 5h 30m" />)}
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      {renderFieldWithValidation("pickupTime", "Pickup Time", <Input type="time" id="pickupTime" value={editedEvent.pickupTime || ""} onChange={(e) => handleFieldChange("pickupTime", e.target.value)} />)}
+                      {renderFieldWithValidation("dropTime", "Drop-off Time", <Input type="time" id="dropTime" value={editedEvent.dropTime || ""} onChange={(e) => handleFieldChange("dropTime", e.target.value)} />)}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+
+
+            {/* Extended Details (Optional) */}
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                Additional Details
+              </h4>
+              <div className="space-y-4 pl-4 border-l-2 border-gray-200">
+                {/* Car Hire Specifics */}
+                {editedEvent.transferCategory?.includes('car') && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      {renderFieldWithValidation("fuelType", "Fuel Type", <Input id="fuelType" value={editedEvent.fuelType || ""} onChange={(e) => handleFieldChange("fuelType", e.target.value)} placeholder="e.g. Petrol" />)}
+                      {renderFieldWithValidation("transmission", "Transmission", <Input id="transmission" value={editedEvent.transmission || ""} onChange={(e) => handleFieldChange("transmission", e.target.value)} placeholder="e.g. Automatic" />)}
+                    </div>
+                    {renderFieldWithValidation("carModel", "Car Model", <Input id="carModel" value={editedEvent.carModel || ""} onChange={(e) => handleFieldChange("carModel", e.target.value)} placeholder="e.g. Toyota Innova" />)}
+                    <div className="grid grid-cols-2 gap-4">
+                      {renderFieldWithValidation("noOfHours", "No. of Hours", <Input type="number" id="noOfHours" value={editedEvent.noOfHours || ""} onChange={(e) => handleFieldChange("noOfHours", Number(e.target.value))} placeholder="Hours" />)}
+                      {renderFieldWithValidation("noOfDays", "No. of Days", <Input type="number" id="noOfDays" value={editedEvent.noOfDays || ""} onChange={(e) => handleFieldChange("noOfDays", Number(e.target.value))} placeholder="Days" />)}
+                    </div>
+                  </>
+                )}
+
+                {/* Bus/Train Specifics */}
+                {(editedEvent.transferCategory === 'bus' || editedEvent.transferCategory === 'train') && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      {renderFieldWithValidation("transferClass", "Class", <Input id="transferClass" value={editedEvent.transferClass || ""} onChange={(e) => handleFieldChange("transferClass", e.target.value)} placeholder="e.g. Sleeper, AC" />)}
+                      {renderFieldWithValidation(editedEvent.transferCategory === 'bus' ? "busNumber" : "trainNumber", editedEvent.transferCategory === 'bus' ? "Bus Number" : "Train Number", <Input id="number" value={editedEvent.transferCategory === 'bus' ? editedEvent.busNumber : editedEvent.trainNumber || ""} onChange={(e) => handleFieldChange(editedEvent.transferCategory === 'bus' ? "busNumber" : "trainNumber", e.target.value)} />)}
+                    </div>
+                    {renderFieldWithValidation("pnr", "PNR", <Input id="pnr" value={editedEvent.pnr || ""} onChange={(e) => handleFieldChange("pnr", e.target.value)} placeholder="PNR Number" />)}
+                    {renderFieldWithValidation("refundable", "Refundable", <Input id="refundable" value={editedEvent.refundable || ""} onChange={(e) => handleFieldChange("refundable", e.target.value)} placeholder="Yes/No" />)}
+                    {renderFieldWithValidation("transferLink", "Booking Link", <Input id="transferLink" value={editedEvent.transferLink || ""} onChange={(e) => handleFieldChange("transferLink", e.target.value)} placeholder="URL" />)}
+                  </>
+                )}
+
+                {/* Amenities/Highlights */}
+                <div className="grid gap-2">
+                  <Label htmlFor="highlights">Amenities / Highlights</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {editedEvent.highlights?.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="px-2 py-1">
+                        {tag}
+                        <button onClick={() => handleRemoveTag(tag)} className="ml-2 hover:text-red-500 focus:outline-none">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <Input
+                    id="newTag"
+                    placeholder="Add amenity/highlight and press Enter"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyDown={handleAddTag}
+                  />
+                </div>
+              </div>
+            </div>
           </>
         )
 

@@ -585,7 +585,16 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
   const updateDayMeals = (dayIndex: number, meal: "breakfast" | "lunch" | "dinner", value: boolean) => {
     const newDays = [...days]
-    newDays[dayIndex].meals[meal] = value
+    // Initialize meals if undefined or array (migration from old format)
+    if (!newDays[dayIndex].meals || Array.isArray(newDays[dayIndex].meals)) {
+      newDays[dayIndex].meals = {
+        breakfast: false,
+        lunch: false,
+        dinner: false,
+      }
+    }
+    // Cast to any to access properties since strict typing is union
+    ; (newDays[dayIndex].meals as any)[meal] = value
     setDays(newDays)
   }
 
@@ -608,77 +617,167 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   }
 
   const handleDeleteEvent = (dayIndex: number, eventIndex: number) => {
-    const newDays = [...days]
-    newDays[dayIndex].events.splice(eventIndex, 1)
-    setDays(newDays)
+    const eventToDelete = days[dayIndex].events[eventIndex]
+    let newDays = JSON.parse(JSON.stringify(days)) // Deep copy
+
+    // Check if it's a multi-night hotel that needs syncing
+    if (eventToDelete.category === 'hotel' && eventToDelete.hotelGroupId) {
+      const groupId = eventToDelete.hotelGroupId
+
+      // 1. Remove the event
+      newDays[dayIndex].events.splice(eventIndex, 1)
+
+      // 2. Find all remaining events for this group and their positions
+      let groupEvents: { dayIdx: number, eventIdx: number, event: IItineraryEvent }[] = []
+      newDays.forEach((d: any, dIdx: number) => {
+        d.events.forEach((e: any, eIdx: number) => {
+          if (e.hotelGroupId === groupId) {
+            groupEvents.push({ dayIdx: dIdx, eventIdx: eIdx, event: e })
+          }
+        })
+      })
+
+      // 3. Sort by day index to ensure sequence
+      groupEvents.sort((a, b) => a.dayIdx - b.dayIdx)
+
+      if (groupEvents.length === 0) {
+        // No remaining events, just update state
+        setDays(newDays)
+        return
+      }
+
+      // 4. Remove all group events from their current positions (to be re-inserted)
+      // Do this in reverse order to avoid index shifting issues
+      groupEvents.reverse().forEach(item => {
+        newDays[item.dayIdx].events.splice(item.eventIdx, 1)
+      })
+      groupEvents.reverse() // Restore original order
+
+      // 5. Calculate new metadata
+      const newTotalNights = Math.max(0, groupEvents.length - 1)
+
+      // 6. Re-insert events starting from the first event's original day
+      // This creates a contiguous block
+      const startDayIdx = groupEvents[0].dayIdx
+
+      groupEvents.forEach((item, idx) => {
+        const targetDayIdx = startDayIdx + idx
+
+        // Ensure we have enough days
+        while (targetDayIdx >= newDays.length) {
+          const lastDay = newDays[newDays.length - 1]
+          newDays.push({
+            ...lastDay,
+            day: newDays.length + 1,
+            title: `Day ${newDays.length + 1}`,
+            date: new Date(new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            events: [],
+            meals: { breakfast: false, lunch: false, dinner: false }
+          })
+        }
+
+        const updatedEvent = {
+          ...item.event,
+          hotelNightIndex: idx + 1,
+          hotelTotalNights: newTotalNights,
+          nights: newTotalNights // Sync nights property
+        }
+
+        // Insert into the target day
+        newDays[targetDayIdx].events.push(updatedEvent)
+      })
+
+      setDays(newDays)
+    } else {
+      // Standard deletion
+      newDays[dayIndex].events.splice(eventIndex, 1)
+      setDays(newDays)
+    }
   }
 
   const handleSaveEvent = (updatedEvent: IItineraryEvent) => {
     if (!editingEvent) return
 
-    const newDays = days.map((day, dayIdx) => {
-      if (dayIdx === editingEvent.dayIndex) {
-        return {
-          ...day,
-          events: day.events.map((event, eventIdx) => {
-            if (eventIdx === editingEvent.eventIndex) {
-              return {
-                ...updatedEvent,
-                highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
-                listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
-              }
-            }
-            return event
-          }),
-        }
-      }
-      return day
-    })
+    // 1. First, create a deep copy of days to work with
+    let newDays = JSON.parse(JSON.stringify(days))
 
-    // Handle multi-night hotels: duplicate event across nights
-    if (updatedEvent.category === "hotel" && updatedEvent.nights && updatedEvent.nights > 1) {
-      const originalEvent = newDays[editingEvent.dayIndex].events[editingEvent.eventIndex]
-      const hotelGroupId = originalEvent.hotelGroupId || `hotel-${Date.now()}`
+    // 2. Update the event at the specific position
+    newDays[editingEvent.dayIndex].events[editingEvent.eventIndex] = {
+      ...updatedEvent,
+      highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
+      listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
+    }
 
-      // Update the original event with night tracking
+    // 3. Handle multi-night hotels
+    // 3. Handle multi-night hotels
+    if (updatedEvent.category === "hotel" && updatedEvent.nights && updatedEvent.nights > 0) {
+      const hotelGroupId = updatedEvent.hotelGroupId || `hotel-${Date.now()}`
+      const totalNights = updatedEvent.nights
+
+      // Update the corrected event with group info
       newDays[editingEvent.dayIndex].events[editingEvent.eventIndex] = {
-        ...originalEvent,
+        ...newDays[editingEvent.dayIndex].events[editingEvent.eventIndex],
         hotelGroupId,
         hotelNightIndex: 1,
-        hotelTotalNights: updatedEvent.nights,
+        hotelTotalNights: totalNights,
       }
 
-      // Add hotel events to subsequent days (including checkout day)
-      for (let i = 1; i <= updatedEvent.nights; i++) {
-        const nextDayIndex = editingEvent.dayIndex + i
+      const currentDayIndex = editingEvent.dayIndex
+      const currentEventIndex = editingEvent.eventIndex
 
-        // Extend days array if needed
-        if (nextDayIndex >= newDays.length) {
-          const lastDay = newDays[newDays.length - 1]
-          newDays.push({
-            ...lastDay,
-            day: newDays.length + 1,
-            title: "",
-            date: new Date(
-              new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000
-            )
-              .toISOString()
-              .split("T")[0],
-            events: [],
+      // A. Remove ALL other existing linked events for this group
+      // We keep the one we are currently editing (to avoid losing its position), but remove all others
+      newDays = newDays.map((day: any, dIdx: number) => {
+        return {
+          ...day,
+          events: day.events.filter((e: any, eIdx: number) => {
+            // Keep non-hotel events
+            if (e.hotelGroupId !== hotelGroupId) return true;
+            // Keep the exact event instance we are editing
+            if (dIdx === currentDayIndex && eIdx === currentEventIndex) return true;
+            // Remove everything else in this group
+            return false;
           })
         }
+      })
 
-        // Create duplicate event for this night/checkout
-        const nightEvent: IItineraryEvent = {
-          ...originalEvent,
-          id: `event-${Date.now()}-night-${i}`,
-          hotelGroupId,
-          hotelNightIndex: i + 1,
-          hotelTotalNights: updatedEvent.nights,
+      // B. Regenerate linked events
+      // We need to generate (totalNights - 1) additional "night" events + 1 "checkout" event
+      // Loop starts from 1 because i=0 is the main event (Night 1)
+      const cachedEvent = newDays[currentDayIndex].events[currentEventIndex]
+
+      for (let i = 1; i <= totalNights; i++) {
+        // i=1 is Night 2, i=totalNights is Checkout
+        const targetDayIndex = currentDayIndex + i
+
+        // Extend days if needed
+        if (targetDayIndex >= newDays.length) {
+          // If we need to add more days to accommodate the stay
+          const daysToAdd = targetDayIndex - newDays.length + 1
+          for (let d = 0; d < daysToAdd; d++) {
+            const lastDay = newDays[newDays.length - 1]
+            newDays.push({
+              ...lastDay,
+              day: newDays.length + 1,
+              title: `Day ${newDays.length + 1}`,
+              date: new Date(new Date(lastDay.date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              events: []
+            })
+          }
         }
 
-        // Add to the next day
-        newDays[nextDayIndex].events.push(nightEvent)
+        // Create the linked event
+        const linkedEvent: IItineraryEvent = {
+          ...cachedEvent,
+          id: `event-${Date.now()}-${i}`, // unique ID
+          hotelGroupId,
+          hotelNightIndex: i + 1, // 1-based index (Night 1 = 1, Night 2 = 2...)
+          hotelTotalNights: totalNights,
+          price: 0, // Linked events usually 0 displayed price
+        }
+
+        // Insert into the target day
+        newDays[targetDayIndex].events.push(linkedEvent)
       }
     }
 
@@ -705,16 +804,67 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   }
 
   const deleteDay = (dayIndex: number) => {
-    if (days.length === 1) {
-      // Prevent deletion if only one day remains
-      return
-    }
+    if (days.length === 1) return
 
-    // Remove the day at the specified index
-    const updatedDays = days.filter((_, index) => index !== dayIndex)
+    // 1. Identify Hotel Events in the deleted day that need resizing
+    const deletedDay = days[dayIndex]
+    const affectedHotelGroups = new Set<string>()
 
-    // Renumber remaining days
-    const renumberedDays = updatedDays.map((day, index) => ({
+    deletedDay.events.forEach(e => {
+      if (e.category === 'hotel' && e.hotelGroupId) {
+        affectedHotelGroups.add(e.hotelGroupId)
+      }
+    })
+
+    // 2. Remove the day
+    let newDays = days.filter((_, index) => index !== dayIndex)
+
+    // 3. Process affected hotel groups
+    // For each group, we need to:
+    // a. Find all remaining events of that group
+    // b. Reduce their totalNights by 1
+    // c. Re-index their nightIndex (1, 2, 3...) based on their new day order
+
+    // We need to do this traversing the NEW days structure
+    affectedHotelGroups.forEach(groupId => {
+      // Collect all remaining events for this group across all days
+      let groupEvents: { dayIdx: number, eventIdx: number, event: IItineraryEvent }[] = []
+
+      newDays.forEach((d, dIdx) => {
+        d.events.forEach((e, eIdx) => {
+          if (e.hotelGroupId === groupId) {
+            groupEvents.push({ dayIdx: dIdx, eventIdx: eIdx, event: e })
+          }
+        })
+      })
+
+      // If no events left (e.g. it was a 1-night stay on the deleted day), nothing to do.
+      if (groupEvents.length === 0) return
+
+      // Verify if we still have a contiguous block? 
+      // Logic: The days are removed, so the remaining days shift up. 
+      // The events physically stay on their "relative" days. 
+      // We just need to update metadata.
+
+      // IMPORTANT: totalNights is (number of cards) - 1. Because the last card is checkout with NO night count usually.
+      // e.g. 3 cards = 2 nights + checkout.
+      const newTotalNights = Math.max(0, groupEvents.length - 1)
+
+      groupEvents.forEach((item, idx) => {
+        // idx is 0-based, so nightIndex is idx + 1
+        const updatedEvent = {
+          ...item.event,
+          hotelNightIndex: idx + 1,
+          hotelTotalNights: newTotalNights,
+          // Update 'nights' property on ALL events to keep them in sync
+          nights: newTotalNights
+        }
+        newDays[item.dayIdx].events[item.eventIdx] = updatedEvent
+      })
+    })
+
+    // 4. Renumber remaining days
+    const renumberedDays = newDays.map((day, index) => ({
       ...day,
       day: index + 1,
       title: day.title.includes("Day ") ? `Day ${index + 1}` : day.title,
@@ -724,10 +874,9 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
     setDeleteConfirmationOpen(false)
     setDeletingDayIndex(null)
 
-    // Show toast notification
     toast({
       title: "Day Deleted",
-      description: `Day ${dayIndex + 1} has been removed from the itinerary.`,
+      description: `Day ${dayIndex + 1} has been removed. Multi-night events have been updated.`,
     })
   }
 
@@ -1872,6 +2021,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           pricingAdults={pricingAdults}
                           pricingChildren={pricingChildren}
                           pricingCurrency={pricingCurrency}
+                          pricingMode={pricingMode}
                           onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
                           onEdit={() => handleEditEvent(dayIndex, eventIndex)}
                           onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
@@ -1894,7 +2044,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                     {/* Meals Component - only show if day has a meal event */}
                     {day.events.some(event => event.category === 'meal') && (
                       <DayMeals
-                        meals={day.meals}
+                        meals={day.meals || []}
                         onChange={(meal, value) => updateDayMeals(dayIndex, meal, value)}
                       />
                     )}
@@ -1945,6 +2095,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                             pricingAdults={pricingAdults}
                             pricingChildren={pricingChildren}
                             pricingCurrency={pricingCurrency}
+                            pricingMode={pricingMode}
                             onDragStart={() => handleDragStart("event", event)}
                             onEdit={() => {
                               const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)

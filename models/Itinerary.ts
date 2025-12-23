@@ -11,7 +11,7 @@ export interface IItinerary {
   duration: string
   totalPrice: number
   currency: string
-  status?: "published" | "archived"
+  status?: "published" | "archived" | "draft"
   type: "fixed-group-tour" | "customized-package" | "cart-combo" | "html-editor" // NEW: Itinerary types
   createdBy: string
   lastUpdatedBy?: string // NEW: Track who last updated
@@ -92,7 +92,7 @@ export interface IItineraryDay {
   detailedDescription?: string
   events: IItineraryEvent[]
   nights?: number
-  meals?: string[] // Array of selected meals for the day
+  meals?: string[] | { breakfast: boolean; lunch: boolean; dinner: boolean } // Array of selected meals for the day or object state
 }
 
 export interface IItineraryEvent {
@@ -105,6 +105,7 @@ export interface IItineraryEvent {
   | "meal"
   | "photo"
   | "other"
+  | "others" // Support both for legacy/compatibility
   | "heading"
   | "paragraph"
   | "list"
@@ -166,6 +167,23 @@ export interface IItineraryEvent {
   vehicleType?: string
   transferType?: "private" | "shared" // Type of transfer for pricing
   transferCategory?: string // Subcategory: airport-transfer, car-hire-hourly, train, bus, etc.
+  pickupTime?: string
+  dropTime?: string
+  noOfHours?: number
+  noOfDays?: number
+  fuelType?: string
+  carModel?: string
+  transmission?: string
+  busNumber?: string
+  trainNumber?: string
+  transferClass?: string
+  transferLink?: string
+  stopsList?: string[]
+  additionalVehicles?: {
+    vehicleType: string
+    capacity: number
+    price: number
+  }[]
   // Image specific
   imageUrl?: string
   imageCaption?: string
@@ -177,6 +195,7 @@ export interface IItineraryEvent {
   nights?: number
   images?: string[]
   subtitle?: string
+  subCategory?: string // For generic sub-categorization (used by 'others')
   additionalInfoSections?: {
     heading: string
     content: string
@@ -200,6 +219,7 @@ const ItineraryEventSchema = new mongoose.Schema({
       "meal",
       "photo",
       "other",
+      "others",
       "heading",
       "paragraph",
       "list",
@@ -252,6 +272,25 @@ const ItineraryEventSchema = new mongoose.Schema({
   vehicleType: String,
   transferType: { type: String, enum: ["private", "shared"] },
   transferCategory: String,
+  pickupTime: String,
+  dropTime: String,
+  noOfHours: Number,
+  noOfDays: Number,
+  fuelType: String,
+  carModel: String,
+  transmission: String,
+  busNumber: String,
+  trainNumber: String,
+  transferClass: String,
+  transferLink: String,
+  stopsList: [String],
+  additionalVehicles: [
+    {
+      vehicleType: String,
+      capacity: Number,
+      price: Number,
+    },
+  ],
   // Activity fields
   duration: String,
   difficulty: String,
