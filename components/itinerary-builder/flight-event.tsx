@@ -76,23 +76,28 @@ export function FlightEvent({
       <EventSourceBadge event={event} />
 
       {/* Flight Header */}
-      <div className="flex items-center gap-1.5 mb-1.5 pb-2 border-b border-gray-100">
-        <Plane className="h-3.5 w-3.5 text-blue-600" />
-        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Flight</h3>
+      <div className="mb-1.5 pb-2 border-b border-gray-100">
+        <div className="flex items-center gap-1.5">
+          <Plane className="h-3.5 w-3.5 text-blue-600" />
+          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Flight</h3>
+        </div>
+        {event.title && (
+          <div className="text-sm font-semibold text-gray-800 mt-1">{event.title}</div>
+        )}
       </div>
 
       {/* Compact Route Header */}
-      <div className="grid grid-cols-[140px_1fr_140px] gap-3 mb-1.5">
+      <div className="flex items-start mb-1.5">
         {/* From City */}
-        <div>
+        <div className="w-24">
           <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">From</div>
           <div className="text-2xl font-bold text-gray-900">{event.fromCity || "Origin"}</div>
         </div>
 
         {/* Arrow Section with Stops Above and Duration Below */}
-        <div className="flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center min-w-[100px] mx-6">
           {/* Stops Above Arrow */}
-          <div className="text-xs text-gray-600 mb-0.5">
+          <div className="text-xs text-gray-600 mb-0.5 whitespace-nowrap">
             {stopsDisplay}
           </div>
 
@@ -112,20 +117,20 @@ export function FlightEvent({
         </div>
 
         {/* To City */}
-        <div className="text-right">
+        <div className="w-24">
           <div className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">To</div>
           <div className="text-2xl font-bold text-gray-900">{event.toCity || "Destination"}</div>
         </div>
       </div>
 
       {/* Flight Times - Compact */}
-      <div className="grid grid-cols-[140px_1fr_140px] gap-3 mb-1.5">
-        <div>
+      <div className="flex items-start mb-1.5">
+        <div className="w-24">
           <div className="text-3xl font-bold text-gray-900">{event.startTime || event.time || "--:--"}</div>
           <div className="text-[10px] text-gray-500 uppercase">Departure</div>
         </div>
-        <div></div>
-        <div className="text-right">
+        <div className="min-w-[100px] mx-6"></div>
+        <div className="w-24">
           <div className="text-3xl font-bold text-gray-900">{event.endTime || "--:--"}</div>
           <div className="text-[10px] text-gray-500 uppercase">Arrival</div>
         </div>
