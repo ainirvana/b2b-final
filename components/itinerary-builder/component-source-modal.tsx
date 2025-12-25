@@ -193,13 +193,48 @@ export function ComponentSourceModal({
 
   // Subcategory options for Transfer (2-level hierarchy)
   const transferSubCategories = [
-    { id: "airport-transfer", label: "Airport Transfer", icon: "✈️" },
-    { id: "car-hire-hourly", label: "Car Hire - Hourly", icon: "🚗" },
-    { id: "car-hire-outstation", label: "Car Hire - Outstation (One Way)", icon: "🚗" },
-    { id: "car-hire-roundtrip", label: "Car Hire - Round Trip", icon: "🚗" },
-    { id: "car-hire-selfdrive", label: "Car Hire - Self Drive", icon: "🚗" },
-    { id: "bus", label: "Bus", icon: "🚌" },
-    { id: "train", label: "Train", icon: "🚆" },
+    {
+      id: "airport-transfer",
+      label: "Airport Transfer",
+      icon: "✈️",
+      description: "To/From airport transfers"
+    },
+    {
+      id: "car-hire-hourly",
+      label: "Car Hire - Hourly",
+      icon: "🕐",
+      description: "Hourly car rental service"
+    },
+    {
+      id: "car-hire-outstation",
+      label: "Car Hire - Outstation (One Way)",
+      icon: "🛣️",
+      description: "One-way intercity travel"
+    },
+    {
+      id: "car-hire-roundtrip",
+      label: "Car Hire - Round Trip",
+      icon: "🔄",
+      description: "Return journey service"
+    },
+    {
+      id: "car-hire-selfdrive",
+      label: "Car Hire - Self Drive",
+      icon: "🚗",
+      description: "Self-driven car rental"
+    },
+    {
+      id: "bus",
+      label: "Bus",
+      icon: "🚌",
+      description: "Bus transportation"
+    },
+    {
+      id: "train",
+      label: "Train",
+      icon: "🚆",
+      description: "Train journey"
+    },
   ]
 
   // Subcategory options for Ancillaries
@@ -697,6 +732,13 @@ export function ComponentSourceModal({
     if (selectedSubCategory && componentType.toLowerCase() === "transfer") {
       payload.transferCategory = selectedSubCategory
 
+      // Save location fields for transfers (different from fromCity/toCity)
+      if (manualFromCity) payload.fromLocation = manualFromCity
+      if (manualToCity) payload.toLocation = manualToCity
+
+      // Airport Transfer specific
+      if (manualAirportName) payload.airportName = manualAirportName
+
       // Extended Transfer Fields
       if (manualPickupTime) payload.pickupTime = manualPickupTime
       if (manualDropTime) payload.dropTime = manualDropTime
@@ -711,10 +753,31 @@ export function ComponentSourceModal({
       if (manualClass) payload.transferClass = manualClass
       if (manualLink) payload.transferLink = manualLink
       if (manualTravelDuration) payload.duration = manualTravelDuration // Map travel duration to duration
-      if (manualDepartureTime) payload.pickupTime = manualDepartureTime // Map departure to pickup
-      if (manualArrivalTime) payload.dropTime = manualArrivalTime // Map arrival to drop
+      if (manualDepartureTime) payload.departureTime = manualDepartureTime // Save as departureTime
+      if (manualArrivalTime) payload.arrivalTime = manualArrivalTime // Save as arrivalTime
       if (manualPnr) payload.pnr = manualPnr
       if (manualRefundable) payload.refundable = manualRefundable
+
+      // Stops list
+      if (manualStopsList && manualStopsList.length > 0) {
+        const cleanedStops = manualStopsList.filter(s => s && s.trim())
+        if (cleanedStops.length > 0) {
+          payload.stopsList = cleanedStops
+        }
+      }
+
+      // Additional vehicles
+      if (manualAdditionalVehicles && manualAdditionalVehicles.length > 0) {
+        payload.additionalVehicles = manualAdditionalVehicles
+      }
+
+      // Amenities (for bus/train)
+      if (manualAmenities && manualAmenities.length > 0) {
+        const cleanedAmenities = manualAmenities.filter(a => a && a.trim())
+        if (cleanedAmenities.length > 0) {
+          payload.amenities = cleanedAmenities
+        }
+      }
     }
     if (manualMeals.length) payload.meals = manualMeals
     if (manualCustomMealDescription) payload.customMealDescription = manualCustomMealDescription
@@ -1026,22 +1089,55 @@ export function ComponentSourceModal({
               {/* Transfer Component - Show Subcategory Selection */}
               {componentType.toLowerCase() === "transfer" ? (
                 <div className="space-y-4">
-                  {/* Subcategory Selection */}
+                  {/* Subcategory Selection - Enhanced Card UI */}
                   <div className="mb-6">
-                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Sub-Category</h4>
-                    <div className="grid grid-cols-3 gap-3">
+                    <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                      <span className="w-1 h-6 bg-black rounded-full mr-3"></span>
+                      Select Transfer Type
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {transferSubCategories.map((subCat) => (
-                        <button
+                        <Card
                           key={subCat.id}
                           onClick={() => setSelectedSubCategory(subCat.id)}
-                          className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${selectedSubCategory === subCat.id
-                            ? "bg-black text-white border-black"
-                            : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                          className={`cursor-pointer transition-all duration-200 hover:shadow-lg group ${selectedSubCategory === subCat.id
+                            ? "border-2 border-black shadow-md bg-gradient-to-br from-gray-50 to-white"
+                            : "border border-gray-200 hover:border-gray-400"
                             }`}
                         >
-                          <span className="text-2xl mb-2">{subCat.icon}</span>
-                          <span className="text-xs text-center font-medium">{subCat.label}</span>
-                        </button>
+                          <CardContent className="p-5 flex flex-col items-center text-center relative">
+                            {/* Selected Indicator */}
+                            {selectedSubCategory === subCat.id && (
+                              <div className="absolute top-2 right-2 w-5 h-5 bg-black rounded-full flex items-center justify-center">
+                                <span className="text-white text-xs">✓</span>
+                              </div>
+                            )}
+
+                            {/* Icon */}
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 transition-all ${selectedSubCategory === subCat.id
+                              ? "bg-black"
+                              : "bg-gray-100 group-hover:bg-gray-200"
+                              }`}>
+                              <span className="text-3xl">{subCat.icon}</span>
+                            </div>
+
+                            {/* Label */}
+                            <h5 className={`font-semibold text-sm mb-1 leading-tight ${selectedSubCategory === subCat.id
+                              ? "text-black"
+                              : "text-gray-800"
+                              }`}>
+                              {subCat.label}
+                            </h5>
+
+                            {/* Description */}
+                            <p className={`text-xs leading-tight ${selectedSubCategory === subCat.id
+                              ? "text-gray-600"
+                              : "text-gray-500"
+                              }`}>
+                              {subCat.description}
+                            </p>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   </div>

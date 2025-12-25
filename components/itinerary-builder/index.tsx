@@ -1567,14 +1567,29 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   }
 
   return (
-    <div className="flex h-screen">
-      <div className="flex-1 p-3 overflow-y-auto h-full">
-        {/* Editor mode banner for customized-package when creating new or editing */}
-        {(itineraryTypeParam === 'customized-package' && (isNewMode || currentItineraryId)) && (
-          <div className="mb-3 inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md text-sm font-semibold">
-            EDITOR MODE
-          </div>
-        )}
+    <div className="flex h-screen relative">
+      {/* Vertical EDITOR MODE strip for customized-package */}
+      {(itineraryTypeParam === 'customized-package' && (isNewMode || currentItineraryId)) && (
+        <div
+          className="fixed left-0 top-0 bottom-0 w-7 flex items-center justify-center z-50 shadow-md"
+          style={{
+            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
+          }}
+        >
+          <span
+            className="text-white font-bold text-sm tracking-widest whitespace-nowrap uppercase"
+            style={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              transform: 'rotate(180deg)',
+              letterSpacing: '0.15em'
+            }}
+          >
+            Editor Mode
+          </span>
+        </div>
+      )}
+      <div className={`flex-1 p-3 overflow-y-auto h-full ${(itineraryTypeParam === 'customized-package' && (isNewMode || currentItineraryId)) ? 'ml-7' : ''}`}>
         {/* Header Card */}
         <div className="bg-white rounded-xl shadow-sm border mb-4 p-3 flex flex-col gap-0">
           {/* Itinerary Title - Biggest Font Size */}

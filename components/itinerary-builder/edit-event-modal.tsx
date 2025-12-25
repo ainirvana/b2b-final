@@ -1535,6 +1535,35 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
                 />
               </div>
             )}
+            {/* Price Field */}
+            <div className="grid gap-2">
+              <Label htmlFor="mealPrice">Price</Label>
+              <div className="flex gap-2">
+                <Select value={editedEvent.currency || "INR"} onValueChange={(value) => handleFieldChange("currency", value)}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR (₹)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="AED">AED (د.إ)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  id="mealPrice"
+                  type="number"
+                  min="0"
+                  max="1000000"
+                  step="0.01"
+                  value={editedEvent.price || ""}
+                  onChange={(e) => handleNumericInput(e, "price")}
+                  placeholder="0.00"
+                  className="flex-1"
+                />
+              </div>
+            </div>
           </>
         )
 

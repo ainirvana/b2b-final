@@ -9,7 +9,7 @@ import { HotelEvent } from "./hotel-event"
 import { TransferEvent } from "./transfer-event"
 import { ActivityEvent } from "./activity-event"
 import { FlightEvent } from "./flight-event"
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -58,7 +58,7 @@ export function EventCard({
 
   return (
     <div className="relative">
-      <div 
+      <div
         className={`${isDragging ? 'opacity-50' : ''}`}
         draggable
         onDragStart={onDragStart}

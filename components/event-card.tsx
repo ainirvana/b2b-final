@@ -15,6 +15,7 @@ import { DayMeals } from "./itinerary-builder/day-meals"
 import { HotelEvent } from "./itinerary-builder/hotel-event"
 import { TransferEvent } from "./itinerary-builder/transfer-event"
 import { ActivityEvent } from "./itinerary-builder/activity-event"
+import { MealEvent } from "./itinerary-builder/meal-event"
 import { ImageEvent } from "./itinerary-builder/image-event"
 import { cn } from "@/lib/utils"
 
@@ -118,65 +119,18 @@ export function EventCard({
   }
 
   if (event.category === "meal") {
-    const getMealLabel = (mealId: string): string => {
-      const labels: { [key: string]: string } = {
-        breakfast: "Breakfast",
-        lunch: "Lunch",
-        dinner: "Dinner",
-        highTea: "High Tea",
-        halfBoard: "Half Board",
-        fullBoard: "Full Board",
-        allInclusive: "All Inclusive",
-        others: event.customMealDescription || "Others"
-      };
-      return labels[mealId] || mealId;
-    };
-
-    const selectedMeals = Array.isArray(event.meals) ? event.meals : [];
-    const mealLabels = selectedMeals.map(getMealLabel).filter(Boolean);
-
     return (
-      <Card
-        className={cn("border-2 cursor-pointer hover:shadow-md transition-shadow relative", getEventColor(event.category))}
-        draggable={!!onDragStart}
-        onDragStart={onDragStart}
-        onClick={handleCardClick}
-      >
-        <EventSourceTags source={event.source || "manual"} isEdited={event.isEdited} />
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 flex-1">
-              <span className="text-sm font-medium text-gray-700">Meals:</span>
-              <span className="text-sm text-gray-800">
-                {mealLabels.length > 0 ? mealLabels.join(" | ") : "No meals selected"}
-              </span>
-            </div>
-            {(onEdit || onDelete) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" data-no-edit>
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {onEdit && (
-                    <DropdownMenuItem onClick={onEdit}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                  )}
-                  {onDelete && (
-                    <DropdownMenuItem onClick={onDelete} className="text-red-600">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <MealEvent
+        event={event}
+        isDetailedView={isDetailedView}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        pricingEnabled={pricingEnabled}
+        pricingAdults={pricingAdults}
+        pricingChildren={pricingChildren}
+        pricingCurrency={pricingCurrency}
+        pricingMode={pricingMode}
+      />
     )
   }
 
@@ -250,7 +204,6 @@ export function EventCard({
             pricingEnabled={pricingEnabled}
             pricingAdults={pricingAdults}
             pricingChildren={pricingChildren}
-            pricingChildren={pricingChildren}
             pricingCurrency={pricingCurrency}
             pricingMode={pricingMode}
           />
@@ -270,7 +223,6 @@ export function EventCard({
             isDetailedView={isDetailedView}
             pricingEnabled={pricingEnabled}
             pricingAdults={pricingAdults}
-            pricingChildren={pricingChildren}
             pricingChildren={pricingChildren}
             pricingCurrency={pricingCurrency}
             pricingMode={pricingMode}

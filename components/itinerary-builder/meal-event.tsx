@@ -1,9 +1,12 @@
 "use client"
 
-import { UtensilsCrossed, Clock, MapPin, Image as ImageIcon } from "lucide-react"
+import { UtensilsCrossed, Clock, MapPin, Image as ImageIcon, MoreVertical, Edit, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { IItineraryEvent } from "@/models/Itinerary"
 import { EventSourceBadge } from "./source-badge"
+import { calculateMealPrice } from "@/lib/pricing-calculator"
 
 interface MealEventProps {
     event: IItineraryEvent
@@ -28,6 +31,15 @@ export function MealEvent({
     pricingCurrency = "INR",
     pricingMode = 'individual',
 }: MealEventProps) {
+    // Calculate pricing if enabled
+    const priceResult = pricingEnabled && pricingMode === 'individual' && event.price
+        ? calculateMealPrice(event, {
+            adults: pricingAdults,
+            children: pricingChildren,
+            targetCurrency: pricingCurrency
+        })
+        : null
+
     const getMealLabel = (mealId: string): string => {
         const labels: { [key: string]: string } = {
             breakfast: "Breakfast",
@@ -71,6 +83,33 @@ export function MealEvent({
     return (
         <div className="bg-white p-2 rounded-lg border border-gray-200 relative">
             <EventSourceBadge event={event} />
+
+            {/* Edit/Delete Dropdown Menu */}
+            {(onEdit || onDelete) && (
+                <div className="absolute top-2 right-2 z-10">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {onEdit && (
+                                <DropdownMenuItem onClick={onEdit}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit
+                                </DropdownMenuItem>
+                            )}
+                            {onDelete && (
+                                <DropdownMenuItem onClick={onDelete} className="text-red-600">
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            )}
 
             {/* Compact Header */}
             <div className="flex items-center gap-1.5 mb-1.5">
@@ -144,13 +183,28 @@ export function MealEvent({
             {event.price && pricingEnabled && pricingMode === 'individual' && (
                 <div className="pt-1.5 border-t border-slate-200">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-500">Price</span>
+                        <span className="text-xs text-slate-500">
+                            {priceResult ? priceResult.breakdown : "Price"}
+                        </span>
                         <div className="text-right">
-                            <span className="text-sm font-bold text-amber-600">
-                                {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
-                                {event.price}
-                            </span>
-                            <span className="text-xs text-slate-500 ml-1">/pax</span>
+                            {priceResult ? (
+                                <>
+                                    <span className="text-sm font-bold text-amber-600">
+                                        {priceResult.displayPrice}
+                                    </span>
+                                    <span className="text-xs text-slate-400 ml-1">
+                                        ({priceResult.originalDisplayPrice}/pax)
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-sm font-bold text-amber-600">
+                                        {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
+                                        {event.price}
+                                    </span>
+                                    <span className="text-xs text-slate-500 ml-1">/pax</span>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
