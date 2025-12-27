@@ -45,6 +45,8 @@ export interface IItinerary {
   // NEW: Quotation-specific fields
   isQuotationOnly?: boolean // Flag to identify itineraries created specifically for quotations
   quotationLead?: any // Store lead data associated with quotation
+  // NEW: Overview events for customized packages
+  overviewEvents?: IItineraryEvent[] // Overview notes that appear above Day 1
 }
 
 export interface IGalleryItem {
@@ -175,6 +177,8 @@ export interface IItineraryEvent {
   vehicleType?: string
   transferType?: "private" | "shared" // Type of transfer for pricing
   transferCategory?: string // Subcategory: airport-transfer, car-hire-hourly, train, bus, etc.
+  airportName?: string // For airport transfers
+  pickupDrop?: "pickup" | "drop" // For airport transfers: pickup from airport or drop to airport
   pickupTime?: string
   dropTime?: string
   noOfHours?: number
@@ -280,6 +284,8 @@ const ItineraryEventSchema = new mongoose.Schema({
   vehicleType: String,
   transferType: { type: String, enum: ["private", "shared"] },
   transferCategory: String,
+  airportName: String,
+  pickupDrop: { type: String, enum: ["pickup", "drop"] },
   pickupTime: String,
   dropTime: String,
   noOfHours: Number,
@@ -446,6 +452,8 @@ const ItinerarySchema = new mongoose.Schema(
     // Quotation-specific fields
     isQuotationOnly: { type: Boolean, default: false },
     quotationLead: mongoose.Schema.Types.Mixed,
+    // Overview events
+    overviewEvents: [ItineraryEventSchema],
   },
   {
     timestamps: true,

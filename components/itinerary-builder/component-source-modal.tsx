@@ -730,6 +730,7 @@ export function ComponentSourceModal({
     if (manualVehicleType) payload.vehicleType = manualVehicleType || manualCarType
 
     if (selectedSubCategory && componentType.toLowerCase() === "transfer") {
+      console.log('🔍 [ADD TRANSFER] Saving transferCategory:', { selectedSubCategory, componentType })
       payload.transferCategory = selectedSubCategory
 
       // Save location fields for transfers (different from fromCity/toCity)
@@ -738,6 +739,8 @@ export function ComponentSourceModal({
 
       // Airport Transfer specific
       if (manualAirportName) payload.airportName = manualAirportName
+      if (manualPickupDrop) payload.pickupDrop = manualPickupDrop
+      if (manualTransferType) payload.transferType = manualTransferType
 
       // Extended Transfer Fields
       if (manualPickupTime) payload.pickupTime = manualPickupTime
@@ -838,6 +841,15 @@ export function ComponentSourceModal({
       } else if (selectedSubCategory === "travel-gears") {
         payload.travelGears = manualProducts.map((p) => ({ name: p.name, price: p.price || 0, description: p.description || "" }))
       }
+    }
+
+    // Debug log to verify transferCategory for transfers
+    if (componentType.toLowerCase() === "transfer") {
+      console.log('🚗 Transfer Payload Debug:', {
+        selectedSubCategory,
+        transferCategory: payload.transferCategory,
+        payload
+      })
     }
 
     onSelectManual(payload)
@@ -1145,241 +1157,7 @@ export function ComponentSourceModal({
                   {/* Show form fields only if subcategory is selected */}
                   {selectedSubCategory && (
                     <div className="space-y-4">
-                      {/* AIRPORT TRANSFER FIELDS */}
-                      {selectedSubCategory === "airport-transfer" && (
-                        <>
-                          {/* Mandatory Fields */}
-                          <div className="mb-6">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                              Mandatory Fields
-                            </h4>
-                            <div className="space-y-4 pl-4 border-l-2 border-red-200">
-                              {/* Pickup/Drop Toggle */}
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Pickup/Drop</label>
-                                <div className="flex gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setManualPickupDrop("pickup")}
-                                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all text-sm ${manualPickupDrop === "pickup"
-                                      ? "bg-black text-white border-black"
-                                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-                                      }`}
-                                  >
-                                    Pickup
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setManualPickupDrop("drop")}
-                                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all text-sm ${manualPickupDrop === "drop"
-                                      ? "bg-black text-white border-black"
-                                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-                                      }`}
-                                  >
-                                    Drop
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Airport Name */}
-                              <div>
-                                <label className="text-sm font-medium">Airport Name</label>
-                                <Input
-                                  value={manualAirportName}
-                                  onChange={(e) => setManualAirportName(e.target.value)}
-                                  placeholder="e.g., Indira Gandhi International Airport"
-                                />
-                              </div>
-
-                              {/* From */}
-                              <div>
-                                <label className="text-sm font-medium">From</label>
-                                <Input
-                                  value={manualFromCity}
-                                  onChange={(e) => setManualFromCity(e.target.value)}
-                                  placeholder={manualPickupDrop === "pickup" ? manualAirportName || "Airport" : "Location"}
-                                />
-                              </div>
-
-                              {/* To */}
-                              <div>
-                                <label className="text-sm font-medium">To</label>
-                                <Input
-                                  value={manualToCity}
-                                  onChange={(e) => setManualToCity(e.target.value)}
-                                  placeholder={manualPickupDrop === "drop" ? manualAirportName || "Airport" : "Destination"}
-                                />
-                              </div>
-
-                              {/* Title */}
-                              <div>
-                                <label className="text-sm font-medium">Title</label>
-                                <Input
-                                  value={manualTitle}
-                                  onChange={(e) => setManualTitle(e.target.value)}
-                                  placeholder="Transfer title"
-                                />
-                              </div>
-
-                              {/* Type of Transfer */}
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Type of Transfer</label>
-                                <div className="flex gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setManualTransferType("private")}
-                                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all text-sm ${manualTransferType === "private"
-                                      ? "bg-black text-white border-black"
-                                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-                                      }`}
-                                  >
-                                    Private
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setManualTransferType("shared")}
-                                    className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all text-sm ${manualTransferType === "shared"
-                                      ? "bg-black text-white border-black"
-                                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
-                                      }`}
-                                  >
-                                    Shared
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Type of Vehicle */}
-                              <div>
-                                <label className="text-sm font-medium">Type of Vehicle</label>
-                                <Input
-                                  value={manualVehicleType}
-                                  onChange={(e) => setManualVehicleType(e.target.value)}
-                                  placeholder="e.g., Sedan, SUV, Van"
-                                />
-                              </div>
-
-                              {/* Vehicle Capacity */}
-                              <div>
-                                <label className="text-sm font-medium">Vehicle Capacity</label>
-                                <Input
-                                  type="number"
-                                  value={manualVehicleCapacity}
-                                  onChange={(e) => setManualVehicleCapacity(Number(e.target.value) || "")}
-                                  placeholder="Default: 3"
-                                />
-                              </div>
-
-                              {/* Price */}
-                              <div>
-                                <label className="text-sm font-medium">Price</label>
-                                <div className="flex gap-2">
-                                  <Select value={manualCurrency} onValueChange={setManualCurrency}>
-                                    <SelectTrigger className="w-[100px]">
-                                      <SelectValue placeholder="Currency" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="INR">INR (₹)</SelectItem>
-                                      <SelectItem value="USD">USD ($)</SelectItem>
-                                      <SelectItem value="EUR">EUR (€)</SelectItem>
-                                      <SelectItem value="GBP">GBP (£)</SelectItem>
-                                      <SelectItem value="AED">AED (د.إ)</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <Input
-                                    type="number"
-                                    value={manualPrice}
-                                    onChange={(e) => setManualPrice(Number(e.target.value) || "")}
-                                    placeholder="0.00"
-                                    className="flex-1"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Optional Fields */}
-                          <div className="mb-6">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                              <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
-                              Optional Fields
-                            </h4>
-                            <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                              {/* Add Stops */}
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Add Stops (if any)</label>
-                                <div className="space-y-2">
-                                  {manualStopsList.map((stop, idx) => (
-                                    <div key={idx} className="flex gap-2">
-                                      <Input
-                                        value={stop}
-                                        onChange={(e) => handleStopChange(idx, e.target.value)}
-                                        placeholder={`Stop ${idx + 1}`}
-                                        className="flex-1"
-                                      />
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleRemoveStop(idx)}
-                                      >
-                                        Remove
-                                      </Button>
-                                    </div>
-                                  ))}
-                                  <Button type="button" variant="outline" size="sm" onClick={handleAddStop}>
-                                    + Add Stop
-                                  </Button>
-                                </div>
-                              </div>
-
-                              {/* Add Vehicles Manually */}
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Add Vehicles Manually</label>
-                                <div className="space-y-3">
-                                  {manualAdditionalVehicles.map((vehicle, idx) => (
-                                    <div key={idx} className="p-3 bg-gray-50 rounded-lg space-y-2">
-                                      <div className="flex justify-between items-center mb-2">
-                                        <span className="text-xs font-medium text-gray-600">Vehicle {idx + 1}</span>
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => handleRemoveVehicle(idx)}
-                                        >
-                                          Remove
-                                        </Button>
-                                      </div>
-                                      <Input
-                                        value={vehicle.vehicleType}
-                                        onChange={(e) => handleVehicleChange(idx, "vehicleType", e.target.value)}
-                                        placeholder="Type of Vehicle"
-                                      />
-                                      <Input
-                                        type="number"
-                                        value={vehicle.capacity}
-                                        onChange={(e) => handleVehicleChange(idx, "capacity", Number(e.target.value) || 0)}
-                                        placeholder="Capacity"
-                                      />
-                                      <Input
-                                        type="number"
-                                        value={vehicle.price}
-                                        onChange={(e) => handleVehicleChange(idx, "price", Number(e.target.value) || 0)}
-                                        placeholder="Price"
-                                      />
-                                    </div>
-                                  ))}
-                                  <Button type="button" variant="outline" size="sm" onClick={handleAddVehicle}>
-                                    + Add Vehicle
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {/* TRANSFER FORMS - Car Hire, Bus, Train */}
+                      {/* TRANSFER FORMS - Handles ALL transfer types including Airport Transfer */}
                       <TransferForms
                         selectedSubCategory={selectedSubCategory}
                         manualTitle={manualTitle}

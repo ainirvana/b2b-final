@@ -190,6 +190,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [isDetailedView, setIsDetailedView] = useState(true)
   const [showDates, setShowDates] = useState(true)
   const [serviceSlots, setServiceSlots] = useState<Array<{ id: string; title: string; events: IItineraryEvent[] }>>([])
+  const [overviewEvents, setOverviewEvents] = useState<IItineraryEvent[]>([])
 
   const [editingEvent, setEditingEvent] = useState<{
     event: IItineraryEvent
@@ -293,6 +294,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             setCurrentItineraryId(
               itineraryData._id ? itineraryData._id.toString() : itineraryId ?? null,
             )
+            // Load overview events if they exist
+            setOverviewEvents(itineraryData.overviewEvents || [])
 
             console.log("[v0] Loaded itinerary data for editing:", itineraryData)
           } else {
@@ -463,6 +466,20 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         return
       }
 
+      // Handle drops in Overview section (dayIndex === -2)
+      if (dayIndex === -2) {
+        // Only allow notes in overview
+        if (draggedItem.item.category !== "note") {
+          console.log("[DEBUG] Only notes are allowed in Overview section")
+          setDraggedItem(null)
+          setDropTarget(null)
+          return
+        }
+        // Open modal for note creation in overview
+        console.log("[DEBUG] Opening component source modal for overview note")
+        setComponentSourceModal({ isOpen: true, component: draggedItem.item, dropTarget: { dayIndex, position } })
+        return
+      }
 
 
       console.log("[DEBUG] Opening component source modal")
@@ -697,6 +714,19 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
   const handleSaveEvent = (updatedEvent: IItineraryEvent) => {
     if (!editingEvent) return
+
+    // Handle overview events (dayIndex === -2)
+    if (editingEvent.dayIndex === -2) {
+      const newOverviewEvents = [...overviewEvents]
+      newOverviewEvents[editingEvent.eventIndex] = {
+        ...updatedEvent,
+        highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
+        listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
+      }
+      setOverviewEvents(newOverviewEvents)
+      setEditingEvent(null)
+      return
+    }
 
     // 1. First, create a deep copy of days to work with
     let newDays = JSON.parse(JSON.stringify(days))
@@ -991,10 +1021,37 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         refundable: (manualData && manualData.refundable) || "",
       }),
       ...(component.category === "transfer" && {
+        transferCategory: (manualData && manualData.transferCategory) || "",
         fromLocation: (manualData && manualData.fromLocation) || (manualData && manualData.from) || "Pick-up location",
         toLocation: (manualData && manualData.toLocation) || (manualData && manualData.to) || "Drop-off location",
         vehicleType: (manualData && manualData.vehicleType) || "Private Car",
         capacity: (manualData && manualData.capacity) || 4,
+        transferType: (manualData && manualData.transferType) || "private",
+        // Airport Transfer specific
+        airportName: (manualData && manualData.airportName) || "",
+        pickupDrop: (manualData && manualData.pickupDrop) || "pickup",
+        // Car Hire specific
+        pickupTime: (manualData && manualData.pickupTime) || "",
+        dropTime: (manualData && manualData.dropTime) || "",
+        noOfHours: (manualData && manualData.noOfHours) || 0,
+        noOfDays: (manualData && manualData.noOfDays) || 0,
+        fuelType: (manualData && manualData.fuelType) || "",
+        carModel: (manualData && manualData.carModel) || "",
+        transmission: (manualData && manualData.transmission) || "",
+        // Bus/Train specific
+        busNumber: (manualData && manualData.busNumber) || "",
+        trainNumber: (manualData && manualData.trainNumber) || "",
+        transferClass: (manualData && manualData.transferClass) || "",
+        transferLink: (manualData && manualData.transferLink) || "",
+        duration: (manualData && manualData.duration) || "",
+        departureTime: (manualData && manualData.departureTime) || "",
+        arrivalTime: (manualData && manualData.arrivalTime) || "",
+        pnr: (manualData && manualData.pnr) || "",
+        refundable: (manualData && manualData.refundable) || "",
+        // Dynamic lists
+        stopsList: (manualData && manualData.stopsList) || [],
+        additionalVehicles: (manualData && manualData.additionalVehicles) || [],
+        amenities: (manualData && manualData.amenities) || [],
       }),
       ...(component.category === "activity" && {
         duration: (manualData && manualData.duration) || "2 hours",
@@ -1029,6 +1086,15 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         title: "Note",
         description: (manualData && manualData.description) || "",
       }),
+    }
+
+    // Handle overview events (dayIndex === -2)
+    if (dayIndex === -2) {
+      setOverviewEvents([...overviewEvents, newEvent])
+      setDraggedItem(null)
+      setDropTarget(null)
+      setComponentSourceModal({ isOpen: false, component: null, dropTarget: null })
+      return
     }
 
     newDays[dayIndex].events.splice(position, 0, newEvent)
@@ -1294,6 +1360,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         gallery, // Include gallery in save data
         branding,
         serviceSlots,
+        overviewEvents, // Include overview events in save data
       }
 
       console.log("[v0] Saving itinerary data:", itineraryData)
@@ -1412,6 +1479,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         images: extractImages(),
         gallery,
         branding,
+        overviewEvents, // Include overview events in auto-save
       }
 
       const result = await updateItinerary(currentItineraryId, itineraryData)
@@ -1971,6 +2039,94 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
         {viewMode === 'itinerary' ? (
           <div className="space-y-1.5">
+            {/* Overview Card - Appears Above Day 1 */}
+            <Card
+              className={`relative border-2 ${dropTarget?.dayIndex === -2 ? "border-blue-400" : "border-indigo-200"} bg-indigo-50/30`}
+              onDragOver={(e) => {
+                e.preventDefault()
+                handleDragOver(-2, overviewEvents.length)
+              }}
+              onDrop={() => handleDrop(-2, overviewEvents.length)}
+            >
+              <CardHeader className="pb-1.5 pt-2 px-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-5 w-5 text-indigo-600" />
+                    <h3 className="text-lg font-bold text-indigo-900">OVERVIEW</h3>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newNote: IItineraryEvent = {
+                        id: `event-${Date.now()}`,
+                        category: "note",
+                        title: "Note",
+                        description: "",
+                        componentSource: "manual",
+                        highlights: [],
+                        time: "",
+                      }
+                      setOverviewEvents([...overviewEvents, newNote])
+                    }}
+                    className="text-sm"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Note
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-1.5 px-2 pb-2">
+                {overviewEvents.length === 0 ? (
+                  <div className="text-center py-4 px-2 border-2 border-dashed border-indigo-200 rounded-md bg-white/50">
+                    <p className="text-sm text-gray-500">
+                      Drag a <strong>Notes</strong> component here or click <strong>Add Note</strong> to add overview information
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {overviewEvents.map((event, eventIndex) => (
+                      <EventCard
+                        key={`overview-${event.id}-${eventIndex}`}
+                        event={event}
+                        isDetailedView={isDetailedView}
+                        pricingEnabled={false}
+                        pricingAdults={0}
+                        pricingChildren={0}
+                        pricingCurrency="INR"
+                        pricingMode="individual"
+                        onDragStart={() => { }}
+                        onEdit={() => {
+                          // Handle editing overview event
+                          setEditingEvent({
+                            event,
+                            dayIndex: -2, // Special index for overview
+                            eventIndex,
+                          })
+                        }}
+                        onDelete={() => {
+                          // Handle deleting overview event
+                          const newOverviewEvents = [...overviewEvents]
+                          newOverviewEvents.splice(eventIndex, 1)
+                          setOverviewEvents(newOverviewEvents)
+                        }}
+                        onUpdate={(updatedEvent) => {
+                          const newOverviewEvents = [...overviewEvents]
+                          newOverviewEvents[eventIndex] = {
+                            ...updatedEvent,
+                            highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
+                            listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
+                          }
+                          setOverviewEvents(newOverviewEvents)
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Day Cards */}
             {days.map((day, dayIndex) => (
               <Card
                 key={`day-${dayIndex}-${day.day}`}
