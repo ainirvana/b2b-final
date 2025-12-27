@@ -40,6 +40,9 @@ import {
   Copy,
   Share2,
   Download,
+  Phone,
+  MessageCircle,
+  Mail,
 } from "lucide-react"
 import { EventCard } from "../event-card"
 import { DayTitle } from "./day-title"
@@ -58,6 +61,7 @@ import { LibraryToItineraryConverter } from "@/lib/library-converter"
 import { useItineraries } from "@/hooks/use-itineraries"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
+import { calculateComponentPrice, PricingConfig } from "@/lib/pricing-calculator"
 
 // Country options removed
 
@@ -2298,47 +2302,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         )}
 
 
-        {/* Pricing Display Section */}
-        {pricingEnabled && (
-          <div className="mt-6 mb-2 p-4 rounded-lg border bg-yellow-50 border-yellow-200 text-center">
-            {pricingMode === 'total-only' ? (
-              <div>
-                <div className="text-lg font-bold text-gray-800">Total Price</div>
-                <div className="text-2xl font-extrabold text-green-700 mt-1">
-                  {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''}
-                  {days.reduce((sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0), 0).toLocaleString()}
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div className="text-lg font-bold text-gray-800 mb-2">Individual Pricing</div>
-                <div className="flex flex-col items-center gap-1">
-                  {days.map((day, dayIndex) => (
-                    <div key={dayIndex} className="w-full flex flex-col items-center">
-                      {day.events.map((event, eventIndex) => (
-                        typeof event.price === 'number' && event.price > 0 ? (
-                          <div key={eventIndex} className="flex justify-between w-64 text-sm">
-                            <span className="font-medium text-gray-700">{event.title || 'Event'}:</span>
-                            <span className="font-semibold text-green-700">
-                              {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''}
-                              {event.price.toLocaleString()}
-                            </span>
-                          </div>
-                        ) : null
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2 text-lg font-bold text-gray-800">Total Price</div>
-                <div className="text-2xl font-extrabold text-green-700 mt-1">
-                  {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''}
-                  {days.reduce((sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0), 0).toLocaleString()}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         <div className="mt-2 text-center">
           <Button onClick={addDay} variant="outline" className="border-dashed border-2 bg-transparent">
             <Plus className="mr-2 h-4 w-4" />
@@ -2392,6 +2355,89 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
               </Card>
             ))}
           </div>
+        </div>
+
+        {/* Pricing Display Section */}
+        {pricingEnabled && (
+          <div className="mt-6 mb-2 p-4 rounded-lg border bg-yellow-50 border-yellow-200 text-center">
+            {(() => {
+              const pricingConfig: PricingConfig = {
+                adults: pricingAdults,
+                children: pricingChildren,
+                targetCurrency: pricingCurrency,
+              }
+
+              const calculateTotal = () => {
+                return days.reduce((sum, day) => {
+                  return sum + day.events.reduce((daySum, event) => {
+                    const result = calculateComponentPrice(event, pricingConfig)
+                    return daySum + (result?.calculatedPrice || 0)
+                  }, 0)
+                }, 0)
+              }
+
+              const totalPrice = calculateTotal()
+              const currencySymbol = pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''
+
+              return pricingMode === 'total-only' ? (
+                <div>
+                  <div className="text-lg font-bold text-gray-800">Total Price</div>
+                  <div className="text-2xl font-extrabold text-green-700 mt-1">
+                    {currencySymbol}
+                    {totalPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="text-lg font-bold text-gray-800 mb-2">Individual Pricing</div>
+                  <div className="flex flex-col items-center gap-1">
+                    {days.map((day, dayIndex) => (
+                      <div key={dayIndex} className="w-full flex flex-col items-center">
+                        {day.events.map((event, eventIndex) => {
+                          const result = calculateComponentPrice(event, pricingConfig)
+                          if (!result || result.calculatedPrice <= 0) return null
+
+                          return (
+                            <div key={eventIndex} className="flex justify-between w-64 text-sm">
+                              <span className="font-medium text-gray-700">{event.title || 'Event'}:</span>
+                              <span className="font-semibold text-green-700">
+                                {result.displayPrice}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 text-lg font-bold text-gray-800">Total Price</div>
+                  <div className="text-2xl font-extrabold text-green-700 mt-1">
+                    {currencySymbol}
+                    {totalPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        )}
+
+        {/* Action Buttons Section */}
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md">
+            <Mail className="mr-2 h-4 w-4" />
+            Enquire Now
+          </Button>
+          <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-md">
+            <CreditCard className="mr-2 h-4 w-4" />
+            Book Now
+          </Button>
+          <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+            <Phone className="mr-2 h-4 w-4" />
+            Call
+          </Button>
+          <Button className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white shadow-md">
+            <MessageCircle className="mr-2 h-4 w-4" />
+            Whatsapp
+          </Button>
         </div>
 
         {/* Library integration panel removed from builder view */}
@@ -2519,7 +2565,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   )
 }
 

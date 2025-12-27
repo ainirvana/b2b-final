@@ -334,7 +334,7 @@ export function calculateComponentPrice(
 
         case "transfer":
             // Use the new transfer pricing logic
-            return calculateTransferPrice(event, config)
+            return calculateTransferPrice(event, config, event.transferCategory)
 
         case "activity":
             // Activities are treated as ancillaries (per person)

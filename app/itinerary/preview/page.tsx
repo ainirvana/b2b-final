@@ -1067,8 +1067,8 @@ export default function ItineraryPreviewPage() {
                             <div
                               key={meal.key}
                               className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] ${available
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                  : "border-slate-200 bg-slate-100 text-slate-400"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 bg-slate-100 text-slate-400"
                                 }`}
                             >
                               {available ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
@@ -1172,25 +1172,6 @@ export default function ItineraryPreviewPage() {
             </div>
           </aside>
         </section>
-        {itinerary.additionalSections && Object.keys(itinerary.additionalSections).length > 0 && (
-          <div className="space-y-6">
-            {Object.entries(itinerary.additionalSections).map(([key, content]) => (
-              <div
-                key={key}
-                className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
-              >
-                <h3 className="text-xl font-semibold text-slate-900">
-                  {key.replace(/([A-Z])/g, " $1").trim()}
-                </h3>
-                <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-600">
-                  {content.split("\n").map((paragraph, idx) => (
-                    <p key={idx}>{paragraph}</p>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
         {showPrices && (
           <div className="rounded-[28px] border border-amber-200 bg-gradient-to-r from-amber-100 via-white to-amber-50 p-6 shadow-[0_20px_60px_rgba(251,191,36,0.18)]">
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1212,6 +1193,25 @@ export default function ItineraryPreviewPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-600">Best Value Guaranteed</p>
               </div>
             </div>
+          </div>
+        )}
+        {itinerary.additionalSections && Object.keys(itinerary.additionalSections).length > 0 && (
+          <div className="space-y-6">
+            {Object.entries(itinerary.additionalSections).map(([key, content]) => (
+              <div
+                key={key}
+                className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+              >
+                <h3 className="text-xl font-semibold text-slate-900">
+                  {key.replace(/([A-Z])/g, " $1").trim()}
+                </h3>
+                <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-600">
+                  {content.split("\n").map((paragraph, idx) => (
+                    <p key={idx}>{paragraph}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
         {itinerary.branding && (itinerary.branding.footerLogo || itinerary.branding.footerText) && (
