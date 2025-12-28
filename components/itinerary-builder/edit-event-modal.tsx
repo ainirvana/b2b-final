@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, type KeyboardEvent } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { X, Plus, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TransferForms } from "./transfer-forms"
+import { OthersForms } from "./others-forms"
 
 interface EditEventModalProps {
   event: IItineraryEvent | null
@@ -531,7 +532,6 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
 
     switch (event.category) {
       case "others":
-        // Others: subcategories like Gift Cards and Travel Gears
         return (
           <div className="space-y-4">
             <div>
@@ -540,62 +540,46 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
                 <button
                   type="button"
                   onClick={() => handleFieldChange('subCategory', 'gift-cards')}
-                  className={`py-2 px-3 rounded-lg border-2 ${editedEvent.subCategory === 'gift-cards' ? 'bg-black text-white border-black' : 'bg-white border-gray-200'}`}>
+                  className={`py-2 px-3 rounded-lg border-2 ${((editedEvent as any).subCategory || 'gift-cards') === 'gift-cards' ? 'bg-black text-white border-black' : 'bg-white border-gray-200'}`}>
                   Gift Cards
                 </button>
                 <button
                   type="button"
                   onClick={() => handleFieldChange('subCategory', 'travel-gears')}
-                  className={`py-2 px-3 rounded-lg border-2 ${editedEvent.subCategory === 'travel-gears' ? 'bg-black text-white border-black' : 'bg-white border-gray-200'}`}>
+                  className={`py-2 px-3 rounded-lg border-2 ${((editedEvent as any).subCategory || 'gift-cards') === 'travel-gears' ? 'bg-black text-white border-black' : 'bg-white border-gray-200'}`}>
                   Travel Gears
                 </button>
               </div>
             </div>
 
-            {editedEvent.subCategory === 'gift-cards' && (
-              <div className="space-y-3">
-                {renderFieldWithValidation('title', 'Title', <Input id="title" value={editedEvent.title || ''} onChange={(e) => handleFieldChange('title', e.target.value)} placeholder="Gift card title" />)}
-                {renderFieldWithValidation('price', 'Amount', <Input id="amount" type="number" value={editedEvent.price || ''} onChange={(e) => handleNumericInput(e, 'price')} placeholder="0.00" />)}
-                {renderFieldWithValidation('serviceCharge', 'Service Charge', <Input id="serviceCharge" type="number" value={(editedEvent as any).serviceCharge || ''} onChange={(e) => handleFieldChange('serviceCharge', Number(e.target.value) || 0)} placeholder="0.00" />)}
-              </div>
-            )}
-
-            {editedEvent.subCategory === 'travel-gears' && (
-              <div className="space-y-3">
-                {((editedEvent as any).travelGears || [{ name: '', price: '', description: '' }]).map((p: any, idx: number) => (
-                  <div key={idx} className="p-3 bg-gray-50 rounded-md">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs text-gray-600">Product {idx + 1}</span>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => {
-                        const copy = [...((editedEvent as any).travelGears || [])]
-                        copy.splice(idx, 1)
-                        handleFieldChange('travelGears', copy)
-                      }}>Remove</Button>
-                    </div>
-                    <Input value={p.name} onChange={(e) => {
-                      const copy = [...((editedEvent as any).travelGears || [])]
-                      copy[idx] = { ...copy[idx], name: e.target.value }
-                      handleFieldChange('travelGears', copy)
-                    }} placeholder="Product name" />
-                    <Input type="number" value={p.price} onChange={(e) => {
-                      const copy = [...((editedEvent as any).travelGears || [])]
-                      copy[idx] = { ...copy[idx], price: Number(e.target.value) || 0 }
-                      handleFieldChange('travelGears', copy)
-                    }} placeholder="Price" />
-                    <Textarea value={p.description} onChange={(e) => {
-                      const copy = [...((editedEvent as any).travelGears || [])]
-                      copy[idx] = { ...copy[idx], description: e.target.value }
-                      handleFieldChange('travelGears', copy)
-                    }} placeholder="Description" rows={2} />
-                  </div>
-                ))}
-                <Button type="button" variant="outline" onClick={() => {
-                  const copy = [...((editedEvent as any).travelGears || [])]
-                  copy.push({ name: '', price: 0, description: '' })
-                  handleFieldChange('travelGears', copy)
-                }}>+ Add Product</Button>
-              </div>
-            )}
+            <OthersForms
+              selectedSubCategory={(editedEvent as any).subCategory || 'gift-cards'}
+              manualTitle={editedEvent.title || ''}
+              setManualTitle={(v) => handleFieldChange("title", v)}
+              manualCurrency={editedEvent.currency || 'INR'}
+              setManualCurrency={(v) => handleFieldChange("currency", v)}
+              manualGiftAmount={editedEvent.price || ''}
+              setManualGiftAmount={(v) => handleFieldChange("price", v)}
+              manualServiceCharge={(editedEvent as any).serviceCharge || ''}
+              setManualServiceCharge={(v) => handleFieldChange("serviceCharge", v)}
+              manualProducts={(editedEvent as any).travelGears || []}
+              handleAddProduct={() => {
+                const copy = [...((editedEvent as any).travelGears || [])]
+                copy.push({ name: '', price: '', description: '', currency: 'INR' })
+                handleFieldChange('travelGears', copy)
+              }}
+              handleRemoveProduct={(idx) => {
+                const copy = [...((editedEvent as any).travelGears || [])]
+                copy.splice(idx, 1)
+                handleFieldChange('travelGears', copy)
+              }}
+              handleProductChange={(idx, field, value) => {
+                const copy = [...((editedEvent as any).travelGears || [])]
+                copy[idx] = { ...copy[idx], [field]: value }
+                handleFieldChange('travelGears', copy)
+              }}
+              errors={validationErrors}
+            />
           </div>
         )
       case "flight":
@@ -1596,7 +1580,11 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
       <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit {event.category.charAt(0).toUpperCase() + event.category.slice(1)}</DialogTitle>
+
         </DialogHeader>
+        <DialogDescription className="sr-only">
+          Edit the details of your {event.category} event.
+        </DialogDescription>
 
         {Object.keys(validationErrors).filter((key) => validationErrors[key]).length > 0 && (
           <Alert variant="destructive">
@@ -1609,7 +1597,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
           {renderFields()}
 
           {/* Additional Information Section */}
-          {editedEvent.category !== "meal" && editedEvent.category !== "flight" && editedEvent.category !== "hotel" && editedEvent.category !== "note" && (
+          {editedEvent.category !== "meal" && editedEvent.category !== "flight" && editedEvent.category !== "hotel" && editedEvent.category !== "note" && editedEvent.category !== "others" && (
             <div className="border rounded-md p-4">
               <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
               {editedEvent.additionalInfoSections && editedEvent.additionalInfoSections.length > 0 ? (
@@ -1666,7 +1654,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
             </div>
           )}
 
-          {!["meal", "flight", "hotel", "note"].includes(editedEvent.category) && (
+          {!["meal", "flight", "hotel", "note", "others"].includes(editedEvent.category) && (
             <div className="grid gap-2">
               <Label htmlFor="price">Price</Label>
               <div className="flex gap-2">

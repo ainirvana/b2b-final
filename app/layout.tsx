@@ -29,7 +29,7 @@ html {
 }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   )
 }

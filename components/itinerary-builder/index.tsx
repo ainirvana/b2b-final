@@ -44,7 +44,7 @@ import {
   MessageCircle,
   Mail,
 } from "lucide-react"
-import { EventCard } from "../event-card"
+import { EventCard } from "./event-card"
 import { DayTitle } from "./day-title"
 import { DayMeals } from "./day-meals"
 import { DateCalendarCard } from "./date-calendar-card"
@@ -717,7 +717,16 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   }
 
   const handleSaveEvent = (updatedEvent: IItineraryEvent) => {
-    if (!editingEvent) return
+    console.log("[DEBUG] handleSaveEvent called", {
+      editingEventId: editingEvent?.event?.id,
+      updatedPrice: updatedEvent.price,
+      updatedCurrency: updatedEvent.currency
+    });
+
+    if (!editingEvent) {
+      console.error("[DEBUG] No editingEvent found in state!");
+      return;
+    }
 
     // Handle overview events (dayIndex === -2)
     if (editingEvent.dayIndex === -2) {
@@ -1089,6 +1098,11 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       ...(component.category === "note" && {
         title: "Note",
         description: (manualData && manualData.description) || "",
+      }),
+      ...(component.category === "others" && {
+        subCategory: (manualData && manualData.subCategory) || "",
+        serviceCharge: (manualData && manualData.serviceCharge) || 0,
+        travelGears: (manualData && manualData.travelGears) || [],
       }),
     }
 
@@ -2114,15 +2128,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           newOverviewEvents.splice(eventIndex, 1)
                           setOverviewEvents(newOverviewEvents)
                         }}
-                        onUpdate={(updatedEvent) => {
-                          const newOverviewEvents = [...overviewEvents]
-                          newOverviewEvents[eventIndex] = {
-                            ...updatedEvent,
-                            highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
-                            listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
-                          }
-                          setOverviewEvents(newOverviewEvents)
-                        }}
                       />
                     ))}
                   </div>
@@ -2200,18 +2205,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
                           onEdit={() => handleEditEvent(dayIndex, eventIndex)}
                           onDelete={() => handleDeleteEvent(dayIndex, eventIndex)}
-                          onMealChange={(meal, value) => {
-                            // meals property is not part of IItineraryEvent, so this is removed
-                          }}
-                          onUpdate={(updatedEvent) => {
-                            const newDays = [...days]
-                            newDays[dayIndex].events[eventIndex] = {
-                              ...updatedEvent,
-                              highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
-                              listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
-                            }
-                            setDays(newDays)
-                          }}
                         />
                       ))}
                     </div>
@@ -2280,16 +2273,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                               const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
                               handleDeleteEvent(dayIndex, eventIndex)
                             }}
-                            onUpdate={(updatedEvent) => {
-                              const eventIndex = days[dayIndex].events.findIndex((e) => e.id === event.id)
-                              const newDays = [...days]
-                              newDays[dayIndex].events[eventIndex] = {
-                                ...updatedEvent,
-                                highlights: updatedEvent.highlights ? [...updatedEvent.highlights] : [],
-                                listItems: updatedEvent.listItems ? [...updatedEvent.listItems] : [],
-                              }
-                              setDays(newDays)
-                            }}
                           />
                         )
                       })}
@@ -2339,12 +2322,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           onDelete={() => {
                             const newSlots = [...serviceSlots]
                             newSlots[slotIndex].events.splice(eventIndex, 1)
-                            setServiceSlots(newSlots)
-                          }}
-                          onMealChange={() => { }}
-                          onUpdate={(updatedEvent) => {
-                            const newSlots = [...serviceSlots]
-                            newSlots[slotIndex].events[eventIndex] = updatedEvent
                             setServiceSlots(newSlots)
                           }}
                         />

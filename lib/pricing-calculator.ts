@@ -282,10 +282,24 @@ export function calculateOthersPrice(
     event: IItineraryEvent,
     config: PricingConfig
 ): PriceResult {
-    const standardPrice = event.price || 0
+    let standardPrice = event.price || 0
     const eventCurrency = event.currency || "INR"
 
-    // Convert to target currency if different (but price doesn't multiply by pax)
+    // Handle Gift Cards: Price + Service Charge
+    if (event.subCategory === "gift-cards") {
+        standardPrice = (event.price || 0) + (event.serviceCharge || 0)
+    }
+    // Handle Travel Gears: Sum of all gear items
+    else if (event.subCategory === "travel-gears" && event.travelGears && event.travelGears.length > 0) {
+        // Calculate sum of all items
+        const gearsTotal = event.travelGears.reduce((sum, item) => sum + (Number(item.price) || 0), 0)
+        // Only use this if it's greater than 0, otherwise fallback to event.price
+        if (gearsTotal > 0) {
+            standardPrice = gearsTotal
+        }
+    }
+
+    // Convert to target currency if different
     const { rates, baseCurrency } = config.exchangeRates && config.baseCurrency
         ? { rates: config.exchangeRates, baseCurrency: config.baseCurrency }
         : getExchangeRates()
@@ -304,7 +318,7 @@ export function calculateOthersPrice(
         originalPrice: standardPrice,
         originalCurrency: eventCurrency,
         originalDisplayPrice: formatCurrencyWithSymbol(standardPrice, eventCurrency),
-        breakdown: `Standard price`
+        breakdown: event.subCategory === "gift-cards" ? "Inclusive of service charge" : "Total price"
     }
 }
 

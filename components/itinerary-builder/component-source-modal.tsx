@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -832,14 +832,23 @@ export function ComponentSourceModal({
 
     // Others specific payload
     if (componentType.toLowerCase() === "others") {
+      // Save common fields
+      if (selectedSubCategory) payload.subCategory = selectedSubCategory
+
       if (selectedSubCategory === "gift-cards") {
-        payload.giftCard = {
-          title: manualTitle || payload.title,
-          amount: manualGiftAmount || 0,
-          serviceCharge: manualServiceCharge || 0,
-        }
+        payload.title = manualTitle || payload.title
+        payload.price = manualGiftAmount || 0
+        payload.serviceCharge = manualServiceCharge || 0
+        payload.currency = manualCurrency || "INR"
       } else if (selectedSubCategory === "travel-gears") {
-        payload.travelGears = manualProducts.map((p) => ({ name: p.name, price: p.price || 0, description: p.description || "" }))
+        payload.travelGears = manualProducts.map((p) => ({
+          name: p.name,
+          price: p.price || 0,
+          description: p.description || "",
+          currency: p.currency || manualCurrency || "INR"
+        }))
+        // Calculate total price for travel gears if needed, or leave price as 0
+        // Usually travel gears price is sum of items, but we keep 0 on main event if individualized
       }
     }
 
@@ -1030,6 +1039,9 @@ export function ComponentSourceModal({
       <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto flex flex-col">
         <DialogHeader>
           <DialogTitle>Add {componentTitle} Component</DialogTitle>
+          <DialogDescription className="sr-only">
+            Select a source for your new {componentTitle} component.
+          </DialogDescription>
         </DialogHeader>
 
         {!selectedSource && (
@@ -1337,6 +1349,8 @@ export function ComponentSourceModal({
                         selectedSubCategory={selectedSubCategory}
                         manualTitle={manualTitle}
                         setManualTitle={setManualTitle}
+                        manualCurrency={manualCurrency}
+                        setManualCurrency={setManualCurrency}
                         manualGiftAmount={manualGiftAmount}
                         setManualGiftAmount={setManualGiftAmount}
                         manualServiceCharge={manualServiceCharge}

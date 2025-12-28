@@ -196,6 +196,16 @@ export interface IItineraryEvent {
     capacity: number
     price: number
   }[]
+  // Others specific
+  subCategory?: string
+  serviceCharge?: number
+  travelGears?: {
+    name: string
+    price: number | ""
+    description: string
+    currency?: string
+  }[]
+
   // Image specific
   imageUrl?: string
   imageCaption?: string
@@ -348,6 +358,17 @@ const ItineraryEventSchema = new mongoose.Schema({
       heading: String,
       content: String,
     },
+  ],
+  // Others specific
+  subCategory: String,
+  serviceCharge: Number,
+  travelGears: [
+    {
+      name: String,
+      price: mongoose.Schema.Types.Mixed,
+      description: String,
+      currency: String
+    }
   ],
 })
 
