@@ -17,6 +17,7 @@ interface HotelEventProps {
   pricingEnabled?: boolean
   pricingAdults?: number
   pricingChildren?: number
+  pricingRooms?: number
   pricingCurrency?: string
   pricingMode?: 'individual' | 'total-only'
 }
@@ -32,6 +33,7 @@ export function HotelEvent({
   pricingEnabled = false,
   pricingAdults = 2,
   pricingChildren = 0,
+  pricingRooms = 1,
   pricingCurrency = "INR",
   pricingMode = 'individual',
 }: HotelEventProps) {
@@ -60,7 +62,8 @@ export function HotelEvent({
     ? calculateHotelPrice(event, {
       adults: pricingAdults,
       children: pricingChildren,
-      targetCurrency: pricingCurrency
+      targetCurrency: pricingCurrency,
+      rooms: pricingRooms
     }, isCheckOutDay)
     : null
 

@@ -12,6 +12,7 @@ export interface PricingConfig {
     targetCurrency: string
     exchangeRates?: Record<string, number>
     baseCurrency?: string
+    rooms?: number
 }
 
 export interface PriceResult {
@@ -101,13 +102,19 @@ export function calculateHotelPrice(
     const pricePerNight = event.price || 0
     const eventCurrency = event.currency || "INR"
 
-    // Calculate occupancy per room from event data
-    const adultsPerRoom = event.adults || 2
-    const childrenPerRoom = event.children || 0
-    const occupancyPerRoom = adultsPerRoom + childrenPerRoom
-
-    // Calculate number of rooms needed (round up)
-    const roomsNeeded = Math.ceil(totalPax / occupancyPerRoom)
+    // Calculate number of rooms needed
+    // If global room count is provided in config, use it. Otherwise calculate from occupancy.
+    let roomsNeeded = 1
+    if (config.rooms && config.rooms > 0) {
+        roomsNeeded = config.rooms
+    } else {
+        // Calculate occupancy per room from event data
+        const adultsPerRoom = event.adults || 2
+        const childrenPerRoom = event.children || 0
+        const occupancyPerRoom = adultsPerRoom + childrenPerRoom
+        // Calculate number of rooms needed (round up)
+        roomsNeeded = Math.ceil(totalPax / occupancyPerRoom)
+    }
 
     // Calculate price for ONE NIGHT only
     const totalInOriginalCurrency = roomsNeeded * pricePerNight

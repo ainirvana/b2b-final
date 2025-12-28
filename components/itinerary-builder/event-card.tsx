@@ -30,6 +30,7 @@ interface EventCardProps {
   pricingEnabled?: boolean
   pricingAdults?: number
   pricingChildren?: number
+  pricingRooms?: number
   pricingCurrency?: string
   pricingMode?: 'individual' | 'total-only'
 }
@@ -48,6 +49,7 @@ export function EventCard({
   pricingEnabled = false,
   pricingAdults = 2,
   pricingChildren = 0,
+  pricingRooms = 1,
   pricingCurrency = "INR",
   pricingMode = 'individual',
 }: EventCardProps) {
@@ -55,7 +57,7 @@ export function EventCard({
   const renderEventContent = () => {
     switch (event.category) {
       case 'hotel':
-        return <HotelEvent event={event} nightIndex={nightIndex} totalNights={totalNights} dayNumber={dayNumber} />
+        return <HotelEvent event={event} nightIndex={nightIndex} totalNights={totalNights} dayNumber={dayNumber} pricingEnabled={pricingEnabled} pricingAdults={pricingAdults} pricingChildren={pricingChildren} pricingRooms={pricingRooms} pricingCurrency={pricingCurrency} pricingMode={pricingMode} />
       case 'transfer':
         return <TransferEvent event={event} />
       case 'activity':

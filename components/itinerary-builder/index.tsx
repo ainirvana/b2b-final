@@ -2241,6 +2241,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           pricingAdults={pricingAdults}
                           pricingChildren={pricingChildren}
                           pricingCurrency={pricingCurrency}
+                          pricingAdults={pricingAdults}
+                          pricingChildren={pricingChildren}
+                          pricingRooms={pricingRooms}
+                          pricingCurrency={pricingCurrency}
                           pricingMode={pricingMode}
                           onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
                           onEdit={() => handleEditEvent(dayIndex, eventIndex)}
@@ -2302,6 +2306,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                             pricingEnabled={pricingEnabled}
                             pricingAdults={pricingAdults}
                             pricingChildren={pricingChildren}
+                            pricingCurrency={pricingCurrency}
+                            pricingAdults={pricingAdults}
+                            pricingChildren={pricingChildren}
+                            pricingRooms={pricingRooms}
                             pricingCurrency={pricingCurrency}
                             pricingMode={pricingMode}
                             onDragStart={() => handleDragStart("event", event)}
@@ -2382,6 +2390,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                 adults: pricingAdults,
                 children: pricingChildren,
                 targetCurrency: pricingCurrency,
+                rooms: pricingRooms,
               }
 
               const calculateTotal = () => {
