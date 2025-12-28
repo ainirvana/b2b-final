@@ -57,6 +57,7 @@ import { PreviewConfigModal, PreviewConfig } from "../preview-config-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import type { IItineraryDay, IItineraryEvent, IGalleryItem } from "@/models/Itinerary"
 import { LibraryToItineraryConverter } from "@/lib/library-converter"
+import { ItineraryDetailsModal } from "./itinerary-details-modal"
 // library hook removed for builder
 import { useItineraries } from "@/hooks/use-itineraries"
 import { useToast } from "@/hooks/use-toast"
@@ -145,35 +146,28 @@ const COMPONENT_TEMPLATES = [
   },
 
   {
-    category: "additionalInformation",
-    title: "Additional Information",
-
-    icon: Info,
-    color: "bg-indigo-100 border-indigo-300",
-  },
-  {
     category: "ancillaries",
-
     title: "Ancillaries",
     icon: CreditCard,
     color: "bg-amber-50 border-amber-200",
   },
-
-
-
   {
     category: "others",
     title: "Others",
     icon: Briefcase,
     color: "bg-slate-50 border-slate-200",
   },
-
-
   {
     category: "note",
     title: "Notes",
     icon: StickyNote,
     color: "bg-yellow-100 border-yellow-300",
+  },
+  {
+    category: "additionalInformation",
+    title: "Additional Information",
+    icon: Info,
+    color: "bg-indigo-100 border-indigo-300",
   },
 ]
 
@@ -264,6 +258,10 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
   const [highlightOptions, setHighlightOptions] = useState<string[]>([])
   const [newHighlight, setNewHighlight] = useState<string>("")
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [guestDetails, setGuestDetails] = useState<any>({})
+  const [agencyDetails, setAgencyDetails] = useState<any>({})
+
   const [viewMode, setViewMode] = useState<'itinerary' | 'all-inclusions'>('itinerary')
   const [isSidebarMinimized, setIsSidebarMinimized] = useState(false)
 
@@ -300,6 +298,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             )
             // Load overview events if they exist
             setOverviewEvents(itineraryData.overviewEvents || [])
+            setGuestDetails(itineraryData.guestDetails || {})
+            setAgencyDetails(itineraryData.agencyDetails || {})
 
             console.log("[v0] Loaded itinerary data for editing:", itineraryData)
           } else {
@@ -1825,6 +1825,26 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                   All Inclusions
                 </Button>
 
+                {/* Details Button */}
+                <Button
+                  variant="outline"
+                  className="font-semibold whitespace-nowrap gap-2"
+                  onClick={() => setIsDetailsModalOpen(true)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Details
+                </Button>
+
+                {/* Details Button */}
+                <Button
+                  variant="outline"
+                  className="font-semibold whitespace-nowrap gap-2"
+                  onClick={() => setIsDetailsModalOpen(true)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Details
+                </Button>
+
                 {/* Detailed View toggle - visible between All Inclusions and Pricing.
                     Enabled only when All Inclusions view is active. */}
                 <div className="flex items-center gap-2 ml-2">
@@ -2501,6 +2521,19 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ItineraryDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        guestDetails={guestDetails}
+        agencyDetails={agencyDetails}
+        onSave={(newGuestDetails, newAgencyDetails) => {
+          setGuestDetails(newGuestDetails)
+          setAgencyDetails(newAgencyDetails)
+        }}
+      />
+
+
 
       <Dialog open={validationErrorOpen} onOpenChange={setValidationErrorOpen}>
         <DialogContent className="sm:max-w-[500px]">

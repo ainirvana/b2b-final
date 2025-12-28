@@ -47,6 +47,23 @@ export interface IItinerary {
   quotationLead?: any // Store lead data associated with quotation
   // NEW: Overview events for customized packages
   overviewEvents?: IItineraryEvent[] // Overview notes that appear above Day 1
+
+  // NEW: Guest Details
+  guestDetails?: {
+    name: string
+    leadReferenceCode: string
+    email: string
+    mobile: string
+  }
+  // NEW: Agency Details
+  agencyDetails?: {
+    logo: string
+    name: string
+    address: string
+    phone: string
+    email: string
+    gst: string
+  }
 }
 
 export interface IGalleryItem {
@@ -217,7 +234,6 @@ export interface IItineraryEvent {
   nights?: number
   images?: string[]
   subtitle?: string
-  subCategory?: string // For generic sub-categorization (used by 'others')
   additionalInfoSections?: {
     heading: string
     content: string
@@ -475,6 +491,22 @@ const ItinerarySchema = new mongoose.Schema(
     quotationLead: mongoose.Schema.Types.Mixed,
     // Overview events
     overviewEvents: [ItineraryEventSchema],
+    // Guest Details
+    guestDetails: {
+      name: String,
+      leadReferenceCode: String,
+      email: String,
+      mobile: String,
+    },
+    // Agency Details
+    agencyDetails: {
+      logo: String,
+      name: String,
+      address: String,
+      phone: String,
+      email: String,
+      gst: String,
+    },
   },
   {
     timestamps: true,
