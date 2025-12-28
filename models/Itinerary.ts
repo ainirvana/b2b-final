@@ -180,6 +180,11 @@ export interface IItineraryEvent {
   stops?: string // Legacy field - kept for backward compatibility
   pnr?: string
   refundable?: string
+  // Flight additional fields
+  bookingId?: string
+  seatNumber?: string
+  inFlightMeals?: string
+
   // Flight luggage - granular fields
   checkinBags?: number
   checkinBagWeight?: string // e.g., "23kg"
@@ -356,6 +361,9 @@ const ItineraryEventSchema = new mongoose.Schema({
   stops: String, // Legacy field
   pnr: String,
   refundable: String,
+  bookingId: String,
+  seatNumber: String,
+  inFlightMeals: String,
   // Flight luggage - granular fields
   checkinBags: Number,
   checkinBagWeight: String,

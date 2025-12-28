@@ -419,7 +419,12 @@ export function ComponentSourceModal({
   const [manualCabinBagWeight, setManualCabinBagWeight] = useState("")
   // Flight stops - structured data
   const [manualNumberOfStops, setManualNumberOfStops] = useState<number | "">(0)
+
   const [manualStopLocations, setManualStopLocations] = useState<string[]>([])
+  // Flight additional fields
+  const [manualBookingId, setManualBookingId] = useState("")
+  const [manualSeatNumber, setManualSeatNumber] = useState("")
+  const [manualInFlightMeals, setManualInFlightMeals] = useState("")
   // Note specific fields
   const [manualNoteContent, setManualNoteContent] = useState("")
   // Hotel specific fields
@@ -812,6 +817,10 @@ export function ComponentSourceModal({
         payload.stopLocations = cleanedStops
       }
     }
+    // Flight additional fields
+    if (manualBookingId) payload.bookingId = manualBookingId
+    if (manualSeatNumber) payload.seatNumber = manualSeatNumber
+    if (manualInFlightMeals) payload.inFlightMeals = manualInFlightMeals
     // Calculate and add flight duration (for display purposes)
     if (manualTime && manualEndTime) {
       const duration = calculateFlightDuration(manualTime, manualEndTime)
@@ -1561,35 +1570,78 @@ export function ComponentSourceModal({
                       Optional Fields
                     </h4>
                     <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                      <div className="grid gap-2">
-                        <label className="text-sm font-medium">Check-in Luggage</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            type="number"
-                            value={manualCheckinBags}
-                            onChange={(e) => setManualCheckinBags(Number(e.target.value) || "")}
-                            placeholder="No. of bags"
-                          />
-                          <Input
-                            value={manualCheckinBagWeight}
-                            onChange={(e) => setManualCheckinBagWeight(e.target.value)}
-                            placeholder="Weight each (e.g. 23kg)"
-                          />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label htmlFor="checkinBags" className="text-sm font-medium">Check-in Luggage</label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="checkinBags"
+                              type="number"
+                              placeholder="Count"
+                              value={manualCheckinBags}
+                              onChange={(e) => setManualCheckinBags(e.target.value === "" ? "" : Number(e.target.value))}
+                              min={0}
+                              className="w-20"
+                            />
+                            <Input
+                              id="checkinBagWeight"
+                              placeholder="Weight (e.g. 23kg)"
+                              value={manualCheckinBagWeight}
+                              onChange={(e) => setManualCheckinBagWeight(e.target.value)}
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <label htmlFor="cabinBags" className="text-sm font-medium">Cabin Luggage</label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="cabinBags"
+                              type="number"
+                              placeholder="Count"
+                              value={manualCabinBags}
+                              onChange={(e) => setManualCabinBags(e.target.value === "" ? "" : Number(e.target.value))}
+                              min={0}
+                              className="w-20"
+                            />
+                            <Input
+                              id="cabinBagWeight"
+                              placeholder="Weight (e.g. 7kg)"
+                              value={manualCabinBagWeight}
+                              onChange={(e) => setManualCabinBagWeight(e.target.value)}
+                              className="flex-1"
+                            />
+                          </div>
                         </div>
                       </div>
-                      <div className="grid gap-2">
-                        <label className="text-sm font-medium">Cabin Luggage</label>
-                        <div className="grid grid-cols-2 gap-2">
+
+                      {/* Additional Details */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <label htmlFor="bookingId" className="text-sm font-medium">Booking ID (Optional)</label>
                           <Input
-                            type="number"
-                            value={manualCabinBags}
-                            onChange={(e) => setManualCabinBags(Number(e.target.value) || "")}
-                            placeholder="No. of bags"
+                            id="bookingId"
+                            value={manualBookingId}
+                            onChange={(e) => setManualBookingId(e.target.value)}
+                            placeholder="e.g. XYZ123"
                           />
+                        </div>
+                        <div className="space-y-2">
+                          <label htmlFor="seatNumber" className="text-sm font-medium">Seat No. (Optional)</label>
                           <Input
-                            value={manualCabinBagWeight}
-                            onChange={(e) => setManualCabinBagWeight(e.target.value)}
-                            placeholder="Weight each (e.g. 7kg)"
+                            id="seatNumber"
+                            value={manualSeatNumber}
+                            onChange={(e) => setManualSeatNumber(e.target.value)}
+                            placeholder="e.g. 12A"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label htmlFor="inFlightMeals" className="text-sm font-medium">Meals (Optional)</label>
+                          <Input
+                            id="inFlightMeals"
+                            value={manualInFlightMeals}
+                            onChange={(e) => setManualInFlightMeals(e.target.value)}
+                            placeholder="e.g. Veg, Non-Veg"
                           />
                         </div>
                       </div>

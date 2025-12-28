@@ -646,35 +646,78 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
                   Optional Fields
                 </h4>
                 <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                  <div className="grid gap-2">
-                    <Label htmlFor="checkinBags">Check-in Luggage</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="number"
-                        value={editedEvent.checkinBags || ""}
-                        onChange={(e) => handleFieldChange("checkinBags", Number(e.target.value) || 0)}
-                        placeholder="No. of bags"
-                      />
-                      <Input
-                        value={editedEvent.checkinBagWeight || ""}
-                        onChange={(e) => handleFieldChange("checkinBagWeight", e.target.value)}
-                        placeholder="Weight each (e.g. 23kg)"
-                      />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="checkinBags">Check-in Luggage</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="checkinBags"
+                          type="number"
+                          placeholder="Count"
+                          value={editedEvent.checkinBags !== undefined ? editedEvent.checkinBags : ""}
+                          onChange={(e) => handleFieldChange("checkinBags", e.target.value === "" ? undefined : Number(e.target.value))}
+                          min={0}
+                          className="w-20"
+                        />
+                        <Input
+                          id="checkinBagWeight"
+                          placeholder="Weight (e.g. 23kg)"
+                          value={editedEvent.checkinBagWeight || ""}
+                          onChange={(e) => handleFieldChange("checkinBagWeight", e.target.value)}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cabinBags">Cabin Luggage</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="cabinBags"
+                          type="number"
+                          placeholder="Count"
+                          value={editedEvent.cabinBags !== undefined ? editedEvent.cabinBags : ""}
+                          onChange={(e) => handleFieldChange("cabinBags", e.target.value === "" ? undefined : Number(e.target.value))}
+                          min={0}
+                          className="w-20"
+                        />
+                        <Input
+                          id="cabinBagWeight"
+                          placeholder="Weight (e.g. 7kg)"
+                          value={editedEvent.cabinBagWeight || ""}
+                          onChange={(e) => handleFieldChange("cabinBagWeight", e.target.value)}
+                          className="flex-1"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="cabinBags">Cabin Luggage</Label>
-                    <div className="grid grid-cols-2 gap-2">
+
+                  {/* Flight Booking Details */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="bookingId">Booking ID (Optional)</Label>
                       <Input
-                        type="number"
-                        value={editedEvent.cabinBags || ""}
-                        onChange={(e) => handleFieldChange("cabinBags", Number(e.target.value) || 0)}
-                        placeholder="No. of bags"
+                        id="bookingId"
+                        value={editedEvent.bookingId || ""}
+                        onChange={(e) => handleFieldChange("bookingId", e.target.value)}
+                        placeholder="e.g. XYZ123"
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="seatNumber">Seat No. (Optional)</Label>
                       <Input
-                        value={editedEvent.cabinBagWeight || ""}
-                        onChange={(e) => handleFieldChange("cabinBagWeight", e.target.value)}
-                        placeholder="Weight each (e.g. 7kg)"
+                        id="seatNumber"
+                        value={editedEvent.seatNumber || ""}
+                        onChange={(e) => handleFieldChange("seatNumber", e.target.value)}
+                        placeholder="e.g. 12A"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="inFlightMeals">Meals (Optional)</Label>
+                      <Input
+                        id="inFlightMeals"
+                        value={editedEvent.inFlightMeals || ""}
+                        onChange={(e) => handleFieldChange("inFlightMeals", e.target.value)}
+                        placeholder="e.g. Veg, Non-Veg"
                       />
                     </div>
                   </div>

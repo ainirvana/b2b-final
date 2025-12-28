@@ -140,7 +140,7 @@ export function FlightEvent({
       {(event.airlines || event.flightNumber) && (
         <div className="mb-1.5 pb-1.5 border-b border-gray-100">
           {event.airlines && (
-            <div className="text-sm font-semibold text-gray-800">{event.airlines}</div>
+            <div className="text-base font-bold text-gray-800">{event.airlines}</div>
           )}
           {event.flightNumber && (
             <div className="text-xs text-gray-600">{event.flightNumber}</div>
@@ -148,33 +148,45 @@ export function FlightEvent({
         </div>
       )}
 
-      {/* Class, PNR, Refundable, Luggage - All in one compact row */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-1.5 text-xs">
+      {/* Footer Info: Class, Luggage, Booking Details */}
+      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 bg-gray-50 p-2 rounded mt-2">
         {event.flightClass && (
-          <div className="flex items-center gap-1">
-            <span className="text-gray-500">Class:</span>
-            <span className="font-semibold text-gray-900">{event.flightClass}</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded border border-gray-100 shadow-sm">
+            <span className="font-medium text-blue-700">{event.flightClass}</span>
           </div>
         )}
-
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded border border-gray-100 shadow-sm">
+          <Luggage className="h-3.5 w-3.5 text-gray-500" />
+          <span>{luggageDisplay || "20kg check-in + 7kg cabin"}</span>
+        </div>
+        {event.refundable && (
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded border border-gray-100 shadow-sm">
+            <Shield className="h-3.5 w-3.5 text-green-600" />
+            <span className="text-green-700 font-medium">{event.refundable}</span>
+          </div>
+        )}
         {event.pnr && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded border border-gray-100 shadow-sm">
             <span className="text-gray-500">PNR:</span>
             <span className="font-mono font-medium text-gray-900">{event.pnr}</span>
           </div>
         )}
-
-        {event.refundable && (
-          <div className="flex items-center gap-1">
-            <span className="text-gray-500">Refund:</span>
-            <span className="font-medium text-gray-900">{event.refundable}</span>
+        {event.bookingId && (
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded border border-gray-100 shadow-sm">
+            <FileText className="h-3.5 w-3.5 text-purple-500" />
+            <span className="font-medium">Booking ID: {event.bookingId}</span>
           </div>
         )}
-
-        {luggageDisplay && (
-          <div className="flex items-center gap-1">
-            <Luggage className="h-3.5 w-3.5 text-gray-400" />
-            <span className="text-gray-700">{luggageDisplay}</span>
+        {event.seatNumber && (
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded border border-gray-100 shadow-sm">
+            <span className="text-gray-500">Seat:</span>
+            <span className="font-medium">{event.seatNumber}</span>
+          </div>
+        )}
+        {event.inFlightMeals && (
+          <div className="flex items-center gap-1.5 px-2 py-1 bg-white rounded border border-gray-100 shadow-sm">
+            <span className="text-gray-500">Meal:</span>
+            <span className="font-medium">{event.inFlightMeals}</span>
           </div>
         )}
       </div>
