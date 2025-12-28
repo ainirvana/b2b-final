@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 interface DayTitleProps {
   day: number
   title: string
-  date?: string
+  date?: string // Kept for backward compatibility or direct date string usage if needed
   nights?: number
   onTitleChange: (title: string) => void
   onNightsChange?: (nights: string) => void
@@ -15,13 +15,13 @@ interface DayTitleProps {
 export function DayTitle({ day, title, date, nights, onTitleChange, onNightsChange }: DayTitleProps) {
   return (
     <div className="flex items-center space-x-1.5">
-      <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-none py-0 px-1.5 text-xs">
+      <Badge variant="secondary" className="bg-orange-100 text-orange-600 border-none py-0 px-1.5 text-xs whitespace-nowrap">
         DAY {day}
       </Badge>
       <Input
         value={title}
         onChange={(e) => onTitleChange(e.target.value)}
-        className="text-sm font-medium border-none p-0 h-auto bg-transparent w-44"
+        className="text-sm font-medium border-none p-0 h-auto bg-transparent w-44 focus-visible:ring-0 placeholder:text-gray-400"
         placeholder="Destination"
       />
       {onNightsChange && (

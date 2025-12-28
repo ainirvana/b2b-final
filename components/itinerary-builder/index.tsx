@@ -2173,13 +2173,33 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                       title={day.title}
                       onTitleChange={(newTitle) => updateDayTitle(dayIndex, newTitle)}
                     />
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      {/* Date Display (Right Side) */}
                       {showDates && pricingStartDate && (() => {
                         const startDate = new Date(pricingStartDate)
                         const currentDate = new Date(startDate)
                         currentDate.setDate(startDate.getDate() + dayIndex)
-                        return <DateCalendarCard date={currentDate.toISOString().split('T')[0]} />
+
+                        const month = currentDate.toLocaleString('default', { month: 'short' }).toUpperCase()
+                        const year = currentDate.getFullYear().toString().slice(-2)
+                        const dayNum = currentDate.getDate().toString()
+                        const weekday = currentDate.toLocaleString('default', { weekday: 'short' }).toUpperCase()
+
+                        return (
+                          <div className="flex flex-col items-center justify-center bg-white border border-gray-200 rounded-lg shadow-sm w-12 h-12 shrink-0 overflow-hidden mr-2">
+                            <div className="text-[8px] font-bold text-amber-500 uppercase leading-none pt-1">
+                              {month}-{year}
+                            </div>
+                            <div className="text-lg font-bold text-gray-600 leading-none my-0.5">
+                              {dayNum}
+                            </div>
+                            <div className="text-[8px] font-bold text-amber-500 uppercase leading-none pb-1">
+                              {weekday}
+                            </div>
+                          </div>
+                        )
                       })()}
+
                       <Button variant="ghost" size="sm" onClick={() => toggleDayCollapse(dayIndex)} className="p-2">
                         {collapsedDays.has(dayIndex) ? (
                           <ChevronDown className="h-4 w-4" />
