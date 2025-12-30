@@ -38,6 +38,13 @@ const transferSubCategories = [
   { id: "train", label: "Train", icon: "🚆" },
 ]
 
+// Subcategory options for Ancillaries
+const ancillariesSubCategories = [
+  { id: "visa", label: "Visa", icon: "📋" },
+  { id: "forex", label: "Forex", icon: "💱" },
+  { id: "travel-insurance", label: "Travel Insurance", icon: "🛡️" },
+]
+
 // Helper function to calculate flight duration
 const calculateFlightDuration = (startTime: string, endTime: string): string => {
   if (!startTime || !endTime) return ""
@@ -1616,8 +1623,101 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
             )}
           </>
         )
+
+      case "ancillaries":
+        return (
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Sub-Category</h4>
+              <div className="grid grid-cols-3 gap-3">
+                {ancillariesSubCategories.map((subCat) => (
+                  <button
+                    key={subCat.id}
+                    type="button"
+                    onClick={() => handleFieldChange("subCategory", subCat.id)}
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${editedEvent.subCategory === subCat.id
+                      ? "bg-black text-white border-black"
+                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                      }`}
+                  >
+                    <span className="text-xl mb-1">{subCat.icon}</span>
+                    <span className="text-xs text-center font-medium">{subCat.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {editedEvent.subCategory && (
+              <AncillariesForms
+                selectedSubCategory={editedEvent.subCategory}
+                manualTitle={editedEvent.title || ""}
+                setManualTitle={(v) => handleFieldChange("title", v)}
+                manualPrice={editedEvent.price === 0 && editedEvent.price !== 0 ? "" : (editedEvent.price ?? "")}
+                setManualPrice={(v) => handleFieldChange("price", v === "" ? 0 : v)}
+                manualCurrency={editedEvent.currency || "INR"}
+                setManualCurrency={(v) => handleFieldChange("currency", v)}
+
+                // Visa Specific
+                manualCountry={(editedEvent as any).country || ""}
+                setManualCountry={(v) => handleFieldChange("country", v)}
+                manualVisaType={(editedEvent as any).visaType || ""}
+                setManualVisaType={(v) => handleFieldChange("visaType", v)}
+                manualVisaDuration={(editedEvent as any).visaDuration || ""}
+                setManualVisaDuration={(v) => handleFieldChange("visaDuration", v)}
+                manualServiceFee={(editedEvent as any).serviceCharge || ""}
+                setManualServiceFee={(v) => handleFieldChange("serviceCharge", v)}
+                manualTotalFee={(editedEvent as any).totalFee || ""} // Derived usually, but passing if stored
+                manualLengthOfStay={(editedEvent as any).lengthOfStay || ""}
+                setManualLengthOfStay={(v) => handleFieldChange("lengthOfStay", v)}
+                manualEntryMethod={(editedEvent as any).entryMethod || ""}
+                setManualEntryMethod={(v) => handleFieldChange("entryMethod", v)}
+                manualDepartureDate={(editedEvent as any).departureDate || ""}
+                setManualDepartureDate={(v) => handleFieldChange("departureDate", v)}
+                manualReturnDate={(editedEvent as any).returnDate || ""}
+                setManualReturnDate={(v) => handleFieldChange("returnDate", v)}
+
+                // Forex Specific
+                manualForexCurrency={(editedEvent as any).forexCurrency || ""}
+                setManualForexCurrency={(v) => handleFieldChange("forexCurrency", v)}
+                manualBaseCurrency={(editedEvent as any).baseCurrency || "INR"}
+                setManualBaseCurrency={(v) => handleFieldChange("baseCurrency", v)}
+                manualAmount={(editedEvent as any).amount || ""}
+                setManualAmount={(v) => handleFieldChange("amount", v)}
+
+                // Travel Insurance Specific
+                manualDestinations={(editedEvent as any).destinations || []}
+                handleAddDestination={() => {
+                  const current = (editedEvent as any).destinations || []
+                  handleFieldChange("destinations", [...current, ""])
+                }}
+                handleRemoveDestination={(idx) => {
+                  const current = (editedEvent as any).destinations || []
+                  handleFieldChange("destinations", current.filter((_: any, i: number) => i !== idx))
+                }}
+                handleDestinationChange={(idx, value) => {
+                  const current = [...((editedEvent as any).destinations || [])]
+                  current[idx] = value
+                  handleFieldChange("destinations", current)
+                }}
+                manualStartDate={(editedEvent as any).startDate || ""}
+                setManualStartDate={(v) => handleFieldChange("startDate", v)}
+                manualEndDate={(editedEvent as any).endDate || ""}
+                setManualEndDate={(v) => handleFieldChange("endDate", v)}
+                manualNoOfTravellers={(editedEvent as any).noOfTravellers || ""}
+                setManualNoOfTravellers={(v) => handleFieldChange("noOfTravellers", v)}
+                manualInsuranceType={(editedEvent as any).insuranceType || ""}
+                setManualInsuranceType={(v) => handleFieldChange("insuranceType", v)}
+                manualNotes={(editedEvent as any).insuranceNotes || ""}
+                setManualNotes={(v) => handleFieldChange("insuranceNotes", v)}
+                manualSumInsured={(editedEvent as any).sumInsured || ""}
+                setManualSumInsured={(v) => handleFieldChange("sumInsured", v)}
+              />
+            )}
+          </div>
+        )
     }
   }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -1641,7 +1741,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
           {renderFields()}
 
           {/* Additional Information Section */}
-          {editedEvent.category !== "meal" && editedEvent.category !== "flight" && editedEvent.category !== "hotel" && editedEvent.category !== "note" && editedEvent.category !== "others" && (
+          {editedEvent.category !== "meal" && editedEvent.category !== "flight" && editedEvent.category !== "hotel" && editedEvent.category !== "note" && editedEvent.category !== "others" && editedEvent.category !== "ancillaries" && (
             <div className="border rounded-md p-4">
               <h3 className="text-lg font-semibold mb-3">Additional Information</h3>
               {editedEvent.additionalInfoSections && editedEvent.additionalInfoSections.length > 0 ? (
@@ -1698,7 +1798,7 @@ export function EditEventModal({ event, isOpen, onClose, onSave }: EditEventModa
             </div>
           )}
 
-          {!["meal", "flight", "hotel", "note", "others"].includes(editedEvent.category) && (
+          {!["meal", "flight", "hotel", "note", "others", "ancillaries"].includes(editedEvent.category) && (
             <div className="grid gap-2">
               <Label htmlFor="price">Price</Label>
               <div className="flex gap-2">

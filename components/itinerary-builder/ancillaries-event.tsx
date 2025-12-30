@@ -4,6 +4,7 @@ import { FileText, Shield, Coins, Globe, Calendar, Users, MapPin, CreditCard } f
 import { Badge } from "@/components/ui/badge"
 import type { IItineraryEvent } from "@/models/Itinerary"
 import { EventSourceBadge } from "./source-badge"
+import { calculateComponentPrice } from "@/lib/pricing-calculator"
 
 interface AncillariesEventProps {
     event: IItineraryEvent
@@ -19,6 +20,8 @@ export function AncillariesEvent({
     pricingEnabled = false,
     pricingCurrency = "INR",
     pricingMode = 'individual',
+    pricingAdults = 2,
+    pricingChildren = 0,
 }: AncillariesEventProps) {
     const subCategory = event.subCategory || "visa"
 
@@ -157,11 +160,14 @@ export function AncillariesEvent({
         </div>
     )
 
-    const getTotalPrice = () => {
-        const basePrice = Number(event.price || 0)
-        const serviceCharge = Number(event.serviceCharge || 0)
-        return basePrice + serviceCharge
-    }
+    // Calculate pricing if enabled
+    const priceResult = pricingEnabled && pricingMode === 'individual' && event.price
+        ? calculateComponentPrice(event, {
+            adults: pricingAdults,
+            children: pricingChildren,
+            targetCurrency: pricingCurrency
+        })
+        : null
 
     return (
         <div className={`p-2 rounded-lg border relative ${getColorClass()}`}>
@@ -187,15 +193,35 @@ export function AncillariesEvent({
             </div>
 
             {/* Pricing */}
-            {pricingEnabled && pricingMode === 'individual' && getTotalPrice() > 0 && (
+            {pricingEnabled && pricingMode === 'individual' && priceResult && (
                 <div className="pt-2 border-t border-slate-200 mt-2">
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-slate-500">
                             {event.serviceCharge ? "Total Fee (inc. service)" : "Price"}
                         </span>
-                        <span className="text-sm font-bold text-slate-900">
-                            {event.currency === "INR" ? "₹" : event.currency === "USD" ? "$" : event.currency} {getTotalPrice()}
-                        </span>
+                        <div className="text-right">
+                            {(subCategory === "visa" || subCategory === "travel-insurance") ? (
+                                <>
+                                    <div className="text-xs text-slate-500 mb-0.5">
+                                        {priceResult.breakdown}
+                                    </div>
+                                    <div className="flex items-center justify-end gap-1">
+                                        <span className="text-sm font-bold text-slate-900">
+                                            {priceResult.displayPrice}
+                                        </span>
+                                        {priceResult.originalCurrency !== pricingCurrency && (
+                                            <span className="text-xs text-slate-400">
+                                                ({priceResult.originalDisplayPrice}/pax)
+                                            </span>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <span className="text-sm font-bold text-slate-900">
+                                    {priceResult.displayPrice}
+                                </span>
+                            )}
+                        </div>
                     </div>
                     {event.serviceCharge && (
                         <div className="text-right text-[10px] text-slate-400">
