@@ -1860,16 +1860,6 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                   Details
                 </Button>
 
-                {/* Details Button */}
-                <Button
-                  variant="outline"
-                  className="font-semibold whitespace-nowrap gap-2"
-                  onClick={() => setIsDetailsModalOpen(true)}
-                >
-                  <FileText className="h-4 w-4" />
-                  Details
-                </Button>
-
                 {/* Detailed View toggle - visible between All Inclusions and Pricing.
                     Enabled only when All Inclusions view is active. */}
                 <div className="flex items-center gap-2 ml-2">

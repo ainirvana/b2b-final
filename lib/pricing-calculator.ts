@@ -367,6 +367,16 @@ export function calculateComponentPrice(
             // These are also per person
             return calculateAncillaryPrice(event, config)
 
+        case "ancillaries":
+            // Check subcategory for specific pricing logic
+            if (event.subCategory === "visa" || event.subCategory === "travel-insurance") {
+                return calculateAncillaryPrice(event, config)
+            } else if (event.subCategory === "forex") {
+                return calculateOthersPrice(event, config)
+            }
+            // Default to others (fixed) if no known subcategory matches
+            return calculateOthersPrice(event, config)
+
         case "other":
             // Others are standard pricing (not affected by pax count)
             return calculateOthersPrice(event, config)

@@ -9,6 +9,10 @@ import { ActivityEvent } from "./activity-event"
 import { FlightEvent } from "./flight-event"
 import { OthersEvent } from "./others-event"
 import { AncillariesEvent } from "./ancillaries-event"
+import { MealEvent } from "./meal-event"
+import { CruiseEvent } from "./cruise-event"
+import { NoteEvent } from "./note-event"
+import { ImageEvent } from "./image-event"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,6 +86,51 @@ export function EventCard({
             pricingEnabled={pricingEnabled}
             pricingCurrency={pricingCurrency}
             pricingMode={pricingMode}
+          />
+        )
+      case 'meal':
+        return (
+          <MealEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            pricingEnabled={pricingEnabled}
+            pricingAdults={pricingAdults}
+            pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        )
+      case 'cruise':
+        return (
+          <CruiseEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            pricingEnabled={pricingEnabled}
+            pricingAdults={pricingAdults}
+            pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        )
+      case 'note':
+        return (
+          <NoteEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        )
+      case 'image':
+        return (
+          <ImageEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            onClick={onEdit}
           />
         )
       case 'others':

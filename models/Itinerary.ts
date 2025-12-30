@@ -128,9 +128,10 @@ export interface IItineraryEvent {
   | "heading"
   | "paragraph"
   | "list"
-  | "list"
   | "image"
   | "note"
+  | "ancillaries"
+  | "cruise"
   title: string
   description: string
   time?: string
@@ -285,7 +286,8 @@ const ItineraryEventSchema = new mongoose.Schema({
       "photo",
       "other",
       "others",
-      "ancillaries", // NEW: Added ancillaries
+      "ancillaries",
+      "cruise",
       "heading",
       "paragraph",
       "list",
