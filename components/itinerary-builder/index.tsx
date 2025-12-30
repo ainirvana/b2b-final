@@ -62,7 +62,7 @@ import { ItineraryDetailsModal } from "./itinerary-details-modal"
 import { useItineraries } from "@/hooks/use-itineraries"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
-import { calculateComponentPrice, PricingConfig } from "@/lib/pricing-calculator"
+import { calculateComponentPrice, calculateTotalPrice, PricingConfig } from "@/lib/pricing-calculator"
 
 // Country options removed
 
@@ -2408,52 +2408,36 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                 rooms: pricingRooms,
               }
 
-              const calculateTotal = () => {
-                return days.reduce((sum, day) => {
-                  return sum + day.events.reduce((daySum, event) => {
-                    const result = calculateComponentPrice(event, pricingConfig)
-                    return daySum + (result?.calculatedPrice || 0)
-                  }, 0)
-                }, 0)
-              }
+              // Flatten all events from all days
+              const allEvents = days.flatMap(day => day.events)
 
-              const totalPrice = calculateTotal()
+              // Use centralized calculator which handles multi-night logic
+              const { total, displayTotal, breakdown } = calculateTotalPrice(allEvents, pricingConfig)
               const currencySymbol = pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''
 
               return pricingMode === 'total-only' ? (
                 <div>
                   <div className="text-lg font-bold text-gray-800">Total Price</div>
                   <div className="text-2xl font-extrabold text-green-700 mt-1">
-                    {currencySymbol}
-                    {totalPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    {displayTotal}
                   </div>
                 </div>
               ) : (
                 <div>
                   <div className="text-lg font-bold text-gray-800 mb-2">Individual Pricing</div>
                   <div className="flex flex-col items-center gap-1">
-                    {days.map((day, dayIndex) => (
-                      <div key={dayIndex} className="w-full flex flex-col items-center">
-                        {day.events.map((event, eventIndex) => {
-                          const result = calculateComponentPrice(event, pricingConfig)
-                          if (!result || result.calculatedPrice <= 0) return null
-
-                          return (
-                            <div key={eventIndex} className="flex justify-between w-64 text-sm">
-                              <span className="font-medium text-gray-700">{event.title || 'Event'}:</span>
-                              <span className="font-semibold text-green-700">
-                                {result.displayPrice}
-                              </span>
-                            </div>
-                          )
-                        })}
+                    {breakdown.map((item, index) => (
+                      <div key={index} className="flex justify-between w-64 text-sm">
+                        <span className="font-medium text-gray-700">{item.title || 'Event'}:</span>
+                        <span className="font-semibold text-green-700">
+                          {item.displayPrice}
+                        </span>
                       </div>
                     ))}
                   </div>
                   <div className="mt-2 text-lg font-bold text-gray-800">Total Price</div>
                   <div className="text-2xl font-extrabold text-green-700 mt-1">
-                    {currencySymbol}
-                    {totalPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    {displayTotal}
                   </div>
                 </div>
               )

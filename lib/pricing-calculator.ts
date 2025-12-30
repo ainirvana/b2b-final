@@ -402,6 +402,30 @@ export function calculateTotalPrice(
     const breakdown: Array<{ title: string; price: number; displayPrice: string }> = []
 
     events.forEach(event => {
+        // Special handling for multi-night hotels to avoid double counting
+        // Only calculate price on the first night (Check-in) and multiply by total nights
+        if (event.category === 'hotel' && event.hotelNightIndex) {
+            // Only proceed if it's the first night
+            if (event.hotelNightIndex === 1) {
+                const result = calculateComponentPrice(event, config)
+                if (result) {
+                    const totalNights = event.hotelTotalNights || event.nights || 1
+                    const totalStayPrice = result.calculatedPrice * totalNights
+                    const displayStayPrice = formatCurrencyWithSymbol(totalStayPrice, config.targetCurrency)
+
+                    total += totalStayPrice
+                    breakdown.push({
+                        title: event.title, // Keep original title
+                        price: totalStayPrice,
+                        displayPrice: displayStayPrice
+                    })
+                }
+            }
+            // Skip all other nights (index > 1) to prevent duplicate pricing
+            return
+        }
+
+        // Standard calculation for all other events
         const result = calculateComponentPrice(event, config)
         if (result) {
             total += result.calculatedPrice

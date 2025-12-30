@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import type { IItineraryEvent } from "@/models/Itinerary"
 import { EventSourceBadge } from "./source-badge"
 import { calculateHotelPrice } from "@/lib/pricing-calculator"
+import { formatCurrencyWithSymbol } from "@/lib/currency-utils"
 
 interface HotelEventProps {
   event: IItineraryEvent
@@ -239,29 +240,35 @@ export function HotelEvent({
       </div>
 
       {/* Price */}
-      {event.price && pricingEnabled && pricingMode === 'individual' && (
+      {event.price && pricingEnabled && pricingMode === 'individual' && isCheckInDay && (
         <div className="pt-1.5 border-t border-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500">
-              {priceResult ? priceResult.breakdown : "Price"}
+              {
+                priceResult
+                  ? `${totalNights || 1} nights × ${priceResult.breakdown?.split('×')[0].trim()} × ${formatCurrencyWithSymbol(priceResult.originalPrice, priceResult.originalCurrency)}`
+                  : "Total Stay Price"
+              }
             </span>
             <div className="text-right">
               {priceResult ? (
                 <>
                   <span className="text-sm font-bold text-blue-600">
-                    {priceResult.displayPrice}
+                    {formatCurrencyWithSymbol(priceResult.calculatedPrice * (totalNights || 1), pricingCurrency)}
                   </span>
-                  <span className="text-xs text-slate-400 ml-1">
-                    ({priceResult.originalDisplayPrice}/night)
-                  </span>
+                  {priceResult.originalCurrency !== pricingCurrency && (
+                    <span className="text-xs text-slate-400 ml-1">
+                      ({formatCurrencyWithSymbol(priceResult.originalPrice * (totalNights || 1), priceResult.originalCurrency)})
+                    </span>
+                  )}
                 </>
               ) : (
                 <>
                   <span className="text-sm font-bold text-blue-600">
                     {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}
-                    {event.price}
+                    {(event.price || 0) * (totalNights || 1)}
                   </span>
-                  <span className="text-xs text-slate-500 ml-1">/night</span>
+                  <span className="text-xs text-slate-500 ml-1">total</span>
                 </>
               )}
             </div>
