@@ -1104,6 +1104,31 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         serviceCharge: (manualData && manualData.serviceCharge) || 0,
         travelGears: (manualData && manualData.travelGears) || [],
       }),
+      ...(component.category === "ancillaries" && {
+        subCategory: (manualData && manualData.subCategory) || "visa",
+        // Visa
+        country: manualData && manualData.country,
+        visaType: manualData && manualData.visaType,
+        visaDuration: manualData && manualData.visaDuration,
+        entryMethod: manualData && manualData.entryMethod,
+        departureDate: manualData && manualData.departureDate,
+        returnDate: manualData && manualData.returnDate,
+        lengthOfStay: manualData && manualData.lengthOfStay,
+        // Forex
+        forexCurrency: manualData && manualData.forexCurrency,
+        baseCurrency: manualData && manualData.baseCurrency,
+        amount: manualData && manualData.amount,
+        // Insurance
+        destinations: manualData && manualData.destinations,
+        startDate: manualData && manualData.startDate,
+        endDate: manualData && manualData.endDate,
+        noOfTravellers: manualData && manualData.noOfTravellers,
+        insuranceType: manualData && manualData.insuranceType,
+        sumInsured: manualData && manualData.sumInsured,
+        insuranceNotes: manualData && manualData.insuranceNotes,
+        // Common
+        serviceCharge: (manualData && manualData.serviceCharge) || 0,
+      }),
     }
 
     // Handle overview events (dayIndex === -2)

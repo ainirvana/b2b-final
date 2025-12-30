@@ -14,6 +14,7 @@ import { X, Plus, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TransferForms } from "./transfer-forms"
 import { OthersForms } from "./others-forms"
+import { AncillariesForms } from "./ancillaries-forms"
 
 interface EditEventModalProps {
   event: IItineraryEvent | null

@@ -228,6 +228,28 @@ export interface IItineraryEvent {
     currency?: string
   }[]
 
+  // Ancillaries specific
+  // Visa
+  country?: string
+  visaType?: string
+  visaDuration?: string
+  entryMethod?: string
+  departureDate?: string
+  returnDate?: string
+  lengthOfStay?: string
+  // Forex
+  forexCurrency?: string
+  baseCurrency?: string
+  amount?: number
+  // Travel Insurance
+  destinations?: string[]
+  startDate?: string
+  endDate?: string
+  noOfTravellers?: number
+  insuranceType?: string
+  sumInsured?: number
+  insuranceNotes?: string
+
   // Image specific
   imageUrl?: string
   imageCaption?: string
@@ -263,6 +285,7 @@ const ItineraryEventSchema = new mongoose.Schema({
       "photo",
       "other",
       "others",
+      "ancillaries", // NEW: Added ancillaries
       "heading",
       "paragraph",
       "list",
@@ -394,6 +417,27 @@ const ItineraryEventSchema = new mongoose.Schema({
       currency: String
     }
   ],
+  // Ancillaries specific
+  // Visa
+  country: String,
+  visaType: String,
+  visaDuration: String,
+  entryMethod: String,
+  departureDate: String,
+  returnDate: String,
+  lengthOfStay: String,
+  // Forex
+  forexCurrency: String,
+  baseCurrency: String,
+  amount: Number,
+  // Travel Insurance
+  destinations: [String],
+  startDate: String,
+  endDate: String,
+  noOfTravellers: Number,
+  insuranceType: String,
+  sumInsured: Number,
+  insuranceNotes: String,
 })
 
 const ItineraryDaySchema = new mongoose.Schema({

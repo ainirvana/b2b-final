@@ -798,6 +798,42 @@ export function ComponentSourceModal({
     if (manualStops) payload.stops = manualStops // Legacy field
     if (manualPnr) payload.pnr = manualPnr
     if (manualRefundable) payload.refundable = manualRefundable
+
+    // Ancillaries specific payload
+    if (componentType.toLowerCase() === "ancillaries" && selectedSubCategory) {
+      payload.subCategory = selectedSubCategory
+
+      // Visa
+      if (selectedSubCategory === "visa") {
+        if (manualCountry) payload.country = manualCountry
+        if (manualVisaType) payload.visaType = manualVisaType
+        if (manualVisaDuration) payload.visaDuration = manualVisaDuration
+        if (manualServiceFee) payload.serviceCharge = Number(manualServiceFee)
+        if (manualEntryMethod) payload.entryMethod = manualEntryMethod
+        if (manualDepartureDate) payload.departureDate = manualDepartureDate
+        if (manualReturnDate) payload.returnDate = manualReturnDate
+        if (manualLengthOfStay) payload.lengthOfStay = manualLengthOfStay
+      }
+
+      // Forex
+      if (selectedSubCategory === "forex") {
+        if (manualForexCurrency) payload.forexCurrency = manualForexCurrency
+        if (manualBaseCurrency) payload.baseCurrency = manualBaseCurrency
+        if (manualAmount) payload.amount = Number(manualAmount)
+        if (manualServiceFee) payload.serviceCharge = Number(manualServiceFee)
+      }
+
+      // Travel Insurance
+      if (selectedSubCategory === "travel-insurance") {
+        if (manualDestinations && manualDestinations.length > 0) payload.destinations = manualDestinations.filter(d => d.trim() !== "")
+        if (manualStartDate) payload.startDate = manualStartDate
+        if (manualEndDate) payload.endDate = manualEndDate
+        if (manualNoOfTravellers) payload.noOfTravellers = Number(manualNoOfTravellers)
+        if (manualInsuranceType) payload.insuranceType = manualInsuranceType
+        if (manualSumInsured) payload.sumInsured = Number(manualSumInsured)
+        if (manualNotes) payload.insuranceNotes = manualNotes
+      }
+    }
     if (manualFlightNumber) payload.flightNumber = manualFlightNumber
     if (manualAirline) payload.airlines = manualAirline
     if (manualClass) payload.flightClass = manualClass
@@ -1774,12 +1810,12 @@ export function ComponentSourceModal({
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                          <label className="text-sm font-medium">Checkin date</label>
-                          <Input type="date" value={manualCheckIn} onChange={(e) => setManualCheckIn(e.target.value)} />
+                          <label className="text-sm font-medium">Check-in Time</label>
+                          <Input type="time" value={manualCheckIn} onChange={(e) => setManualCheckIn(e.target.value)} />
                         </div>
                         <div className="grid gap-2">
-                          <label className="text-sm font-medium">Check out date</label>
-                          <Input type="date" value={manualCheckOut} onChange={(e) => setManualCheckOut(e.target.value)} />
+                          <label className="text-sm font-medium">Check-out Time</label>
+                          <Input type="time" value={manualCheckOut} onChange={(e) => setManualCheckOut(e.target.value)} />
                         </div>
                       </div>
                       <div className="grid gap-2">

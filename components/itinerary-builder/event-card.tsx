@@ -8,6 +8,7 @@ import { TransferEvent } from "./transfer-event"
 import { ActivityEvent } from "./activity-event"
 import { FlightEvent } from "./flight-event"
 import { OthersEvent } from "./others-event"
+import { AncillariesEvent } from "./ancillaries-event"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +71,15 @@ export function EventCard({
             pricingEnabled={pricingEnabled}
             pricingAdults={pricingAdults}
             pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
+          />
+        )
+      case 'ancillaries':
+        return (
+          <AncillariesEvent
+            event={event}
+            pricingEnabled={pricingEnabled}
             pricingCurrency={pricingCurrency}
             pricingMode={pricingMode}
           />
