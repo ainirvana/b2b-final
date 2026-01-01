@@ -298,6 +298,8 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             )
             // Load overview events if they exist
             setOverviewEvents(itineraryData.overviewEvents || [])
+            // Load service slots (Additional Information) if they exist
+            setServiceSlots(itineraryData.serviceSlots || [])
             setGuestDetails(itineraryData.guestDetails || {})
             setAgencyDetails(itineraryData.agencyDetails || {})
 
@@ -941,7 +943,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         id: `event-${Date.now()}`,
         category: "list",
         title,
-        description: "",
+        description: title || "Additional Information", // Required by Mongoose schema
         listItems: bullets,
         componentSource: "manual",
         highlights: [],
@@ -1380,24 +1382,42 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         currency: "USD",
         createdBy: "agent-user",
         countries,
-        days: days.map((day) => ({
-          ...day,
-          events: day.events.map((event) => ({
-            ...event,
-            title: event.title || ("New " + event.category),
-            description: event.description || "No description provided",
-            highlights: event.highlights || [],
-            listItems: event.listItems || [],
-            price: event.price || 0,
-            versionHistory: event.versionHistory || [
-              {
-                timestamp: new Date(),
-                action: "created" as const,
-                source: event.componentSource || "manual",
-              },
-            ],
-          })),
-        })),
+        days: days.map((day, dayIdx) => {
+          // Convert meals object to array of strings for Mongoose schema
+          let mealsArray: string[] = []
+          if (day.meals) {
+            if (Array.isArray(day.meals)) {
+              mealsArray = day.meals
+            } else if (typeof day.meals === 'object') {
+              // Convert object { breakfast: true, lunch: false, dinner: true } to ["breakfast", "dinner"]
+              const mealsObj = day.meals as { breakfast?: boolean; lunch?: boolean; dinner?: boolean }
+              if (mealsObj.breakfast) mealsArray.push('breakfast')
+              if (mealsObj.lunch) mealsArray.push('lunch')
+              if (mealsObj.dinner) mealsArray.push('dinner')
+            }
+          }
+
+          return {
+            ...day,
+            title: day.title || `Day ${dayIdx + 1}`, // Provide default title if empty
+            meals: mealsArray, // Use array format instead of object
+            events: day.events.map((event) => ({
+              ...event,
+              title: event.title || ("New " + event.category),
+              description: event.description || "No description provided",
+              highlights: event.highlights || [],
+              listItems: event.listItems || [],
+              price: event.price || 0,
+              versionHistory: event.versionHistory || [
+                {
+                  timestamp: new Date(),
+                  action: "created" as const,
+                  source: event.componentSource || "manual",
+                },
+              ],
+            })),
+          }
+        }),
         highlights: extractHighlights(),
         images: extractImages(),
         gallery, // Include gallery in save data

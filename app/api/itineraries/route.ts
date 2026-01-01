@@ -260,6 +260,8 @@ export async function POST(request: NextRequest) {
         value: err.errors[key].value,
       }))
 
+      console.error("[v0] MONGOOSE VALIDATION ERRORS:", JSON.stringify(validationErrors, null, 2))
+
       return createErrorResponse(
         "Mongoose Validation Failed",
         "The provided data failed database validation.",

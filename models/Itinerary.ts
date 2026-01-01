@@ -47,6 +47,12 @@ export interface IItinerary {
   quotationLead?: any // Store lead data associated with quotation
   // NEW: Overview events for customized packages
   overviewEvents?: IItineraryEvent[] // Overview notes that appear above Day 1
+  // Service Slots for Additional Information
+  serviceSlots?: Array<{
+    id: string
+    title: string
+    events: IItineraryEvent[]
+  }>
 
   // NEW: Guest Details
   guestDetails?: {
@@ -545,6 +551,14 @@ const ItinerarySchema = new mongoose.Schema(
     quotationLead: mongoose.Schema.Types.Mixed,
     // Overview events
     overviewEvents: [ItineraryEventSchema],
+    // Service Slots for Additional Information
+    serviceSlots: [
+      {
+        id: { type: String },
+        title: { type: String },
+        events: [ItineraryEventSchema],
+      },
+    ],
     // Guest Details
     guestDetails: {
       name: String,

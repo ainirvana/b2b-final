@@ -55,31 +55,40 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
               <Layout className="h-5 w-5 text-purple-500" />
               <Label className="text-base font-medium">Template</Label>
             </div>
-            
-            <div className="grid grid-cols-2 gap-3">
+
+            <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setTemplate(1)}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${
-                  template === 1
+                className={`p-3 rounded-lg border-2 text-left transition-all ${template === 1
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <div className="font-medium">Template 1</div>
-                <div className="text-xs text-gray-500">Professional Layout</div>
+                <div className="text-xs text-gray-500">Professional</div>
               </button>
               <button
                 type="button"
                 onClick={() => setTemplate(2)}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${
-                  template === 2
+                className={`p-3 rounded-lg border-2 text-left transition-all ${template === 2
                     ? 'border-purple-500 bg-purple-50 text-purple-700'
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <div className="font-medium">Template 2</div>
-                <div className="text-xs text-gray-500">Timeline Design</div>
+                <div className="text-xs text-gray-500">Timeline</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTemplate(3)}
+                className={`p-3 rounded-lg border-2 text-left transition-all ${template === 3
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                    : 'border-gray-200 hover:border-gray-300'
+                  }`}
+              >
+                <div className="font-medium">Template 3</div>
+                <div className="text-xs text-gray-500">Luxury Brochure</div>
               </button>
             </div>
           </div>
@@ -90,7 +99,7 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
               <Users className="h-5 w-5 text-blue-500" />
               <Label className="text-base font-medium">Travelers</Label>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="adults" className="text-sm text-gray-600">Adults</Label>
