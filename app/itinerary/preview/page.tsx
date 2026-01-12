@@ -764,6 +764,45 @@ export default function ItineraryPreviewPage() {
       { key: "lunch", label: "Lunch" },
       { key: "dinner", label: "Dinner" },
     ] as const
+
+    // Get pricing config from itinerary.previewConfig and pricing settings (same as Template 3)
+    const { rates: exchangeRates, baseCurrency } = getExchangeRates()
+    const targetCurrency = baseCurrency || "INR"
+    const pricingConfig: PricingConfig = {
+      adults: itinerary.previewConfig?.adults || 2,
+      children: itinerary.previewConfig?.children || 0,
+      targetCurrency: targetCurrency,
+      exchangeRates: exchangeRates,
+      baseCurrency: baseCurrency,
+    }
+
+    // Calculate total price with currency conversion
+    let calculatedTotalPrice = 0
+    itinerary.days.forEach((day: any) => {
+      day.events?.forEach((event: any) => {
+        if (event.price && event.price > 0) {
+          const priceResult = calculateComponentPrice(event, pricingConfig)
+          if (priceResult) {
+            calculatedTotalPrice += priceResult.calculatedPrice
+          }
+        }
+      })
+    })
+
+    // Format total price with target currency
+    const displayTotalPrice = formatCurrencyWithSymbol(calculatedTotalPrice, targetCurrency)
+
+    // Helper to format event price with currency conversion
+    const formatEventPrice = (event: any) => {
+      if (event.price && event.price > 0) {
+        const priceResult = calculateComponentPrice(event, pricingConfig)
+        if (priceResult) {
+          return priceResult.displayPrice
+        }
+      }
+      return formatCurrencyWithSymbol(event.price || 0, targetCurrency)
+    }
+
     return (
       <div className="space-y-10">
         <section className="rounded-[36px] overflow-hidden bg-white shadow-[0_28px_80px_rgba(15,23,42,0.12)]">
@@ -999,7 +1038,7 @@ export default function ItineraryPreviewPage() {
                                 {hasPrice && (
                                   <div className="text-right">
                                     <p className="text-xs ??? font-semibold uppercase tracking-[0.25em] text-slate-400">Price</p>
-                                    <p className="text-lg font-semibold text-slate-900">{formatPrice(event.price)}</p>
+                                    <p className="text-lg font-semibold text-slate-900">{formatEventPrice(event)}</p>
                                   </div>
                                 )}
                               </div>
@@ -1095,7 +1134,7 @@ export default function ItineraryPreviewPage() {
                   <Percent className="h-4 w-4" />
                 </div>
                 <div className="mt-5 space-y-1">
-                  <p className="text-3xl font-semibold text-slate-900 sm:text-4xl">{formatPrice(itinerary.totalPrice)}</p>
+                  <p className="text-3xl font-semibold text-slate-900 sm:text-4xl">{displayTotalPrice}</p>
                   <p className="text-sm text-slate-500">Excluding applicable taxes</p>
                 </div>
                 <Button className="mt-6 w-full rounded-full bg-amber-500 text-base font-semibold text-slate-900 hover:bg-amber-600">
@@ -1193,7 +1232,7 @@ export default function ItineraryPreviewPage() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-semibold text-slate-900">{formatPrice(itinerary.totalPrice)}</p>
+                <p className="text-3xl font-semibold text-slate-900">{displayTotalPrice}</p>
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-600">Best Value Guaranteed</p>
               </div>
             </div>

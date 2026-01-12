@@ -33,8 +33,8 @@ export function OthersEvent({
     const isGiftCard = event.subCategory === "gift-cards"
     const isTravelGear = event.subCategory === "travel-gears"
 
-    // Calculate pricing result using the enhanced calculator
-    const priceResult = pricingEnabled
+    // Always calculate price conversion when price exists
+    const priceResult = (event.price || (event.travelGears && event.travelGears.length > 0))
         ? calculateOthersPrice(event, {
             adults: pricingAdults,
             children: pricingChildren,
@@ -103,8 +103,8 @@ export function OthersEvent({
                 </div>
             )}
 
-            {/* Footer Pricing Section - EXACT Match to FlightEvent styles but with DUAL CURRENCY */}
-            {pricingEnabled && (
+            {/* Footer Pricing Section - Always show if price exists */}
+            {(event.price || (event.travelGears && event.travelGears.length > 0)) && (
                 <div className="pt-2 mt-2 border-t border-gray-200">
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">

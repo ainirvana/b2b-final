@@ -29,7 +29,8 @@ export function TransferEvent({
   pricingCurrency = "INR",
   pricingMode = 'individual',
 }: TransferEventProps) {
-  const priceResult = pricingEnabled && pricingMode === 'individual' && event.price
+  // Always calculate price conversion when price exists
+  const priceResult = event.price
     ? calculateTransferPrice(event, {
       adults: pricingAdults,
       children: pricingChildren,
@@ -440,8 +441,8 @@ export function TransferEvent({
         </div>
       )}
 
-      {/* Price */}
-      {event.price && pricingEnabled && pricingMode === 'individual' && (
+      {/* Price - Always show if price exists */}
+      {event.price && (
         <div className="pt-3 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 font-medium">

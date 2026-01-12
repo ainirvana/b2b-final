@@ -37,8 +37,8 @@ export function CruiseEvent({
     pricingMode = 'individual',
 }: CruiseEventProps) {
 
-    // Use generic price calculator or custom logic if needed
-    const priceResult = pricingEnabled && pricingMode === 'individual' && event.price
+    // Always calculate price conversion when price exists
+    const priceResult = event.price
         ? calculateComponentPrice(event, {
             adults: pricingAdults,
             children: pricingChildren,
@@ -129,8 +129,8 @@ export function CruiseEvent({
                 </div>
             </div>
 
-            {/* Price */}
-            {event.price && pricingEnabled && pricingMode === 'individual' && (
+            {/* Price - Always show if price exists */}
+            {event.price && (
                 <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
                     <span className="text-xs text-gray-500">Price</span>
                     <div className="text-right">
@@ -145,7 +145,7 @@ export function CruiseEvent({
                             </>
                         ) : (
                             <span className="text-sm font-bold text-cyan-700">
-                                {event.currency} {event.price}
+                                {event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}{event.price}
                             </span>
                         )}
                     </div>

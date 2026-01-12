@@ -59,7 +59,8 @@ export function HotelEvent({
   const isCheckInDay = nightIndex === 1
   const isCheckOutDay = nightIndex !== undefined && totalNights !== undefined && nightIndex === totalNights + 1
 
-  const priceResult = pricingEnabled && pricingMode === 'individual' && event.price
+  // Always calculate price conversion when price exists
+  const priceResult = event.price
     ? calculateHotelPrice(event, {
       adults: pricingAdults,
       children: pricingChildren,
@@ -239,8 +240,8 @@ export function HotelEvent({
 
       </div>
 
-      {/* Price */}
-      {event.price && pricingEnabled && pricingMode === 'individual' && isCheckInDay && (
+      {/* Price - Always show if price exists (only on check-in day) */}
+      {event.price && isCheckInDay && (
         <div className="pt-1.5 border-t border-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500">

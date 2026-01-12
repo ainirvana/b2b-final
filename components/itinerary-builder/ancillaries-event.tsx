@@ -160,8 +160,8 @@ export function AncillariesEvent({
         </div>
     )
 
-    // Calculate pricing if enabled
-    const priceResult = pricingEnabled && pricingMode === 'individual' && event.price
+    // Always calculate price conversion when price exists
+    const priceResult = event.price
         ? calculateComponentPrice(event, {
             adults: pricingAdults,
             children: pricingChildren,
@@ -192,8 +192,8 @@ export function AncillariesEvent({
                 {subCategory === "travel-insurance" && renderInsuranceDetails()}
             </div>
 
-            {/* Pricing */}
-            {pricingEnabled && pricingMode === 'individual' && priceResult && (
+            {/* Pricing - Always show if price exists */}
+            {event.price && (
                 <div className="pt-2 border-t border-slate-200 mt-2">
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-slate-500">
@@ -202,14 +202,16 @@ export function AncillariesEvent({
                         <div className="text-right">
                             {(subCategory === "visa" || subCategory === "travel-insurance") ? (
                                 <>
-                                    <div className="text-xs text-slate-500 mb-0.5">
-                                        {priceResult.breakdown}
-                                    </div>
+                                    {priceResult && (
+                                        <div className="text-xs text-slate-500 mb-0.5">
+                                            {priceResult.breakdown}
+                                        </div>
+                                    )}
                                     <div className="flex items-center justify-end gap-1">
                                         <span className="text-sm font-bold text-slate-900">
-                                            {priceResult.displayPrice}
+                                            {priceResult ? priceResult.displayPrice : `${event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}${event.price}`}
                                         </span>
-                                        {priceResult.originalCurrency !== pricingCurrency && (
+                                        {priceResult && priceResult.originalCurrency !== pricingCurrency && (
                                             <span className="text-xs text-slate-400">
                                                 ({priceResult.originalDisplayPrice}/pax)
                                             </span>
@@ -218,7 +220,7 @@ export function AncillariesEvent({
                                 </>
                             ) : (
                                 <span className="text-sm font-bold text-slate-900">
-                                    {priceResult.displayPrice}
+                                    {priceResult ? priceResult.displayPrice : `${event.currency === "INR" ? "₹" : event.currency === "EUR" ? "€" : event.currency === "GBP" ? "£" : event.currency === "AED" ? "AED " : "$"}${event.price}`}
                                 </span>
                             )}
                         </div>

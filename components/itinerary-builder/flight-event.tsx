@@ -25,8 +25,8 @@ export function FlightEvent({
   pricingCurrency = "INR",
   pricingMode = 'individual',
 }: FlightEventProps) {
-  // Calculate pricing if enabled
-  const priceResult = pricingEnabled && pricingMode === 'individual' && event.price
+  // Always calculate price conversion when price exists
+  const priceResult = event.price
     ? calculateFlightPrice(event, {
       adults: pricingAdults,
       children: pricingChildren,
@@ -250,8 +250,8 @@ export function FlightEvent({
         </div>
       )}
 
-      {/* Price */}
-      {event.price && pricingEnabled && pricingMode === 'individual' && (
+      {/* Price - Always show if price exists */}
+      {event.price && (
         <div className="pt-2 mt-2 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500">

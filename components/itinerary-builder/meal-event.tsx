@@ -31,8 +31,8 @@ export function MealEvent({
     pricingCurrency = "INR",
     pricingMode = 'individual',
 }: MealEventProps) {
-    // Calculate pricing if enabled
-    const priceResult = pricingEnabled && pricingMode === 'individual' && event.price
+    // Always calculate price conversion when price exists
+    const priceResult = event.price
         ? calculateMealPrice(event, {
             adults: pricingAdults,
             children: pricingChildren,
@@ -179,8 +179,8 @@ export function MealEvent({
                 </div>
             )}
 
-            {/* Price */}
-            {event.price && pricingEnabled && pricingMode === 'individual' && (
+            {/* Price - Always show if price exists */}
+            {event.price && (
                 <div className="pt-1.5 border-t border-slate-200">
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-slate-500">
