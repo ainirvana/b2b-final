@@ -14,6 +14,7 @@ export interface IPublicShare {
   createdBy: string
   isActive: boolean
   expiresAt?: Date
+  expiryMessage?: string // Custom message shown when link expires
   passwordProtected?: boolean
   password?: string
   viewCount: number
@@ -32,14 +33,25 @@ export interface IPublicShare {
       contactPhone?: string
     }
   }
-  // Pricing markup options for shared itineraries
+  // Global pricing markup options (for individual shares or default for collections)
   pricingOptions?: {
     markupType: "percentage" | "fixed"
     markupValue: number
-    showOriginalPrice: boolean  // Show strikethrough original price
+    showOriginalPrice: boolean  // Show strikethrough price (higher than selling price)
+    strikethroughMarkupType?: "percentage" | "fixed"  // Markup type for strikethrough price
+    strikethroughMarkupValue?: number  // Markup value applied on top of selling price
     showIndividualPricing: boolean  // Show per-event prices
     pricingCurrency: string  // Currency to display prices in (e.g., "INR", "USD")
   }
+  // Per-itinerary pricing for collection shares (overrides global pricingOptions)
+  perItineraryPricing?: Array<{
+    itineraryId: string
+    markupType: "percentage" | "fixed"
+    markupValue: number
+    showOriginalPrice: boolean
+    strikethroughMarkupType?: "percentage" | "fixed"
+    strikethroughMarkupValue?: number
+  }>
 }
 
 export interface IShareView {
@@ -94,6 +106,7 @@ const publicShareSchema = new mongoose.Schema({
   createdBy: { type: String, required: true },
   isActive: { type: Boolean, default: true },
   expiresAt: { type: Date },
+  expiryMessage: { type: String }, // Custom message shown when link expires
   passwordProtected: { type: Boolean, default: false },
   password: { type: String },
   viewCount: { type: Number, default: 0 },
@@ -110,14 +123,25 @@ const publicShareSchema = new mongoose.Schema({
       contactPhone: { type: String }
     }
   },
-  // Pricing markup options
+  // Global pricing markup options
   pricingOptions: {
     markupType: { type: String, enum: ["percentage", "fixed"], default: "percentage" },
     markupValue: { type: Number, default: 0 },
     showOriginalPrice: { type: Boolean, default: false },
+    strikethroughMarkupType: { type: String, enum: ["percentage", "fixed"], default: "percentage" },
+    strikethroughMarkupValue: { type: Number, default: 0 },
     showIndividualPricing: { type: Boolean, default: true },
     pricingCurrency: { type: String, default: "INR" }
-  }
+  },
+  // Per-itinerary pricing for collection shares
+  perItineraryPricing: [{
+    itineraryId: { type: mongoose.Schema.Types.ObjectId, ref: "Itinerary" },
+    markupType: { type: String, enum: ["percentage", "fixed"], default: "percentage" },
+    markupValue: { type: Number, default: 0 },
+    showOriginalPrice: { type: Boolean, default: false },
+    strikethroughMarkupType: { type: String, enum: ["percentage", "fixed"], default: "percentage" },
+    strikethroughMarkupValue: { type: Number, default: 0 }
+  }]
 }, {
   timestamps: true
 })

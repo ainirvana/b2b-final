@@ -182,15 +182,15 @@ export function PricingPanel() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-body-sm text-neutral-700">Subtotal</span>
-                <span className="text-body-sm text-neutral-900 font-medium">₹{subtotal.toLocaleString()}</span>
+                <span className="text-body-sm text-neutral-900 font-medium">₹{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-body-xs text-neutral-600">Taxes & Fees</span>
-                <span className="text-body-xs text-neutral-600">₹{taxes.toFixed(0)}</span>
+                <span className="text-body-xs text-neutral-600">₹{taxes.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-body-xs text-success-600">Early Bird Discount</span>
-                <span className="text-body-xs text-success-600">-₹{discount.toFixed(0)}</span>
+                <span className="text-body-xs text-success-600">-₹{discount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
 
@@ -198,7 +198,7 @@ export function PricingPanel() {
 
             <div className="flex justify-between items-center py-2">
               <span className="text-heading-md text-neutral-900">Total</span>
-              <span className="text-heading-lg text-gray-900 font-bold">₹{total.toLocaleString()}</span>
+              <span className="text-heading-lg text-gray-900 font-bold">₹{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </CardContent>
         </Card>
@@ -208,32 +208,32 @@ export function PricingPanel() {
           <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold h-12 text-label-lg rounded transition-colors">
             BOOK NOW
           </Button>
-          
+
           <div className="text-center text-xs text-gray-500">OR</div>
-          
+
           <Button variant="outline" className="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 h-12 text-label-lg bg-transparent rounded transition-colors">
             Add to Cart
           </Button>
-          
+
           <div className="text-center text-xs text-gray-500">OR</div>
-          
+
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
-              <input 
-                type="text" 
-                placeholder="Full Name" 
+              <input
+                type="text"
+                placeholder="Full Name"
                 className="input-field text-sm h-10"
               />
-              <input 
-                type="email" 
-                placeholder="Email" 
+              <input
+                type="email"
+                placeholder="Email"
                 className="input-field text-sm h-10"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <input 
-                type="tel" 
-                placeholder="+91 Mobile" 
+              <input
+                type="tel"
+                placeholder="+91 Mobile"
                 className="input-field text-sm h-10"
               />
               <select className="input-field text-sm h-10">
@@ -244,7 +244,7 @@ export function PricingPanel() {
               </select>
             </div>
           </div>
-          
+
           <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold h-12 text-label-lg rounded transition-colors">
             SEND ENQUIRY
           </Button>

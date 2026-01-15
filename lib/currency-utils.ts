@@ -51,10 +51,11 @@ export function convertCurrency(
 
 /**
  * Format a currency amount with the appropriate symbol
+ * Uses international number format with commas and 2 decimal places
  * 
  * @param amount The amount to format
  * @param currency The currency code (USD, EUR, INR, etc.)
- * @returns Formatted currency string
+ * @returns Formatted currency string (e.g., ₹1,234,567.89)
  */
 export function formatCurrencyWithSymbol(amount: number, currency: string): string {
   const symbols: Record<string, string> = {
@@ -72,8 +73,13 @@ export function formatCurrencyWithSymbol(amount: number, currency: string): stri
 
   const symbol = symbols[currency] || currency;
 
-  // Format with 2 decimal places by default
-  return `${symbol}${amount.toFixed(2)}`;
+  // Format with international commas and exactly 2 decimal places
+  const formattedNumber = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+
+  return `${symbol}${formattedNumber}`;
 }
 
 /**

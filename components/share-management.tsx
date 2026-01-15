@@ -50,6 +50,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
     itineraryId: "",
     itineraryIds: [] as string[],
     expiresAt: "",
+    expiryMessage: "", // Custom message when link expires
     passwordProtected: false,
     password: "",
     settings: {
@@ -64,14 +65,25 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
         logo: ""
       }
     },
-    // Pricing markup options
+    // Global pricing markup options (used for individual shares)
     pricingOptions: {
       markupType: "percentage" as "percentage" | "fixed",
       markupValue: 0,
       showOriginalPrice: false,
+      strikethroughMarkupType: "percentage" as "percentage" | "fixed",
+      strikethroughMarkupValue: 0,
       showIndividualPricing: true,
       pricingCurrency: "INR"
-    }
+    },
+    // Per-itinerary pricing for collection shares
+    perItineraryPricing: [] as Array<{
+      itineraryId: string
+      markupType: "percentage" | "fixed"
+      markupValue: number
+      showOriginalPrice: boolean
+      strikethroughMarkupType: "percentage" | "fixed"
+      strikethroughMarkupValue: number
+    }>
   })
   const [creating, setCreating] = useState(false)
   const { toast } = useToast()
@@ -138,6 +150,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
         itineraryId: "",
         itineraryIds: [],
         expiresAt: "",
+        expiryMessage: "",
         passwordProtected: false,
         password: "",
         settings: {
@@ -156,9 +169,12 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
           markupType: "percentage",
           markupValue: 0,
           showOriginalPrice: false,
+          strikethroughMarkupType: "percentage",
+          strikethroughMarkupValue: 0,
           showIndividualPricing: true,
           pricingCurrency: "INR"
-        }
+        },
+        perItineraryPricing: []
       })
     } catch (err) {
       console.error("Error creating share:", err)
@@ -173,11 +189,44 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
   }
 
   const handleItineraryToggle = (itineraryId: string, checked: boolean) => {
+    setFormData(prev => {
+      // Prevent duplicates in itineraryIds
+      const newItineraryIds = checked
+        ? prev.itineraryIds.includes(itineraryId)
+          ? prev.itineraryIds
+          : [...prev.itineraryIds, itineraryId]
+        : prev.itineraryIds.filter(id => id !== itineraryId)
+
+      // Also update perItineraryPricing - check for existing entry to prevent duplicates
+      const alreadyExists = prev.perItineraryPricing.some(p => p.itineraryId === itineraryId)
+      const newPerItineraryPricing = checked
+        ? alreadyExists
+          ? prev.perItineraryPricing
+          : [...prev.perItineraryPricing, {
+            itineraryId,
+            markupType: "percentage" as "percentage" | "fixed",
+            markupValue: 0,
+            showOriginalPrice: false,
+            strikethroughMarkupType: "percentage" as "percentage" | "fixed",
+            strikethroughMarkupValue: 0
+          }]
+        : prev.perItineraryPricing.filter(p => p.itineraryId !== itineraryId)
+
+      return {
+        ...prev,
+        itineraryIds: newItineraryIds,
+        perItineraryPricing: newPerItineraryPricing
+      }
+    })
+  }
+
+  // Update per-itinerary pricing
+  const updatePerItineraryPricing = (itineraryId: string, field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      itineraryIds: checked
-        ? [...prev.itineraryIds, itineraryId]
-        : prev.itineraryIds.filter(id => id !== itineraryId)
+      perItineraryPricing: prev.perItineraryPricing.map(p =>
+        p.itineraryId === itineraryId ? { ...p, [field]: value } : p
+      )
     }))
   }
 
@@ -311,6 +360,22 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
                 onChange={(e) => setFormData(prev => ({ ...prev, expiresAt: e.target.value }))}
               />
             </div>
+
+            {formData.expiresAt && (
+              <div>
+                <Label htmlFor="expiry-message">Expiry Message (Optional)</Label>
+                <Textarea
+                  id="expiry-message"
+                  value={formData.expiryMessage}
+                  onChange={(e) => setFormData(prev => ({ ...prev, expiryMessage: e.target.value }))}
+                  placeholder="Custom message to show when this weblink expires (e.g., 'This offer has expired. Please contact us for updated pricing.')"
+                  rows={2}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This message will be displayed when someone tries to access an expired weblink
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Settings */}
@@ -347,8 +412,8 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
               </div>
             </div>
 
-            {/* Markup Options - Only show if pricing is enabled */}
-            {formData.settings.showPricing && (
+            {/* Markup Options - Only show if pricing is enabled AND not a collection share with itineraries selected */}
+            {formData.settings.showPricing && !(formData.shareType === "collection" && formData.itineraryIds.length > 0) && (
               <div className="space-y-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
                 <div className="flex items-center gap-2">
                   <Percent className="h-4 w-4 text-amber-600" />
@@ -410,9 +475,68 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
                     }
                   />
                   <Label htmlFor="show-original-price" className="text-sm">
-                    Show original price (strikethrough)
+                    Show strikethrough price (higher than selling price)
                   </Label>
                 </div>
+
+                {/* Strikethrough Markup - only show when showOriginalPrice is enabled */}
+                {formData.pricingOptions.showOriginalPrice && (
+                  <div className="ml-6 p-3 bg-amber-100 rounded border border-amber-300 space-y-3">
+                    <p className="text-xs text-amber-700">
+                      Set an additional markup to create a higher &quot;was&quot; price. This is applied on top of the selling price.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Strikethrough Markup Type</Label>
+                        <Select
+                          value={formData.pricingOptions.strikethroughMarkupType}
+                          onValueChange={(value: "percentage" | "fixed") =>
+                            setFormData(prev => ({
+                              ...prev,
+                              pricingOptions: { ...prev.pricingOptions, strikethroughMarkupType: value }
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="percentage">Percentage (%)</SelectItem>
+                            <SelectItem value="fixed">Fixed Amount</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">
+                          {formData.pricingOptions.strikethroughMarkupType === "percentage" ? "%" : "Amount"}
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step={formData.pricingOptions.strikethroughMarkupType === "percentage" ? "0.1" : "1"}
+                          value={formData.pricingOptions.strikethroughMarkupValue}
+                          onChange={(e) =>
+                            setFormData(prev => ({
+                              ...prev,
+                              pricingOptions: { ...prev.pricingOptions, strikethroughMarkupValue: parseFloat(e.target.value) || 0 }
+                            }))
+                          }
+                          className="h-8 text-xs"
+                          placeholder={formData.pricingOptions.strikethroughMarkupType === "percentage" ? "e.g., 20" : "e.g., 2000"}
+                        />
+                      </div>
+                    </div>
+                    {formData.pricingOptions.strikethroughMarkupValue > 0 && (
+                      <p className="text-xs text-amber-800 italic">
+                        Example: If selling price is ₹11,000, strikethrough will show{" "}
+                        {formData.pricingOptions.strikethroughMarkupType === "percentage"
+                          ? `₹${(11000 * (1 + formData.pricingOptions.strikethroughMarkupValue / 100)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : `₹${(11000 + formData.pricingOptions.strikethroughMarkupValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        }
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -464,6 +588,120 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
                       : `A fixed amount will be added to the total price`}
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Per-Itinerary Markup - Only for collection shares with pricing enabled */}
+            {formData.settings.showPricing && formData.shareType === "collection" && formData.itineraryIds.length > 0 && (
+              <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2">
+                  <Percent className="h-4 w-4 text-blue-600" />
+                  <h5 className="font-medium text-sm text-blue-800">Per-Itinerary Markup</h5>
+                </div>
+                <p className="text-xs text-blue-600 mb-3">
+                  Set different markup for each itinerary in the collection. This overrides the global markup above.
+                </p>
+
+                <div className="space-y-4">
+                  {formData.perItineraryPricing.map((pricing) => {
+                    const itinerary = availableItineraries.find(i => i._id === pricing.itineraryId)
+                    if (!itinerary) return null
+                    return (
+                      <div key={pricing.itineraryId} className="p-3 bg-white rounded border border-blue-100">
+                        <p className="font-medium text-sm mb-2">{itinerary.title}</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <Label className="text-xs">Markup Type</Label>
+                            <Select
+                              value={pricing.markupType}
+                              onValueChange={(value: "percentage" | "fixed") =>
+                                updatePerItineraryPricing(pricing.itineraryId, "markupType", value)
+                              }
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="percentage">Percentage (%)</SelectItem>
+                                <SelectItem value="fixed">Fixed Amount</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-xs">
+                              {pricing.markupType === "percentage" ? "%" : "Amount"}
+                            </Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step={pricing.markupType === "percentage" ? "0.1" : "1"}
+                              value={pricing.markupValue}
+                              onChange={(e) =>
+                                updatePerItineraryPricing(pricing.itineraryId, "markupValue", parseFloat(e.target.value) || 0)
+                              }
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <div className="flex items-center space-x-1">
+                              <Switch
+                                id={`show-original-${pricing.itineraryId}`}
+                                checked={pricing.showOriginalPrice}
+                                onCheckedChange={(checked) =>
+                                  updatePerItineraryPricing(pricing.itineraryId, "showOriginalPrice", checked)
+                                }
+                              />
+                              <Label htmlFor={`show-original-${pricing.itineraryId}`} className="text-xs">
+                                Strikethrough
+                              </Label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Strikethrough Markup for this itinerary */}
+                        {pricing.showOriginalPrice && (
+                          <div className="mt-3 p-2 bg-amber-50 rounded border border-amber-200 space-y-2">
+                            <p className="text-xs text-amber-700">
+                              Strikethrough markup (applied on top of selling price):
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs">Type</Label>
+                                <Select
+                                  value={pricing.strikethroughMarkupType || "percentage"}
+                                  onValueChange={(value: "percentage" | "fixed") =>
+                                    updatePerItineraryPricing(pricing.itineraryId, "strikethroughMarkupType", value)
+                                  }
+                                >
+                                  <SelectTrigger className="h-7 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="percentage">%</SelectItem>
+                                    <SelectItem value="fixed">Fixed</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-xs">Value</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step={(pricing.strikethroughMarkupType || "percentage") === "percentage" ? "0.1" : "1"}
+                                  value={pricing.strikethroughMarkupValue || 0}
+                                  onChange={(e) =>
+                                    updatePerItineraryPricing(pricing.itineraryId, "strikethroughMarkupValue", parseFloat(e.target.value) || 0)
+                                  }
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
 

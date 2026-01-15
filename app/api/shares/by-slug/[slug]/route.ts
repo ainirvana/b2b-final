@@ -59,7 +59,10 @@ export async function GET(
         // Check if share has expired
         if (share.expiresAt && new Date() > share.expiresAt) {
             return NextResponse.json(
-                { error: "Weblink has expired" },
+                {
+                    error: "Weblink has expired",
+                    expiryMessage: share.expiryMessage || null // Include custom message if available
+                },
                 { status: 410 }
             )
         }

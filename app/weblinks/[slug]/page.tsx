@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Eye, Lock, Calendar, MapPin, DollarSign, Users, Clock, Loader2, Share2, Download } from "lucide-react"
+import { Eye, Lock, Calendar, MapPin, DollarSign, Users, Clock, Loader2, Share2, Download, MessageCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { IPublicShare } from "@/models/PublicShare"
 import { IItinerary } from "@/models/Itinerary"
@@ -52,7 +52,10 @@ export default function PublicWeblinkPage() {
       }
 
       if (response.status === 410) {
-        setError("This share has expired")
+        // Get custom expiry message if available
+        const expiredData = await response.json()
+        const customMessage = expiredData.expiryMessage
+        setError(customMessage || "This weblink has expired. Please contact the provider for updated information.")
         return
       }
 
@@ -177,7 +180,9 @@ export default function PublicWeblinkPage() {
   const formatPrice = (price: number, currency: string = "USD") => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(price)
   }
 
@@ -334,6 +339,16 @@ export default function PublicWeblinkPage() {
             </div>
             <div className="flex items-center space-x-2">
               <Button
+                asChild
+                size="sm"
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                <a href="https://ticketing.aivialabs.com/forms/enquire-now-from-weblinks" target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Enquire Now
+                </a>
+              </Button>
+              <Button
                 onClick={handleShare}
                 variant="outline"
                 size="sm"
@@ -438,8 +453,9 @@ function IndividualItineraryView({
     return formatCurrencyWithSymbol(finalPrice, targetCurrency)
   }
 
-  // Format original price (for strikethrough display)
-  const formatOriginalPrice = (price: number, fromCurrency: string = "INR") => {
+  // Format strikethrough price (selling price + strikethrough markup to create higher "was" price)
+  const formatStrikethroughPrice = (price: number, fromCurrency: string = "INR") => {
+    // First calculate the selling price (original + markup)
     const convertedPrice = convertCurrency(
       price,
       fromCurrency,
@@ -447,14 +463,51 @@ function IndividualItineraryView({
       exchangeRates,
       baseCurrency
     )
-    return formatCurrencyWithSymbol(convertedPrice, targetCurrency)
+
+    // Apply regular markup to get selling price
+    let sellingPrice = convertedPrice
+    if (pricingOptions?.markupValue) {
+      if (pricingOptions.markupType === "percentage") {
+        sellingPrice = convertedPrice * (1 + pricingOptions.markupValue / 100)
+      } else {
+        const convertedMarkup = convertCurrency(
+          pricingOptions.markupValue,
+          baseCurrency,
+          targetCurrency,
+          exchangeRates,
+          baseCurrency
+        )
+        sellingPrice = convertedPrice + convertedMarkup
+      }
+    }
+
+    // Now apply strikethrough markup on top of selling price
+    let strikethroughPrice = sellingPrice
+    if (pricingOptions?.strikethroughMarkupValue) {
+      if (pricingOptions.strikethroughMarkupType === "percentage") {
+        strikethroughPrice = sellingPrice * (1 + pricingOptions.strikethroughMarkupValue / 100)
+      } else {
+        const convertedStrikethroughMarkup = convertCurrency(
+          pricingOptions.strikethroughMarkupValue,
+          baseCurrency,
+          targetCurrency,
+          exchangeRates,
+          baseCurrency
+        )
+        strikethroughPrice = sellingPrice + convertedStrikethroughMarkup
+      }
+    }
+
+    return formatCurrencyWithSymbol(strikethroughPrice, targetCurrency)
   }
 
   // Legacy formatPrice for non-converted display
   const formatPrice = (price: number, currency: string = "USD") => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(price)
   }
 
@@ -522,9 +575,9 @@ function IndividualItineraryView({
                     <span className="font-semibold">
                       {getDisplayPrice(itinerary.totalPrice, itinerary.currency)}
                     </span>
-                    {pricingOptions?.showOriginalPrice && pricingOptions.markupValue > 0 && (
+                    {pricingOptions?.showOriginalPrice && pricingOptions.strikethroughMarkupValue > 0 && (
                       <span className="text-gray-400 line-through text-sm">
-                        {formatOriginalPrice(itinerary.totalPrice, itinerary.currency)}
+                        {formatStrikethroughPrice(itinerary.totalPrice, itinerary.currency)}
                       </span>
                     )}
                   </div>
@@ -904,8 +957,9 @@ function CollectionView({
     return formatCurrencyWithSymbol(finalPrice, targetCurrency)
   }
 
-  // Format original price (for strikethrough display)
-  const formatOriginalPrice = (price: number, fromCurrency: string = "INR") => {
+  // Format strikethrough price (selling price + strikethrough markup to create higher "was" price)
+  const formatStrikethroughPrice = (price: number, fromCurrency: string = "INR") => {
+    // First calculate the selling price (original + markup)
     const convertedPrice = convertCurrency(
       price,
       fromCurrency,
@@ -913,13 +967,50 @@ function CollectionView({
       exchangeRates,
       baseCurrency
     )
-    return formatCurrencyWithSymbol(convertedPrice, targetCurrency)
+
+    // Apply regular markup to get selling price
+    let sellingPrice = convertedPrice
+    if (pricingOptions?.markupValue) {
+      if (pricingOptions.markupType === "percentage") {
+        sellingPrice = convertedPrice * (1 + pricingOptions.markupValue / 100)
+      } else {
+        const convertedMarkup = convertCurrency(
+          pricingOptions.markupValue,
+          baseCurrency,
+          targetCurrency,
+          exchangeRates,
+          baseCurrency
+        )
+        sellingPrice = convertedPrice + convertedMarkup
+      }
+    }
+
+    // Now apply strikethrough markup on top of selling price
+    let strikethroughPrice = sellingPrice
+    if (pricingOptions?.strikethroughMarkupValue) {
+      if (pricingOptions.strikethroughMarkupType === "percentage") {
+        strikethroughPrice = sellingPrice * (1 + pricingOptions.strikethroughMarkupValue / 100)
+      } else {
+        const convertedStrikethroughMarkup = convertCurrency(
+          pricingOptions.strikethroughMarkupValue,
+          baseCurrency,
+          targetCurrency,
+          exchangeRates,
+          baseCurrency
+        )
+        strikethroughPrice = sellingPrice + convertedStrikethroughMarkup
+      }
+    }
+
+    return formatCurrencyWithSymbol(strikethroughPrice, targetCurrency)
   }
 
   const formatPrice = (price: number, currency: string = "USD") => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(price)
   }
 
@@ -1015,9 +1106,9 @@ function CollectionView({
                     <span className="font-semibold">
                       {getDisplayPrice(itinerary.totalPrice, itinerary.currency)}
                     </span>
-                    {pricingOptions?.showOriginalPrice && pricingOptions.markupValue > 0 && (
+                    {pricingOptions?.showOriginalPrice && pricingOptions.strikethroughMarkupValue > 0 && (
                       <span className="text-gray-400 line-through text-xs">
-                        {formatOriginalPrice(itinerary.totalPrice, itinerary.currency)}
+                        {formatStrikethroughPrice(itinerary.totalPrice, itinerary.currency)}
                       </span>
                     )}
                   </div>
@@ -1044,7 +1135,7 @@ function CollectionView({
               )}
 
               {/* View Details Button */}
-              <div className="mt-4 pt-4 border-t">
+              <div className="mt-4 pt-4 border-t space-y-2">
                 <Button
                   onClick={() => handleViewItinerary(itinerary)}
                   className="w-full"
@@ -1052,6 +1143,16 @@ function CollectionView({
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   View Details
+                </Button>
+                <Button
+                  asChild
+                  className="w-full bg-amber-500 hover:bg-amber-600"
+                  size="sm"
+                >
+                  <a href="https://ticketing.aivialabs.com/forms/enquire-now-from-weblinks" target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Enquire Now
+                  </a>
                 </Button>
               </div>
             </CardContent>

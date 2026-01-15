@@ -193,11 +193,18 @@ export async function POST(request: NextRequest) {
         showOriginalPrice: false,
         showIndividualPricing: true,
         pricingCurrency: "INR"
-      }
+      },
+      // Per-itinerary pricing for collection shares
+      perItineraryPricing: body.perItineraryPricing || []
     }
 
     if (body.expiresAt) {
       shareData.expiresAt = new Date(body.expiresAt)
+    }
+
+    // Add expiry message if provided
+    if (body.expiryMessage) {
+      shareData.expiryMessage = body.expiryMessage
     }
 
     if (shareType === "individual") {
