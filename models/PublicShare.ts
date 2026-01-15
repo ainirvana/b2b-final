@@ -2,7 +2,8 @@ import mongoose from "mongoose"
 
 export interface IPublicShare {
   _id?: string
-  shareId: string // UUID for public URL
+  shareId: string // UUID for internal reference
+  slug: string // URL-friendly slug based on title (for /weblinks/[slug])
   title: string
   description?: string
   shareType: "individual" | "collection"
@@ -31,6 +32,14 @@ export interface IPublicShare {
       contactPhone?: string
     }
   }
+  // Pricing markup options for shared itineraries
+  pricingOptions?: {
+    markupType: "percentage" | "fixed"
+    markupValue: number
+    showOriginalPrice: boolean  // Show strikethrough original price
+    showIndividualPricing: boolean  // Show per-event prices
+    pricingCurrency: string  // Currency to display prices in (e.g., "INR", "USD")
+  }
 }
 
 export interface IShareView {
@@ -53,28 +62,34 @@ const shareViewSchema = new mongoose.Schema({
 })
 
 const publicShareSchema = new mongoose.Schema({
-  shareId: { 
-    type: String, 
-    required: true, 
+  shareId: {
+    type: String,
+    required: true,
     unique: true,
-    index: true 
+    index: true
+  },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
   },
   title: { type: String, required: true },
   description: { type: String },
-  shareType: { 
-    type: String, 
-    enum: ["individual", "collection"], 
-    required: true 
+  shareType: {
+    type: String,
+    enum: ["individual", "collection"],
+    required: true
   },
-  itineraryId: { 
-    type: mongoose.Schema.Types.ObjectId, 
+  itineraryId: {
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Itinerary",
-    required: function(this: IPublicShare) { return this.shareType === "individual" }
+    required: function (this: IPublicShare) { return this.shareType === "individual" }
   },
-  itineraryIds: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
+  itineraryIds: [{
+    type: mongoose.Schema.Types.ObjectId,
     ref: "Itinerary",
-    required: function(this: IPublicShare) { return this.shareType === "collection" }
+    required: function (this: IPublicShare) { return this.shareType === "collection" }
   }],
   createdBy: { type: String, required: true },
   isActive: { type: Boolean, default: true },
@@ -94,6 +109,14 @@ const publicShareSchema = new mongoose.Schema({
       contactEmail: { type: String },
       contactPhone: { type: String }
     }
+  },
+  // Pricing markup options
+  pricingOptions: {
+    markupType: { type: String, enum: ["percentage", "fixed"], default: "percentage" },
+    markupValue: { type: Number, default: 0 },
+    showOriginalPrice: { type: Boolean, default: false },
+    showIndividualPricing: { type: Boolean, default: true },
+    pricingCurrency: { type: String, default: "INR" }
   }
 }, {
   timestamps: true
@@ -101,6 +124,7 @@ const publicShareSchema = new mongoose.Schema({
 
 // Add indexes for better performance
 publicShareSchema.index({ shareId: 1 })
+publicShareSchema.index({ slug: 1 })
 publicShareSchema.index({ createdBy: 1 })
 publicShareSchema.index({ shareType: 1 })
 publicShareSchema.index({ isActive: 1 })

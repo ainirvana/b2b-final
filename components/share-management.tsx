@@ -11,19 +11,20 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { 
-  Share2, 
-  Eye, 
-  Copy, 
-  Trash2, 
-  Edit, 
-  Calendar, 
-  Lock, 
+import {
+  Share2,
+  Eye,
+  Copy,
+  Trash2,
+  Edit,
+  Calendar,
+  Lock,
   Unlock,
   ExternalLink,
   Plus,
   Loader2,
-  Settings
+  Settings,
+  Percent
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { IPublicShare } from "@/models/PublicShare"
@@ -62,6 +63,14 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
         primaryColor: "",
         logo: ""
       }
+    },
+    // Pricing markup options
+    pricingOptions: {
+      markupType: "percentage" as "percentage" | "fixed",
+      markupValue: 0,
+      showOriginalPrice: false,
+      showIndividualPricing: true,
+      pricingCurrency: "INR"
     }
   })
   const [creating, setCreating] = useState(false)
@@ -69,7 +78,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.title.trim()) {
       toast({
         title: "Title Required",
@@ -115,7 +124,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
       const result = await response.json()
       onShareCreated(result.share)
       onClose()
-      
+
       toast({
         title: "Share Created",
         description: `Your ${formData.shareType} share has been created successfully!`
@@ -142,6 +151,13 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
             primaryColor: "",
             logo: ""
           }
+        },
+        pricingOptions: {
+          markupType: "percentage",
+          markupValue: 0,
+          showOriginalPrice: false,
+          showIndividualPricing: true,
+          pricingCurrency: "INR"
         }
       })
     } catch (err) {
@@ -171,7 +187,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
         <DialogHeader>
           <DialogTitle>Create New Share</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Info */}
           <div className="space-y-4">
@@ -185,7 +201,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
                 required
               />
             </div>
-            
+
             <div>
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -201,7 +217,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
               <Label htmlFor="shareType">Share Type</Label>
               <Select
                 value={formData.shareType}
-                onValueChange={(value: "individual" | "collection") => 
+                onValueChange={(value: "individual" | "collection") =>
                   setFormData(prev => ({ ...prev, shareType: value, itineraryId: "", itineraryIds: [] }))
                 }
               >
@@ -246,7 +262,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
                       <Checkbox
                         id={itinerary._id}
                         checked={formData.itineraryIds.includes(itinerary._id!)}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           handleItineraryToggle(itinerary._id!, checked as boolean)
                         }
                       />
@@ -266,7 +282,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
               <Switch
                 id="password-protected"
                 checked={formData.passwordProtected}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   setFormData(prev => ({ ...prev, passwordProtected: checked, password: checked ? prev.password : "" }))
                 }
               />
@@ -300,15 +316,15 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
           {/* Settings */}
           <div className="space-y-4">
             <h4 className="font-medium">Share Settings</h4>
-            
+
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="show-pricing"
                   checked={formData.settings.showPricing}
-                  onCheckedChange={(checked) => 
-                    setFormData(prev => ({ 
-                      ...prev, 
+                  onCheckedChange={(checked) =>
+                    setFormData(prev => ({
+                      ...prev,
                       settings: { ...prev.settings, showPricing: checked }
                     }))
                   }
@@ -320,9 +336,9 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
                 <Switch
                   id="show-contact"
                   checked={formData.settings.showContactInfo}
-                  onCheckedChange={(checked) => 
-                    setFormData(prev => ({ 
-                      ...prev, 
+                  onCheckedChange={(checked) =>
+                    setFormData(prev => ({
+                      ...prev,
                       settings: { ...prev.settings, showContactInfo: checked }
                     }))
                   }
@@ -331,10 +347,130 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
               </div>
             </div>
 
+            {/* Markup Options - Only show if pricing is enabled */}
+            {formData.settings.showPricing && (
+              <div className="space-y-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="flex items-center gap-2">
+                  <Percent className="h-4 w-4 text-amber-600" />
+                  <h5 className="font-medium text-sm text-amber-800">Price Markup Options</h5>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="markup-type" className="text-sm">Markup Type</Label>
+                    <Select
+                      value={formData.pricingOptions.markupType}
+                      onValueChange={(value: "percentage" | "fixed") =>
+                        setFormData(prev => ({
+                          ...prev,
+                          pricingOptions: { ...prev.pricingOptions, markupType: value }
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                        <SelectItem value="fixed">Fixed Amount</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="markup-value" className="text-sm">
+                      {formData.pricingOptions.markupType === "percentage" ? "Markup %" : "Fixed Amount"}
+                    </Label>
+                    <Input
+                      id="markup-value"
+                      type="number"
+                      min="0"
+                      step={formData.pricingOptions.markupType === "percentage" ? "0.1" : "1"}
+                      value={formData.pricingOptions.markupValue}
+                      onChange={(e) =>
+                        setFormData(prev => ({
+                          ...prev,
+                          pricingOptions: { ...prev.pricingOptions, markupValue: parseFloat(e.target.value) || 0 }
+                        }))
+                      }
+                      placeholder={formData.pricingOptions.markupType === "percentage" ? "e.g., 10" : "e.g., 500"}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-original-price"
+                    checked={formData.pricingOptions.showOriginalPrice}
+                    onCheckedChange={(checked) =>
+                      setFormData(prev => ({
+                        ...prev,
+                        pricingOptions: { ...prev.pricingOptions, showOriginalPrice: checked }
+                      }))
+                    }
+                  />
+                  <Label htmlFor="show-original-price" className="text-sm">
+                    Show original price (strikethrough)
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show-individual-pricing"
+                    checked={formData.pricingOptions.showIndividualPricing}
+                    onCheckedChange={(checked) =>
+                      setFormData(prev => ({
+                        ...prev,
+                        pricingOptions: { ...prev.pricingOptions, showIndividualPricing: checked }
+                      }))
+                    }
+                  />
+                  <Label htmlFor="show-individual-pricing" className="text-sm">
+                    Show individual event prices
+                  </Label>
+                </div>
+
+                <div>
+                  <Label htmlFor="pricing-currency" className="text-sm">Display Currency</Label>
+                  <Select
+                    value={formData.pricingOptions.pricingCurrency}
+                    onValueChange={(value) =>
+                      setFormData(prev => ({
+                        ...prev,
+                        pricingOptions: { ...prev.pricingOptions, pricingCurrency: value }
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INR">₹ INR (Indian Rupee)</SelectItem>
+                      <SelectItem value="USD">$ USD (US Dollar)</SelectItem>
+                      <SelectItem value="EUR">€ EUR (Euro)</SelectItem>
+                      <SelectItem value="GBP">£ GBP (British Pound)</SelectItem>
+                      <SelectItem value="AED">د.إ AED (UAE Dirham)</SelectItem>
+                      <SelectItem value="SGD">S$ SGD (Singapore Dollar)</SelectItem>
+                      <SelectItem value="AUD">A$ AUD (Australian Dollar)</SelectItem>
+                      <SelectItem value="CAD">C$ CAD (Canadian Dollar)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.pricingOptions.markupValue > 0 && (
+                  <p className="text-xs text-amber-700">
+                    {formData.pricingOptions.markupType === "percentage"
+                      ? `Prices will be increased by ${formData.pricingOptions.markupValue}%`
+                      : `A fixed amount will be added to the total price`}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Custom Branding */}
             <div className="space-y-3">
               <h5 className="font-medium text-sm">Custom Branding (Optional)</h5>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="company-name" className="text-sm">Company Name</Label>
@@ -354,7 +490,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
                     placeholder="Your Company"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="primary-color" className="text-sm">Primary Color</Label>
                   <Input
@@ -440,7 +576,7 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
     try {
       setLoading(true)
       const response = await fetch("/api/shares?createdBy=current-user") // TODO: Get from auth
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch shares")
       }
@@ -459,8 +595,24 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
     }
   }
 
-  const copyShareLink = async (shareId: string) => {
-    const url = `${window.location.origin}/share/${shareId}`
+  // Helper to generate URL-friendly slug from title
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim()
+  }
+
+  // Get share URL (use slug if available, otherwise generate from title)
+  const getShareUrl = (share: any) => {
+    const slug = share.slug || generateSlug(share.title)
+    return `${window.location.origin}/weblinks/${slug}`
+  }
+
+  const copyShareLink = async (share: any) => {
+    const url = getShareUrl(share)
     try {
       await navigator.clipboard.writeText(url)
       toast({
@@ -519,8 +671,8 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
         throw new Error("Failed to update share")
       }
 
-      setShares(prev => prev.map(share => 
-        share.shareId === shareId 
+      setShares(prev => prev.map(share =>
+        share.shareId === shareId
           ? { ...share, isActive: !isActive }
           : share
       ))
@@ -611,6 +763,15 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
                       {!share.isActive && (
                         <Badge variant="destructive">Inactive</Badge>
                       )}
+                      {/* Markup Badge */}
+                      {share.pricingOptions && share.pricingOptions.markupValue > 0 && (
+                        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                          <Percent className="h-3 w-3 mr-1" />
+                          {share.pricingOptions.markupType === "percentage"
+                            ? `+${share.pricingOptions.markupValue}%`
+                            : `+${share.pricingOptions.markupValue} fixed`}
+                        </Badge>
+                      )}
                     </div>
 
                     {share.description && (
@@ -670,15 +831,18 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyShareLink(share.shareId)}
+                      onClick={() => copyShareLink(share)}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
-                    
+
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(`/share/${share.shareId}`, '_blank')}
+                      onClick={() => {
+                        const slug = share.slug || (share.title?.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim())
+                        window.open(`/weblinks/${slug}`, '_blank')
+                      }}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>

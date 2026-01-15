@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast"
 import { IPublicShare } from "@/models/PublicShare"
 import { IItinerary } from "@/models/Itinerary"
 import { ImageCollage } from "@/components/image-collage"
+import { convertCurrency, formatCurrencyWithSymbol } from "@/lib/currency-utils"
+import { getExchangeRates } from "@/lib/pricing-calculator"
 
 interface PublicShareData extends IPublicShare {
   itinerary?: IItinerary
@@ -42,24 +44,24 @@ export default function PublicSharePage() {
     try {
       setLoading(true)
       const response = await fetch(`/api/shares/${shareId}`)
-      
+
       if (response.status === 404) {
         setError("Share not found or has been removed")
         return
       }
-      
+
       if (response.status === 410) {
         setError("This share has expired")
         return
       }
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch share data")
       }
 
       const data = await response.json()
       const share = data.share as PublicShareData
-      
+
       if (share.passwordProtected && !verified) {
         setPasswordRequired(true)
         setShareData(share)
@@ -125,7 +127,7 @@ export default function PublicSharePage() {
       setVerified(true)
       setPasswordRequired(false)
       trackView()
-      
+
       toast({
         title: "Access Granted",
         description: "Password verified successfully"
@@ -275,7 +277,7 @@ export default function PublicSharePage() {
     )
   }
 
-  const branding = shareData.settings.customBranding || 
+  const branding = shareData.settings.customBranding ||
     (shareData.shareType === "individual" ? shareData.itinerary?.branding : null)
 
   // Helper to safely get branding properties
@@ -303,7 +305,7 @@ export default function PublicSharePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header 
+      <header
         className="bg-white shadow-sm border-b"
         style={{
           backgroundColor: getBrandingProp('primaryColor') || "#ffffff",
@@ -345,14 +347,16 @@ export default function PublicSharePage() {
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {shareData.shareType === "individual" && shareData.itinerary ? (
-          <IndividualItineraryView 
-            itinerary={shareData.itinerary} 
+          <IndividualItineraryView
+            itinerary={shareData.itinerary}
             settings={shareData.settings}
+            pricingOptions={shareData.pricingOptions}
           />
         ) : shareData.shareType === "collection" && shareData.itineraries ? (
-          <CollectionView 
-            itineraries={shareData.itineraries} 
+          <CollectionView
+            itineraries={shareData.itineraries}
             settings={shareData.settings}
+            pricingOptions={shareData.pricingOptions}
           />
         ) : (
           <div className="text-center py-12">
@@ -381,18 +385,89 @@ export default function PublicSharePage() {
   )
 }
 
-function IndividualItineraryView({ 
-  itinerary, 
-  settings 
-}: { 
+function IndividualItineraryView({
+  itinerary,
+  settings,
+  pricingOptions
+}: {
   itinerary: IItinerary
-  settings: any 
+  settings: any
+  pricingOptions?: {
+    markupType: "percentage" | "fixed"
+    markupValue: number
+    showOriginalPrice: boolean
+    showIndividualPricing?: boolean
+    pricingCurrency?: string
+  }
 }) {
+  // Get exchange rates for currency conversion
+  const { rates: exchangeRates, baseCurrency } = getExchangeRates()
+  const targetCurrency = pricingOptions?.pricingCurrency || itinerary.currency || "INR"
+  const showIndividualPricing = pricingOptions?.showIndividualPricing !== false // Default true
+
+  // Convert and format price with currency conversion and optional markup
+  const formatPriceWithConversion = (price: number, fromCurrency: string = "INR") => {
+    // Convert to target currency
+    const convertedPrice = convertCurrency(
+      price,
+      fromCurrency,
+      targetCurrency,
+      exchangeRates,
+      baseCurrency
+    )
+    // Apply markup
+    let finalPrice = convertedPrice
+    if (pricingOptions?.markupValue) {
+      if (pricingOptions.markupType === "percentage") {
+        finalPrice = convertedPrice * (1 + pricingOptions.markupValue / 100)
+      } else {
+        // For fixed markup, convert the markup value too
+        const convertedMarkup = convertCurrency(
+          pricingOptions.markupValue,
+          baseCurrency,
+          targetCurrency,
+          exchangeRates,
+          baseCurrency
+        )
+        finalPrice = convertedPrice + convertedMarkup
+      }
+    }
+    return formatCurrencyWithSymbol(finalPrice, targetCurrency)
+  }
+
+  // Format original price (for strikethrough display)
+  const formatOriginalPrice = (price: number, fromCurrency: string = "INR") => {
+    const convertedPrice = convertCurrency(
+      price,
+      fromCurrency,
+      targetCurrency,
+      exchangeRates,
+      baseCurrency
+    )
+    return formatCurrencyWithSymbol(convertedPrice, targetCurrency)
+  }
+
+  // Legacy formatPrice for non-converted display
   const formatPrice = (price: number, currency: string = "USD") => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency
     }).format(price)
+  }
+
+  // Apply markup to price (for individual events)
+  const applyMarkup = (price: number): number => {
+    if (!pricingOptions || !pricingOptions.markupValue) return price
+    if (pricingOptions.markupType === "percentage") {
+      return price * (1 + pricingOptions.markupValue / 100)
+    } else {
+      return price + pricingOptions.markupValue
+    }
+  }
+
+  // Get the display price (with conversion and markup)
+  const getDisplayPrice = (price: number, currency: string = "INR") => {
+    return formatPriceWithConversion(price, currency)
   }
 
   const getTypeColor = (type: string) => {
@@ -428,7 +503,7 @@ function IndividualItineraryView({
                 </Badge>
               </div>
               <p className="text-gray-600 mb-4">{itinerary.description}</p>
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-gray-500" />
@@ -442,13 +517,18 @@ function IndividualItineraryView({
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-gray-500" />
                     <span className="font-semibold">
-                      {formatPrice(itinerary.totalPrice, itinerary.currency)}
+                      {getDisplayPrice(itinerary.totalPrice, itinerary.currency)}
                     </span>
+                    {pricingOptions?.showOriginalPrice && pricingOptions.markupValue > 0 && (
+                      <span className="text-gray-400 line-through text-sm">
+                        {formatOriginalPrice(itinerary.totalPrice, itinerary.currency)}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
             </div>
-            
+
             {itinerary.gallery && itinerary.gallery.length > 0 && (
               <div>
                 <ImageCollage gallery={itinerary.gallery} className="max-h-[300px]" />
@@ -497,23 +577,269 @@ function IndividualItineraryView({
               <CardContent>
                 {day.events && day.events.length > 0 && (
                   <div className="space-y-4">
-                    {day.events.map((event, eventIndex) => (
-                      <div key={eventIndex} className="border-l-4 border-blue-200 pl-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline">{event.category}</Badge>
-                          <span className="font-medium">{event.title}</span>
+                    {day.events.map((event, eventIndex) => {
+                      // Category-specific styling
+                      const categoryColors: Record<string, string> = {
+                        flight: "border-sky-400 bg-sky-50",
+                        hotel: "border-emerald-400 bg-emerald-50",
+                        activity: "border-purple-400 bg-purple-50",
+                        transfer: "border-orange-400 bg-orange-50",
+                        meal: "border-amber-400 bg-amber-50",
+                        ancillaries: "border-indigo-400 bg-indigo-50",
+                        cruise: "border-cyan-400 bg-cyan-50",
+                        others: "border-slate-400 bg-slate-50",
+                        other: "border-slate-400 bg-slate-50",
+                        note: "border-yellow-400 bg-yellow-50",
+                      }
+                      const colorClass = categoryColors[event.category] || "border-gray-300 bg-gray-50"
+
+                      return (
+                        <div key={eventIndex} className={`border-l-4 ${colorClass} p-4 rounded-r-lg`}>
+                          {/* Header */}
+                          <div className="flex items-center gap-2 mb-3">
+                            <Badge variant="outline" className="capitalize">{event.category}</Badge>
+                            <span className="font-semibold text-lg">{event.title}</span>
+                          </div>
+
+                          {/* Description */}
+                          {event.description && event.description !== "No description provided" && (
+                            <p className="text-gray-600 text-sm mb-3">{event.description}</p>
+                          )}
+
+                          {/* ========== FLIGHT ========== */}
+                          {event.category === "flight" && (
+                            <div className="space-y-2 text-sm">
+                              {/* Route */}
+                              {(event.fromCity || event.toCity) && (
+                                <div className="flex items-center gap-2 font-medium">
+                                  <span className="text-sky-600">{event.fromCity}</span>
+                                  <span>→</span>
+                                  <span className="text-sky-600">{event.toCity}</span>
+                                </div>
+                              )}
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-gray-600">
+                                {event.airlines && <span>✈️ {event.airlines}</span>}
+                                {event.flightNumber && <span>Flight: {event.flightNumber}</span>}
+                                {event.flightClass && <span>Class: {event.flightClass}</span>}
+                                {event.startTime && <span>Departure: {event.startTime}</span>}
+                                {event.endTime && <span>Arrival: {event.endTime}</span>}
+                                {event.pnr && <span>PNR: {event.pnr}</span>}
+                                {event.numberOfStops !== undefined && (
+                                  <span>Stops: {event.numberOfStops === 0 ? "Non-stop" : event.numberOfStops}</span>
+                                )}
+                                {event.refundable && <span>Refundable: {event.refundable}</span>}
+                              </div>
+                              {/* Baggage */}
+                              {(event.checkinBags || event.cabinBags || event.baggage) && (
+                                <div className="text-gray-600">
+                                  <span className="font-medium">Baggage: </span>
+                                  {event.checkinBags && <span>Check-in: {event.checkinBags} bag(s) {event.checkinBagWeight && `@ ${event.checkinBagWeight}`}</span>}
+                                  {event.cabinBags && <span> | Cabin: {event.cabinBags} bag(s) {event.cabinBagWeight && `@ ${event.cabinBagWeight}`}</span>}
+                                  {event.baggage && !event.checkinBags && <span>{event.baggage}</span>}
+                                </div>
+                              )}
+                              {event.flightNotes && <p className="text-gray-500 italic">{event.flightNotes}</p>}
+                            </div>
+                          )}
+
+                          {/* ========== HOTEL ========== */}
+                          {event.category === "hotel" && (
+                            <div className="space-y-2 text-sm">
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-gray-600">
+                                {event.hotelName && <span className="font-medium col-span-full">🏨 {event.hotelName}</span>}
+                                {event.roomCategory && <span>Room: {event.roomCategory}</span>}
+                                {event.hotelRating && <span>Rating: {"⭐".repeat(event.hotelRating)}</span>}
+                                {event.mealPlan && <span>Meals: {event.mealPlan}</span>}
+                                {event.checkIn && <span>Check-in: {event.checkIn}</span>}
+                                {event.checkOut && <span>Check-out: {event.checkOut}</span>}
+                                {event.nights && <span>Nights: {event.nights}</span>}
+                                {event.adults && <span>Adults: {event.adults}</span>}
+                                {event.children && <span>Children: {event.children}</span>}
+                                {event.propertyType && <span>Type: {event.propertyType}</span>}
+                                {event.confirmationNumber && <span>Confirmation: {event.confirmationNumber}</span>}
+                              </div>
+                              {event.address && <p className="text-gray-600">📍 {event.address}</p>}
+                              {event.amenities && event.amenities.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {event.amenities.map((amenity, idx) => (
+                                    <Badge key={idx} variant="secondary" className="text-xs">{amenity}</Badge>
+                                  ))}
+                                </div>
+                              )}
+                              {event.hotelNotes && <p className="text-gray-500 italic">{event.hotelNotes}</p>}
+                            </div>
+                          )}
+
+                          {/* ========== TRANSFER ========== */}
+                          {event.category === "transfer" && (
+                            <div className="space-y-2 text-sm">
+                              {/* Route */}
+                              {(event.fromLocation || event.toLocation) && (
+                                <div className="flex items-center gap-2 font-medium text-orange-600">
+                                  <span>{event.fromLocation || "Pickup"}</span>
+                                  <span>→</span>
+                                  <span>{event.toLocation || "Drop"}</span>
+                                </div>
+                              )}
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-gray-600">
+                                {event.transferCategory && <span>Type: {event.transferCategory.replace(/-/g, " ")}</span>}
+                                {event.vehicleType && <span>🚗 {event.vehicleType}</span>}
+                                {event.carModel && <span>Model: {event.carModel}</span>}
+                                {event.transferType && <span className="capitalize">{event.transferType} Transfer</span>}
+                                {event.pickupTime && <span>Pickup: {event.pickupTime}</span>}
+                                {event.dropTime && <span>Drop: {event.dropTime}</span>}
+                                {event.airportName && <span>Airport: {event.airportName}</span>}
+                                {event.noOfHours && <span>Hours: {event.noOfHours}</span>}
+                                {event.noOfDays && <span>Days: {event.noOfDays}</span>}
+                                {event.trainNumber && <span>Train: {event.trainNumber}</span>}
+                                {event.busNumber && <span>Bus: {event.busNumber}</span>}
+                                {event.transferClass && <span>Class: {event.transferClass}</span>}
+                                {event.transmission && <span>Transmission: {event.transmission}</span>}
+                                {event.fuelType && <span>Fuel: {event.fuelType}</span>}
+                              </div>
+                              {event.stopsList && event.stopsList.length > 0 && (
+                                <div className="text-gray-600">
+                                  <span className="font-medium">Stops: </span>
+                                  {event.stopsList.join(" → ")}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* ========== ACTIVITY ========== */}
+                          {event.category === "activity" && (
+                            <div className="space-y-2 text-sm">
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-gray-600">
+                                {event.duration && <span>⏱️ Duration: {event.duration}</span>}
+                                {event.difficulty && <span>Difficulty: {event.difficulty}</span>}
+                                {event.capacity && <span>Capacity: {event.capacity}</span>}
+                                {event.time && <span>Time: {event.time}</span>}
+                                {event.location && <span>📍 {event.location}</span>}
+                              </div>
+                              {event.highlights && event.highlights.length > 0 && (
+                                <div className="mt-2">
+                                  <span className="font-medium text-gray-700">Highlights:</span>
+                                  <ul className="list-disc list-inside text-gray-600 mt-1">
+                                    {event.highlights.map((h, idx) => <li key={idx}>{h}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* ========== MEAL ========== */}
+                          {event.category === "meal" && (
+                            <div className="space-y-2 text-sm">
+                              <div className="flex flex-wrap gap-2">
+                                {event.meals && event.meals.map((meal, idx) => (
+                                  <Badge key={idx} className="capitalize bg-amber-100 text-amber-800">{meal}</Badge>
+                                ))}
+                              </div>
+                              {event.customMealDescription && (
+                                <p className="text-gray-600">{event.customMealDescription}</p>
+                              )}
+                              {event.time && <span className="text-gray-500">Time: {event.time}</span>}
+                              {event.location && <span className="text-gray-500 ml-2">📍 {event.location}</span>}
+                            </div>
+                          )}
+
+                          {/* ========== ANCILLARIES (Visa, Forex, Insurance) ========== */}
+                          {event.category === "ancillaries" && (
+                            <div className="space-y-2 text-sm text-gray-600">
+                              {/* Visa */}
+                              {event.visaType && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <span>🛂 Visa Type: {event.visaType}</span>
+                                  {event.country && <span>Country: {event.country}</span>}
+                                  {event.visaDuration && <span>Duration: {event.visaDuration}</span>}
+                                  {event.entryMethod && <span>Entry: {event.entryMethod}</span>}
+                                  {event.departureDate && <span>Departure: {event.departureDate}</span>}
+                                  {event.returnDate && <span>Return: {event.returnDate}</span>}
+                                </div>
+                              )}
+                              {/* Forex */}
+                              {(event.forexCurrency || event.amount) && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <span>💱 Forex Currency: {event.forexCurrency}</span>
+                                  {event.amount && <span>Amount: {event.amount}</span>}
+                                  {event.baseCurrency && <span>Base: {event.baseCurrency}</span>}
+                                </div>
+                              )}
+                              {/* Insurance */}
+                              {event.insuranceType && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <span>🛡️ Insurance: {event.insuranceType}</span>
+                                  {event.sumInsured && <span>Sum Insured: {event.sumInsured}</span>}
+                                  {event.noOfTravellers && <span>Travellers: {event.noOfTravellers}</span>}
+                                  {event.startDate && <span>From: {event.startDate}</span>}
+                                  {event.endDate && <span>To: {event.endDate}</span>}
+                                  {event.destinations && event.destinations.length > 0 && (
+                                    <span>Destinations: {event.destinations.join(", ")}</span>
+                                  )}
+                                </div>
+                              )}
+                              {event.insuranceNotes && <p className="text-gray-500 italic">{event.insuranceNotes}</p>}
+                            </div>
+                          )}
+
+                          {/* ========== CRUISE ========== */}
+                          {event.category === "cruise" && (
+                            <div className="space-y-2 text-sm text-gray-600">
+                              {event.duration && <span>Duration: {event.duration}</span>}
+                              {event.time && <span className="ml-2">Time: {event.time}</span>}
+                              {event.location && <span className="ml-2">📍 {event.location}</span>}
+                            </div>
+                          )}
+
+                          {/* ========== OTHERS ========== */}
+                          {(event.category === "others" || event.category === "other") && (
+                            <div className="space-y-2 text-sm text-gray-600">
+                              {event.subCategory && <span>Category: {event.subCategory}</span>}
+                              {event.travelGears && event.travelGears.length > 0 && (
+                                <div className="mt-2">
+                                  <span className="font-medium">Travel Gears:</span>
+                                  <div className="grid grid-cols-2 gap-2 mt-1">
+                                    {event.travelGears.map((gear, idx) => (
+                                      <div key={idx} className="bg-gray-100 p-2 rounded">
+                                        <span className="font-medium">{gear.name}</span>
+                                        {gear.price && <span className="ml-2">{gear.currency || "INR"} {gear.price}</span>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* ========== GENERIC (Note, Image, etc.) ========== */}
+                          {event.category === "image" && event.imageUrl && (
+                            <img src={event.imageUrl} alt={event.imageAlt || event.title} className="max-h-48 rounded-lg mt-2" />
+                          )}
+
+                          {/* Price (if applicable and individual pricing enabled) */}
+                          {settings.showPricing && showIndividualPricing && event.price && event.price > 0 && (
+                            <div className="mt-2 pt-2 border-t border-gray-200">
+                              <span className="font-semibold text-green-600">
+                                {getDisplayPrice(event.price, event.currency || itinerary.currency)}
+                              </span>
+                              {pricingOptions?.showOriginalPrice && pricingOptions.markupValue > 0 && (
+                                <span className="text-gray-400 line-through text-sm ml-2">
+                                  {formatOriginalPrice(event.price, event.currency || itinerary.currency)}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Time & Location fallback for categories without specific display */}
+                          {!["flight", "hotel", "transfer", "activity", "meal", "ancillaries"].includes(event.category) && (
+                            <div className="flex gap-4 text-sm text-gray-500 mt-2">
+                              {event.time && <span>⏰ {event.time}</span>}
+                              {event.location && <span>📍 {event.location}</span>}
+                            </div>
+                          )}
                         </div>
-                        {event.description && (
-                          <p className="text-gray-600 text-sm">{event.description}</p>
-                        )}
-                        {event.time && (
-                          <p className="text-gray-500 text-sm">Time: {event.time}</p>
-                        )}
-                        {event.location && (
-                          <p className="text-gray-500 text-sm">Location: {event.location}</p>
-                        )}
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -525,21 +851,88 @@ function IndividualItineraryView({
   )
 }
 
-function CollectionView({ 
-  itineraries, 
-  settings 
-}: { 
+function CollectionView({
+  itineraries,
+  settings,
+  pricingOptions
+}: {
   itineraries: IItinerary[]
-  settings: any 
+  settings: any
+  pricingOptions?: {
+    markupType: "percentage" | "fixed"
+    markupValue: number
+    showOriginalPrice: boolean
+    showIndividualPricing?: boolean
+    pricingCurrency?: string
+  }
 }) {
   const [selectedItinerary, setSelectedItinerary] = useState<IItinerary | null>(null)
   const [showModal, setShowModal] = useState(false)
+
+  // Get exchange rates for currency conversion
+  const { rates: exchangeRates, baseCurrency } = getExchangeRates()
+  const targetCurrency = pricingOptions?.pricingCurrency || "INR"
+  const showIndividualPricing = pricingOptions?.showIndividualPricing !== false // Default true
+
+  // Convert and format price with currency conversion and optional markup
+  const formatPriceWithConversion = (price: number, fromCurrency: string = "INR") => {
+    const convertedPrice = convertCurrency(
+      price,
+      fromCurrency,
+      targetCurrency,
+      exchangeRates,
+      baseCurrency
+    )
+    let finalPrice = convertedPrice
+    if (pricingOptions?.markupValue) {
+      if (pricingOptions.markupType === "percentage") {
+        finalPrice = convertedPrice * (1 + pricingOptions.markupValue / 100)
+      } else {
+        const convertedMarkup = convertCurrency(
+          pricingOptions.markupValue,
+          baseCurrency,
+          targetCurrency,
+          exchangeRates,
+          baseCurrency
+        )
+        finalPrice = convertedPrice + convertedMarkup
+      }
+    }
+    return formatCurrencyWithSymbol(finalPrice, targetCurrency)
+  }
+
+  // Format original price (for strikethrough display)
+  const formatOriginalPrice = (price: number, fromCurrency: string = "INR") => {
+    const convertedPrice = convertCurrency(
+      price,
+      fromCurrency,
+      targetCurrency,
+      exchangeRates,
+      baseCurrency
+    )
+    return formatCurrencyWithSymbol(convertedPrice, targetCurrency)
+  }
 
   const formatPrice = (price: number, currency: string = "USD") => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency
     }).format(price)
+  }
+
+  // Apply markup to price
+  const applyMarkup = (price: number): number => {
+    if (!pricingOptions || !pricingOptions.markupValue) return price
+    if (pricingOptions.markupType === "percentage") {
+      return price * (1 + pricingOptions.markupValue / 100)
+    } else {
+      return price + pricingOptions.markupValue
+    }
+  }
+
+  // Get the display price (with currency conversion and markup)
+  const getDisplayPrice = (price: number, currency: string = "INR") => {
+    return formatPriceWithConversion(price, currency)
   }
 
   const getTypeColor = (type: string) => {
@@ -599,11 +992,11 @@ function CollectionView({
                   {getTypeLabel(itinerary.type)}
                 </Badge>
               </div>
-              
+
               <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                 {itinerary.description}
               </p>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-gray-500" />
@@ -617,8 +1010,13 @@ function CollectionView({
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-gray-500" />
                     <span className="font-semibold">
-                      {formatPrice(itinerary.totalPrice, itinerary.currency)}
+                      {getDisplayPrice(itinerary.totalPrice, itinerary.currency)}
                     </span>
+                    {pricingOptions?.showOriginalPrice && pricingOptions.markupValue > 0 && (
+                      <span className="text-gray-400 line-through text-xs">
+                        {formatOriginalPrice(itinerary.totalPrice, itinerary.currency)}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -671,7 +1069,7 @@ function CollectionView({
               </div>
               <p className="text-gray-600">{selectedItinerary.description}</p>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               {/* Basic Info */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
@@ -695,8 +1093,13 @@ function CollectionView({
                     <div>
                       <p className="text-xs text-gray-500">Price</p>
                       <p className="font-medium">
-                        {formatPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
+                        {getDisplayPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
                       </p>
+                      {pricingOptions?.showOriginalPrice && pricingOptions.markupValue > 0 && (
+                        <p className="text-gray-400 line-through text-xs">
+                          {formatOriginalPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -753,21 +1156,114 @@ function CollectionView({
                         <CardContent className="pt-0">
                           {day.events && day.events.length > 0 && (
                             <div className="space-y-3">
-                              {day.events.map((event, eventIndex) => (
-                                <div key={eventIndex} className="border-l-2 border-blue-200 pl-3">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Badge variant="outline" className="text-xs">{event.category}</Badge>
-                                    <span className="font-medium text-sm">{event.title}</span>
+                              {day.events.map((event, eventIndex) => {
+                                // Category-specific styling (compact version)
+                                const categoryColors: Record<string, string> = {
+                                  flight: "border-sky-400 bg-sky-50",
+                                  hotel: "border-emerald-400 bg-emerald-50",
+                                  activity: "border-purple-400 bg-purple-50",
+                                  transfer: "border-orange-400 bg-orange-50",
+                                  meal: "border-amber-400 bg-amber-50",
+                                  ancillaries: "border-indigo-400 bg-indigo-50",
+                                  cruise: "border-cyan-400 bg-cyan-50",
+                                  others: "border-slate-400 bg-slate-50",
+                                  other: "border-slate-400 bg-slate-50",
+                                  note: "border-yellow-400 bg-yellow-50",
+                                }
+                                const colorClass = categoryColors[event.category] || "border-gray-300 bg-gray-50"
+
+                                return (
+                                  <div key={eventIndex} className={`border-l-2 ${colorClass} pl-3 py-2 rounded-r`}>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Badge variant="outline" className="text-xs capitalize">{event.category}</Badge>
+                                      <span className="font-medium text-sm">{event.title}</span>
+                                    </div>
+
+                                    {event.description && event.description !== "No description provided" && (
+                                      <p className="text-xs text-gray-600 mb-2">{event.description}</p>
+                                    )}
+
+                                    {/* Flight Details */}
+                                    {event.category === "flight" && (
+                                      <div className="text-xs text-gray-600 space-y-1">
+                                        {(event.fromCity || event.toCity) && (
+                                          <p className="font-medium text-sky-600">{event.fromCity} → {event.toCity}</p>
+                                        )}
+                                        <div className="flex flex-wrap gap-2">
+                                          {event.airlines && <span>✈️ {event.airlines}</span>}
+                                          {event.flightNumber && <span>#{event.flightNumber}</span>}
+                                          {event.startTime && event.endTime && (
+                                            <span>{event.startTime} - {event.endTime}</span>
+                                          )}
+                                          {event.flightClass && <span>Class: {event.flightClass}</span>}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Hotel Details */}
+                                    {event.category === "hotel" && (
+                                      <div className="text-xs text-gray-600 space-y-1">
+                                        {event.hotelName && <p className="font-medium">🏨 {event.hotelName}</p>}
+                                        <div className="flex flex-wrap gap-2">
+                                          {event.roomCategory && <span>Room: {event.roomCategory}</span>}
+                                          {event.hotelRating && <span>{"⭐".repeat(event.hotelRating)}</span>}
+                                          {event.mealPlan && <span>Meals: {event.mealPlan}</span>}
+                                          {event.checkIn && <span>Check-in: {event.checkIn}</span>}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Transfer Details */}
+                                    {event.category === "transfer" && (
+                                      <div className="text-xs text-gray-600 space-y-1">
+                                        {(event.fromLocation || event.toLocation) && (
+                                          <p className="font-medium text-orange-600">{event.fromLocation} → {event.toLocation}</p>
+                                        )}
+                                        <div className="flex flex-wrap gap-2">
+                                          {event.vehicleType && <span>🚗 {event.vehicleType}</span>}
+                                          {event.transferCategory && <span>{event.transferCategory.replace(/-/g, " ")}</span>}
+                                          {event.transferType && <span className="capitalize">{event.transferType}</span>}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Activity Details */}
+                                    {event.category === "activity" && (
+                                      <div className="text-xs text-gray-600 flex flex-wrap gap-2">
+                                        {event.duration && <span>⏱️ {event.duration}</span>}
+                                        {event.difficulty && <span>Difficulty: {event.difficulty}</span>}
+                                        {event.location && <span>📍 {event.location}</span>}
+                                      </div>
+                                    )}
+
+                                    {/* Meal Details */}
+                                    {event.category === "meal" && event.meals && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {event.meals.map((meal, idx) => (
+                                          <Badge key={idx} className="text-[10px] capitalize bg-amber-100 text-amber-800">{meal}</Badge>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Ancillaries (Visa/Forex/Insurance) */}
+                                    {event.category === "ancillaries" && (
+                                      <div className="text-xs text-gray-600 flex flex-wrap gap-2">
+                                        {event.visaType && <span>🛂 {event.visaType}</span>}
+                                        {event.forexCurrency && <span>💱 {event.forexCurrency}</span>}
+                                        {event.insuranceType && <span>🛡️ {event.insuranceType}</span>}
+                                      </div>
+                                    )}
+
+                                    {/* Fallback for other categories */}
+                                    {!["flight", "hotel", "transfer", "activity", "meal", "ancillaries"].includes(event.category) && (
+                                      <div className="flex gap-4 text-xs text-gray-500">
+                                        {event.time && <span>⏰ {event.time}</span>}
+                                        {event.location && <span>📍 {event.location}</span>}
+                                      </div>
+                                    )}
                                   </div>
-                                  {event.description && (
-                                    <p className="text-xs text-gray-600 mb-1">{event.description}</p>
-                                  )}
-                                  <div className="flex gap-4 text-xs text-gray-500">
-                                    {event.time && <span>⏰ {event.time}</span>}
-                                    {event.location && <span>📍 {event.location}</span>}
-                                  </div>
-                                </div>
-                              ))}
+                                )
+                              })}
                             </div>
                           )}
                         </CardContent>

@@ -9,9 +9,9 @@ export async function GET(
 ) {
   try {
     await connectToDatabase()
-    
+
     const { shareId } = await params
-    
+
     const share = await PublicShare.findOne({ shareId, isActive: true })
       .populate({
         path: 'itineraryId',
@@ -66,12 +66,12 @@ export async function PUT(
 ) {
   try {
     await connectToDatabase()
-    
+
     const { shareId } = params
     const body = await request.json()
-    
+
     const share = await PublicShare.findOne({ shareId })
-    
+
     if (!share) {
       return NextResponse.json(
         { error: "Share not found" },
@@ -80,10 +80,10 @@ export async function PUT(
     }
 
     // TODO: Add authorization check - only creator can update
-    
+
     // Update allowed fields
     const updateData: any = {}
-    
+
     if (body.title) updateData.title = body.title
     if (body.description !== undefined) updateData.description = body.description
     if (body.isActive !== undefined) updateData.isActive = body.isActive
@@ -91,7 +91,7 @@ export async function PUT(
       updateData.expiresAt = body.expiresAt ? new Date(body.expiresAt) : null
     }
     if (body.settings) updateData.settings = { ...share.settings, ...body.settings }
-    
+
     // Handle password updates
     if (body.passwordProtected !== undefined) {
       updateData.passwordProtected = body.passwordProtected
@@ -99,6 +99,14 @@ export async function PUT(
         updateData.password = body.password // Simple storage for now
       } else if (!body.passwordProtected) {
         updateData.password = undefined
+      }
+    }
+
+    // Handle pricing options updates
+    if (body.pricingOptions) {
+      updateData.pricingOptions = {
+        ...share.pricingOptions,
+        ...body.pricingOptions
       }
     }
 
@@ -138,11 +146,11 @@ export async function DELETE(
 ) {
   try {
     await connectToDatabase()
-    
+
     const { shareId } = params
-    
+
     const share = await PublicShare.findOne({ shareId })
-    
+
     if (!share) {
       return NextResponse.json(
         { error: "Share not found" },
@@ -151,9 +159,9 @@ export async function DELETE(
     }
 
     // TODO: Add authorization check - only creator can delete
-    
+
     await PublicShare.findOneAndDelete({ shareId })
-    
+
     // Optional: Also delete related share views
     await ShareView.deleteMany({ shareId })
 

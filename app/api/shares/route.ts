@@ -26,19 +26,27 @@ interface CreateShareRequest {
       contactPhone?: string
     }
   }
+  // Pricing markup options
+  pricingOptions?: {
+    markupType: "percentage" | "fixed"
+    markupValue: number
+    showOriginalPrice: boolean
+    showIndividualPricing: boolean
+    pricingCurrency: string
+  }
 }
 
 // GET /api/shares - List user's shares
 export async function GET(request: NextRequest) {
   try {
     await connectToDatabase()
-    
+
     const { searchParams } = new URL(request.url)
     const createdBy = searchParams.get("createdBy")
     const shareType = searchParams.get("shareType")
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "10")
-    
+
     if (!createdBy) {
       return NextResponse.json(
         { error: "Missing createdBy parameter" },
@@ -52,7 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     const skip = (page - 1) * limit
-    
+
     const [shares, total] = await Promise.all([
       PublicShare.find(query)
         .populate({
@@ -91,12 +99,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await connectToDatabase()
-    
+
     const body: CreateShareRequest = await request.json()
-    
+
     // Validate request
     const { title, shareType, settings } = body
-    
+
     if (!title || !shareType || !settings) {
       return NextResponse.json(
         { error: "Missing required fields: title, shareType, settings" },
@@ -142,7 +150,23 @@ export async function POST(request: NextRequest) {
 
     // Generate unique share ID
     const shareId = uuidv4()
-    
+
+    // Generate URL-friendly slug from title
+    const baseSlug = body.title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .trim()
+
+    // Ensure slug uniqueness by checking existing slugs
+    let slug = baseSlug
+    let counter = 1
+    while (await PublicShare.findOne({ slug })) {
+      slug = `${baseSlug}-${counter}`
+      counter++
+    }
+
     // Store password directly for now (in production, use proper hashing)
     let hashedPassword
     if (body.passwordProtected && body.password) {
@@ -152,6 +176,7 @@ export async function POST(request: NextRequest) {
     // Create share
     const shareData: Partial<IPublicShare> = {
       shareId,
+      slug,
       title: body.title,
       description: body.description,
       shareType: body.shareType,
@@ -160,7 +185,15 @@ export async function POST(request: NextRequest) {
       passwordProtected: body.passwordProtected || false,
       password: hashedPassword,
       settings: body.settings,
-      viewCount: 0
+      viewCount: 0,
+      // Include pricing options with defaults
+      pricingOptions: body.pricingOptions || {
+        markupType: "percentage",
+        markupValue: 0,
+        showOriginalPrice: false,
+        showIndividualPricing: true,
+        pricingCurrency: "INR"
+      }
     }
 
     if (body.expiresAt) {
@@ -191,7 +224,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: "Share created successfully",
       share: newShare,
-      publicUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/share/${shareId}`
+      publicUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/weblinks/${slug}`
     }, { status: 201 })
 
   } catch (error) {
