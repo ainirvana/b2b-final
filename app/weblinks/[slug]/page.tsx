@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Eye, Lock, Calendar, MapPin, DollarSign, Users, Clock, Loader2, Share2, Download, MessageCircle } from "lucide-react"
+import { Eye, Lock, Calendar, MapPin, DollarSign, Users, Clock, Loader2, Share2, Download, MessageCircle, Plane, X, Sparkles, Bed, Car, Utensils, Mountain, FileText, Ship, File } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { IPublicShare } from "@/models/PublicShare"
 import { IItinerary } from "@/models/Itinerary"
@@ -515,13 +515,13 @@ export default function PublicWeblinkPage() {
       <div className="relative z-10 pt-16 pb-12 px-4 sm:px-6 lg:px-8 text-center max-w-5xl mx-auto">
         <div
           className={`inline-flex items-center justify-center p-1 rounded-full mb-6 backdrop-blur-sm shadow-sm animate-fade-in ${getBrandingProp('heroImage')
-              ? 'bg-white/10 border border-white/20'
-              : 'bg-white/50 border border-white/50'
+            ? 'bg-white/10 border border-white/20'
+            : 'bg-white/50 border border-white/50'
             }`}
         >
           <span className={`px-4 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${getBrandingProp('heroImage')
-              ? 'bg-white/20 text-white border-transparent'
-              : 'bg-white text-gray-900 border-gray-100 border'
+            ? 'bg-white/20 text-white border-transparent'
+            : 'bg-white text-gray-900 border-gray-100 border'
             }`}>
             Exclusive Collection
           </span>
@@ -1572,44 +1572,76 @@ function CollectionView({
         ))}
       </div>
 
-      {/* Individual Itinerary Modal */}
+      {/* Individual Itinerary Modal - Enhanced UI */}
       {showModal && selectedItinerary && (
         <Dialog open={showModal} onOpenChange={closeModal}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <div className="flex items-center gap-2">
-                <DialogTitle className="text-xl">{selectedItinerary.title}</DialogTitle>
-                <Badge className={getTypeColor(selectedItinerary.type)}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 gap-0 overflow-hidden flex flex-col">
+
+            {/* Modal Header Banner (Sticky) */}
+            <div className="relative h-48 md:h-64 flex-shrink-0">
+              {selectedItinerary.gallery && selectedItinerary.gallery.length > 0 ? (
+                <img
+                  src={selectedItinerary.gallery[0].url}
+                  alt={selectedItinerary.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-r from-gray-800 to-gray-900 flex items-center justify-center">
+                  <Plane className="h-16 w-16 text-white/20" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white z-10">
+                <Badge className={`mb-2 ${getTypeColor(selectedItinerary.type)} bg-opacity-90 backdrop-blur-sm border-none`}>
                   {getTypeLabel(selectedItinerary.type)}
                 </Badge>
+                <DialogTitle className="text-2xl md:text-3xl font-bold leading-tight shadow-md">
+                  {selectedItinerary.title}
+                </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Detailed itinerary view for {selectedItinerary.title}
+                </DialogDescription>
               </div>
-              <p className="text-gray-600">{selectedItinerary.description}</p>
-            </DialogHeader>
 
-            <div className="space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-                {selectedItinerary.type === 'cart-combo' ? (
-                  <>
-                    {/* Cart/Combo Specific Stats */}
-                    <div className="flex items-center gap-2">
+              <button
+                onClick={closeModal}
+                className="absolute top-4 right-4 p-2 bg-black/30 hover:bg-black/50 rounded-full text-white backdrop-blur-sm transition-colors z-20"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto p-6 space-y-8 bg-gray-50/50 flex-1">
+
+              {/* Description & Stats */}
+              {selectedItinerary.type === 'cart-combo' ? (
+                <div className="space-y-8">
+                  <p className="text-gray-600 leading-relaxed text-lg">
+                    {selectedItinerary.description}
+                  </p>
+
+                  {/* Old Stats Grid for Cart/Combo */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-3">
                       <div className="p-2 bg-purple-100 rounded-full">
-                        <Users className="h-4 w-4 text-purple-600" />
+                        <Users className="h-5 w-5 text-purple-600" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">No. of Items</p>
-                        <p className="font-medium">{selectedItinerary.cartItems?.length || 0}</p>
+                        <p className="text-xs text-gray-500 font-medium uppercase">No. of Items</p>
+                        <p className="font-semibold text-gray-900">{selectedItinerary.cartItems?.length || 0}</p>
                       </div>
                     </div>
 
                     {settings.showPricing && (
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 bg-green-100 rounded-full">
-                          <DollarSign className="h-4 w-4 text-green-600" />
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-100 rounded-full">
+                          <DollarSign className="h-5 w-5 text-emerald-600" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Price</p>
-                          <p className="font-medium">
+                          <p className="text-xs text-gray-500 font-medium uppercase">Total Price</p>
+                          <p className="font-semibold text-gray-900">
                             {getDisplayPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
                           </p>
                           {pricingOptions?.showOriginalPrice && (pricingOptions.strikethroughMarkupValue ?? 0) > 0 && (
@@ -1621,226 +1653,253 @@ function CollectionView({
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <div className="p-2 bg-blue-100 rounded-full">
-                        <Calendar className="h-4 w-4 text-blue-600" />
+                        <Calendar className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500">No. of Days</p>
-                        <p className="font-medium">
+                        <p className="text-xs text-gray-500 font-medium uppercase">Duration</p>
+                        <p className="font-semibold text-gray-900">
                           {new Set(selectedItinerary.cartItems?.map((i: any) => i.date).filter(Boolean)).size} Days
                         </p>
                       </div>
                     </div>
-                    {/* Empty 4th column or could be used for something else */}
-                    <div className="hidden md:block"></div>
-                  </>
-                ) : (
-                  <>
-                    {/* Standard Stats for Customized Packages etc */}
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <p className="text-xs text-gray-500">Destination</p>
-                        <p className="font-medium">{selectedItinerary.destination}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <p className="text-xs text-gray-500">Duration</p>
-                        <p className="font-medium">{selectedItinerary.duration}</p>
-                      </div>
-                    </div>
-                    {settings.showPricing && (
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-gray-500" />
-                        <div>
-                          <p className="text-xs text-gray-500">Price</p>
-                          <p className="font-medium">
-                            {getDisplayPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
-                          </p>
-                          {pricingOptions?.showOriginalPrice && (pricingOptions.strikethroughMarkupValue ?? 0) > 0 && (
-                            <p className="text-gray-400 line-through text-xs">
-                              {formatStrikethroughPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <p className="text-xs text-gray-500">Days</p>
-                        <p className="font-medium">{selectedItinerary.days?.length || 0}</p>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Gallery */}
-              {selectedItinerary.gallery && selectedItinerary.gallery.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Gallery</h4>
-                  <ImageCollage gallery={selectedItinerary.gallery} className="max-h-[300px]" />
-                </div>
-              )}
-
-              {/* Highlights */}
-              {selectedItinerary.highlights && selectedItinerary.highlights.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Highlights</h4>
-                  <ul className="grid md:grid-cols-2 gap-2">
-                    {selectedItinerary.highlights.map((highlight, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-                        <span className="text-sm">{highlight}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Days Itinerary */}
-              {selectedItinerary.days && selectedItinerary.days.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-3">Day-by-Day Itinerary</h4>
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {selectedItinerary.days.map((day, index) => (
-                      <Card key={index} className="border border-gray-200">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">
-                              Day {day.day}: {day.title}
-                            </CardTitle>
-                            <Badge variant="outline" className="text-xs">{day.date}</Badge>
-                          </div>
-                          {day.description && (
-                            <p className="text-sm text-gray-600">{day.description}</p>
-                          )}
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          {day.events && day.events.length > 0 && (
-                            <div className="space-y-3">
-                              {day.events.map((event, eventIndex) => {
-                                // Category-specific styling (compact version)
-                                const categoryColors: Record<string, string> = {
-                                  flight: "border-sky-400 bg-sky-50",
-                                  hotel: "border-emerald-400 bg-emerald-50",
-                                  activity: "border-purple-400 bg-purple-50",
-                                  transfer: "border-orange-400 bg-orange-50",
-                                  meal: "border-amber-400 bg-amber-50",
-                                  ancillaries: "border-indigo-400 bg-indigo-50",
-                                  cruise: "border-cyan-400 bg-cyan-50",
-                                  others: "border-slate-400 bg-slate-50",
-                                  other: "border-slate-400 bg-slate-50",
-                                  note: "border-yellow-400 bg-yellow-50",
-                                }
-                                const colorClass = categoryColors[event.category] || "border-gray-300 bg-gray-50"
-
-                                return (
-                                  <div key={eventIndex} className={`border-l-2 ${colorClass} pl-3 py-2 rounded-r`}>
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Badge variant="outline" className="text-xs capitalize">{event.category}</Badge>
-                                      <span className="font-medium text-sm">{event.title}</span>
-                                    </div>
-
-                                    {event.description && event.description !== "No description provided" && (
-                                      <p className="text-xs text-gray-600 mb-2">{event.description}</p>
-                                    )}
-
-                                    {/* Flight Details */}
-                                    {event.category === "flight" && (
-                                      <div className="text-xs text-gray-600 space-y-1">
-                                        {(event.fromCity || event.toCity) && (
-                                          <p className="font-medium text-sky-600">{event.fromCity} → {event.toCity}</p>
-                                        )}
-                                        <div className="flex flex-wrap gap-2">
-                                          {event.airlines && <span>✈️ {event.airlines}</span>}
-                                          {event.flightNumber && <span>#{event.flightNumber}</span>}
-                                          {event.startTime && event.endTime && (
-                                            <span>{event.startTime} - {event.endTime}</span>
-                                          )}
-                                          {event.flightClass && <span>Class: {event.flightClass}</span>}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Hotel Details */}
-                                    {event.category === "hotel" && (
-                                      <div className="text-xs text-gray-600 space-y-1">
-                                        {event.hotelName && <p className="font-medium">🏨 {event.hotelName}</p>}
-                                        <div className="flex flex-wrap gap-2">
-                                          {event.roomCategory && <span>Room: {event.roomCategory}</span>}
-                                          {event.hotelRating && <span>{"⭐".repeat(event.hotelRating)}</span>}
-                                          {event.mealPlan && <span>Meals: {event.mealPlan}</span>}
-                                          {event.checkIn && <span>Check-in: {event.checkIn}</span>}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Transfer Details */}
-                                    {event.category === "transfer" && (
-                                      <div className="text-xs text-gray-600 space-y-1">
-                                        {(event.fromLocation || event.toLocation) && (
-                                          <p className="font-medium text-orange-600">{event.fromLocation} → {event.toLocation}</p>
-                                        )}
-                                        <div className="flex flex-wrap gap-2">
-                                          {event.vehicleType && <span>🚗 {event.vehicleType}</span>}
-                                          {event.transferCategory && <span>{event.transferCategory.replace(/-/g, " ")}</span>}
-                                          {event.transferType && <span className="capitalize">{event.transferType}</span>}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Activity Details */}
-                                    {event.category === "activity" && (
-                                      <div className="text-xs text-gray-600 space-y-1">
-                                        <div className="flex flex-wrap gap-2">
-                                          {event.duration && <span>⏱️ {event.duration}</span>}
-                                          {event.difficulty && <span>Difficulty: {event.difficulty}</span>}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Meal Details */}
-                                    {event.category === "meal" && event.meals && (
-                                      <div className="text-xs text-gray-600 space-y-1">
-                                        <div className="flex flex-wrap gap-2">
-                                          {event.meals.map((meal, i) => (
-                                            <Badge key={i} variant="secondary" className="text-[10px]">{meal}</Badge>
-                                          ))}
-                                          {event.customMealDescription && <span>{event.customMealDescription}</span>}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Ancillaries (Visa/Forex/Insurance) */}
-                                    {event.category === "ancillaries" && (
-                                      <div className="text-xs text-gray-600 flex flex-wrap gap-2">
-                                        {event.visaType && <span>🛂 {event.visaType}</span>}
-                                        {event.forexCurrency && <span>💱 {event.forexCurrency}</span>}
-                                        {event.insuranceType && <span>🛡️ {event.insuranceType}</span>}
-                                      </div>
-                                    )}
-
-                                    {/* Fallback for other categories */}
-                                    {!["flight", "hotel", "transfer", "activity", "meal", "ancillaries"].includes(event.category) && (
-                                      <div className="flex gap-4 text-xs text-gray-500">
-                                        {event.time && <span>⏰ {event.time}</span>}
-                                        {event.location && <span>📍 {event.location}</span>}
-                                      </div>
-                                    )}
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
                   </div>
+
+                  {/* Old Day-by-Day Card List for Cart/Combo */}
+                  {selectedItinerary.days && selectedItinerary.days.length > 0 && (
+                    <div className="space-y-6">
+                      <h3 className="text-xl font-bold flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-gray-400" />
+                        Detailed Itinerary
+                      </h3>
+                      <div className="space-y-4">
+                        {selectedItinerary.days.map((day, index) => (
+                          <Card key={index} className="border border-gray-200">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-base">
+                                  Day {day.day}: {day.title}
+                                </CardTitle>
+                                <Badge variant="outline" className="text-xs">{day.date}</Badge>
+                              </div>
+                              {day.description && (
+                                <p className="text-sm text-gray-600">{day.description}</p>
+                              )}
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              {day.events && day.events.length > 0 && (
+                                <div className="space-y-3">
+                                  {day.events.map((event, eventIndex) => (
+                                    <div key={eventIndex} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Badge variant="secondary" className="text-[10px] capitalize">{event.category}</Badge>
+                                        <span className="font-medium text-sm">{event.title}</span>
+                                      </div>
+                                      {event.description && event.description !== "No description provided" && (
+                                        <p className="text-xs text-gray-600">{event.description}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {/* New Customized Package Layout */}
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 space-y-4">
+                      <p className="text-gray-600 leading-relaxed text-lg">
+                        {selectedItinerary.description}
+                      </p>
+                      {/* Highlights */}
+                      {selectedItinerary.highlights && selectedItinerary.highlights.length > 0 && (
+                        <div className="pt-4">
+                          <h4 className="font-semibold mb-3 flex items-center gap-2 text-gray-900">
+                            <Sparkles className="h-4 w-4 text-amber-500" />
+                            Trip Highlights
+                          </h4>
+                          <ul className="grid sm:grid-cols-2 gap-3">
+                            {selectedItinerary.highlights.map((highlight, index) => (
+                              <li key={index} className="flex items-start gap-2 text-sm text-gray-700 bg-white p-2 rounded-lg border border-gray-100 shadow-sm">
+                                <div className="mt-1 w-1.5 h-1.5 bg-brand-primary-500 rounded-full flex-shrink-0" />
+                                <span>{highlight}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Sidebar Stats */}
+                    <div className="md:col-span-1">
+                      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-4 sticky top-0">
+                        <h4 className="font-semibold text-gray-900 border-b pb-2 mb-2">Trip Summary</h4>
+
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-rose-100 rounded-lg text-rose-600"><MapPin className="h-5 w-5" /></div>
+                          <div>
+                            <p className="text-xs text-gray-500 font-medium uppercase">Destination</p>
+                            <p className="font-semibold text-gray-900">{selectedItinerary.destination}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><Clock className="h-5 w-5" /></div>
+                          <div>
+                            <p className="text-xs text-gray-500 font-medium uppercase">Duration</p>
+                            <p className="font-semibold text-gray-900">{selectedItinerary.duration}</p>
+                          </div>
+                        </div>
+
+                        {settings.showPricing && (
+                          <div className="flex items-center gap-3 pt-2 border-t border-dashed border-gray-200">
+                            <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600"><DollarSign className="h-5 w-5" /></div>
+                            <div>
+                              <p className="text-xs text-gray-500 font-medium uppercase">Total Price</p>
+                              <p className="font-bold text-lg text-gray-900">
+                                {getDisplayPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
+                              </p>
+                              {pricingOptions?.showOriginalPrice && (pricingOptions.strikethroughMarkupValue ?? 0) > 0 && (
+                                <p className="text-gray-400 line-through text-xs">
+                                  {formatStrikethroughPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* New Timeline View */}
+                  {selectedItinerary.days && selectedItinerary.days.length > 0 && (
+                    <div>
+                      <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-gray-400" />
+                        Detailed Itinerary
+                      </h3>
+
+                      <div className="relative pl-4 md:pl-8 space-y-8 border-l-2 border-gray-200 ml-3">
+                        {selectedItinerary.days.map((day, index) => (
+                          <div key={index} className="relative">
+                            {/* Timeline Node */}
+                            <div className="absolute -left-[25px] md:-left-[41px] top-0 bg-white border-4 border-gray-50 text-gray-400 rounded-full h-8 w-8 flex items-center justify-center font-bold text-sm shadow-sm z-10">
+                              {day.day}
+                            </div>
+
+                            <div className="mb-2">
+                              <h4 className="text-lg font-bold text-gray-900">{day.title}</h4>
+                              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded inline-block mt-1">
+                                {day.date}
+                              </span>
+                            </div>
+
+                            {day.description && (
+                              <p className="text-gray-600 mb-4 text-sm leading-relaxed max-w-3xl">
+                                {day.description}
+                              </p>
+                            )}
+
+                            {/* Events Grid */}
+                            {day.events && day.events.length > 0 && (
+                              <div className="grid gap-3">
+                                {day.events.map((event, eventIndex) => {
+                                  const categoryColors: Record<string, string> = {
+                                    flight: "border-sky-200 bg-sky-50 text-sky-900 group-hover:border-sky-300",
+                                    hotel: "border-emerald-200 bg-emerald-50 text-emerald-900 group-hover:border-emerald-300",
+                                    activity: "border-purple-200 bg-purple-50 text-purple-900 group-hover:border-purple-300",
+                                    transfer: "border-orange-200 bg-orange-50 text-orange-900 group-hover:border-orange-300",
+                                    meal: "border-amber-200 bg-amber-50 text-amber-900 group-hover:border-amber-300",
+                                    ancillaries: "border-indigo-200 bg-indigo-50 text-indigo-900 group-hover:border-indigo-300",
+                                    cruise: "border-cyan-200 bg-cyan-50 text-cyan-900 group-hover:border-cyan-300",
+                                    note: "border-yellow-200 bg-yellow-50 text-yellow-900 group-hover:border-yellow-300",
+                                    other: "border-gray-200 bg-gray-50 text-gray-900 group-hover:border-gray-300",
+                                  }
+
+                                  const categoryIcons: Record<string, any> = {
+                                    flight: Plane,
+                                    hotel: Bed,
+                                    activity: Mountain,
+                                    transfer: Car,
+                                    meal: Utensils,
+                                    ancillaries: FileText,
+                                    cruise: Ship,
+                                    note: File,
+                                    other: MapPin
+                                  }
+
+                                  const baseClass = categoryColors[event.category] || categoryColors.other
+                                  const IconComponent = categoryIcons[event.category] || categoryIcons.other
+
+                                  return (
+                                    <div key={eventIndex} className={`group border rounded-xl p-4 transition-all hover:shadow-md ${baseClass}`}>
+                                      <div className="flex items-start justify-between gap-4">
+                                        <div className="space-y-1 w-full">
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <div className="p-1.5 bg-white/60 rounded-full shadow-sm">
+                                              <IconComponent className="h-4 w-4" />
+                                            </div>
+                                            <h5 className="font-semibold text-sm leading-tight ml-1">{event.title}</h5>
+                                          </div>
+
+                                          {event.description && event.description !== "No description provided" && (
+                                            <div className="text-sm opacity-90 leading-relaxed font-light pl-1 border-l-2 border-current/20">
+                                              {event.description}
+                                            </div>
+                                          )}
+
+                                          {/* Metadata Chips - Using flex wrap for cleaner layout */}
+                                          <div className="flex flex-wrap gap-2 pt-2 mt-1">
+                                            {/* Flight Specifics */}
+                                            {event.category === "flight" && (
+                                              <>
+                                                {(event.fromCity || event.toCity) && <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded border border-current/10 font-medium">{event.fromCity} ➝ {event.toCity}</span>}
+                                                {event.airlines && <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded border border-current/10">✈️ {event.airlines}</span>}
+                                                {event.startTime && <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded border border-current/10">🕒 {event.startTime}</span>}
+                                              </>
+                                            )}
+                                            {/* Hotel Specifics */}
+                                            {event.category === "hotel" && (
+                                              <>
+                                                {event.hotelName && <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded border border-current/10 font-medium">🏨 {event.hotelName}</span>}
+                                                {event.roomCategory && <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded border border-current/10">🛏️ {event.roomCategory}</span>}
+                                                {event.mealPlan && <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded border border-current/10">🍽️ {event.mealPlan}</span>}
+                                              </>
+                                            )}
+                                            {/* Transfer Specifics */}
+                                            {event.category === "transfer" && (
+                                              <>
+                                                {(event.fromLocation || event.toLocation) && <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded border border-current/10 font-medium">{event.fromLocation} ➝ {event.toLocation}</span>}
+                                                {event.vehicleType && <span className="text-xs bg-white/50 px-1.5 py-0.5 rounded border border-current/10">🚗 {event.vehicleType}</span>}
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Gallery Grid at Bottom */}
+              {selectedItinerary.gallery && selectedItinerary.gallery.length > 0 && (
+                <div className="pt-8 border-t border-gray-100">
+                  <h3 className="font-bold text-xl mb-4 text-gray-900">Gallery</h3>
+                  <ImageCollage gallery={selectedItinerary.gallery} className="rounded-xl overflow-hidden shadow-sm" />
                 </div>
               )}
 

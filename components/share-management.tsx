@@ -173,8 +173,8 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
         title: initialShare.title,
         description: initialShare.description || "",
         shareType: initialShare.shareType,
-        itineraryId: initialShare.shareType === "individual" ? (initialShare.itineraryId?._id || initialShare.itineraryId || "") : "",
-        itineraryIds: initialShare.shareType === "collection" ? (initialShare.itineraryIds?.map((i: any) => i._id || i) || []) : [],
+        itineraryId: initialShare.shareType === "individual" ? ((initialShare.itineraryId as any)?._id || initialShare.itineraryId || "") : "",
+        itineraryIds: initialShare.shareType === "collection" ? ((initialShare.itineraryIds as any[])?.map((i: any) => i._id || i) || []) : [],
         expiresAt: initialShare.expiresAt ? new Date(initialShare.expiresAt).toISOString().slice(0, 16) : "",
         expiryMessage: initialShare.expiryMessage || "",
         passwordProtected: initialShare.passwordProtected || false,
@@ -207,7 +207,11 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
           showIndividualPricing: initialShare.pricingOptions?.showIndividualPricing ?? true,
           pricingCurrency: initialShare.pricingOptions?.pricingCurrency || "INR"
         },
-        perItineraryPricing: initialShare.perItineraryPricing || []
+        perItineraryPricing: initialShare.perItineraryPricing?.map(p => ({
+          ...p,
+          strikethroughMarkupType: p.strikethroughMarkupType || "percentage",
+          strikethroughMarkupValue: p.strikethroughMarkupValue || 0
+        })) || []
       })
     }
   }, [initialShare])
