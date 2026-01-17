@@ -84,6 +84,13 @@ export async function PUT(
 
     if (body.title !== undefined) updateData.title = body.title
     if (body.description !== undefined) updateData.description = body.description
+
+    // Enable Updating Share Type & Dependencies
+    if (body.shareType !== undefined) updateData.shareType = body.shareType
+    if (body.itineraryId !== undefined) updateData.itineraryId = body.itineraryId || null
+    if (body.itineraryIds !== undefined) updateData.itineraryIds = body.itineraryIds
+
+    console.log('[API PUT] Update data:', JSON.stringify(updateData, null, 2))
     if (body.isActive !== undefined) updateData.isActive = body.isActive
     if (body.expiresAt !== undefined) {
       updateData.expiresAt = body.expiresAt ? new Date(body.expiresAt) : null

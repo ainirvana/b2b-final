@@ -839,7 +839,7 @@ function IndividualItineraryView({
                     <span className="font-semibold">
                       {getDisplayPrice(itinerary.totalPrice, itinerary.currency)}
                     </span>
-                    {pricingOptions?.showOriginalPrice && pricingOptions.strikethroughMarkupValue > 0 && (
+                    {pricingOptions?.showOriginalPrice && (pricingOptions.strikethroughMarkupValue ?? 0) > 0 && (
                       <span className="text-gray-400 line-through text-sm">
                         {formatStrikethroughPrice(itinerary.totalPrice, itinerary.currency)}
                       </span>
@@ -1142,9 +1142,9 @@ function IndividualItineraryView({
                               <span className="font-semibold text-green-600">
                                 {getDisplayPrice(event.price, event.currency || itinerary.currency)}
                               </span>
-                              {pricingOptions?.showOriginalPrice && pricingOptions.markupValue > 0 && (
+                              {pricingOptions?.showOriginalPrice && (pricingOptions.markupValue ?? 0) > 0 && (
                                 <span className="text-gray-400 line-through text-sm ml-2">
-                                  {formatOriginalPrice(event.price, event.currency || itinerary.currency)}
+                                  {formatStrikethroughPrice(event.price, event.currency || itinerary.currency)}
                                 </span>
                               )}
                             </div>
@@ -1372,7 +1372,7 @@ function CollectionView({
                     <span className="font-semibold">
                       {getDisplayPrice(itinerary.totalPrice, itinerary.currency)}
                     </span>
-                    {pricingOptions?.showOriginalPrice && pricingOptions.strikethroughMarkupValue > 0 && (
+                    {pricingOptions?.showOriginalPrice && (pricingOptions.strikethroughMarkupValue ?? 0) > 0 && (
                       <span className="text-gray-400 line-through text-xs">
                         {formatStrikethroughPrice(itinerary.totalPrice, itinerary.currency)}
                       </span>
@@ -1380,6 +1380,39 @@ function CollectionView({
                   </div>
                 )}
               </div>
+
+              {itinerary.type === 'cart-combo' && itinerary.cartItems && itinerary.cartItems.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <h4 className="font-medium text-xs mb-2 text-gray-500 uppercase tracking-wider">Package Inclusions:</h4>
+                  <ul className="space-y-2">
+                    {itinerary.cartItems.slice(0, 3).map((item, idx) => {
+                      const categoryColors: Record<string, string> = {
+                        flight: "text-sky-600 bg-sky-50 border-sky-100",
+                        hotel: "text-emerald-600 bg-emerald-50 border-emerald-100",
+                        activity: "text-purple-600 bg-purple-50 border-purple-100",
+                        transfer: "text-orange-600 bg-orange-50 border-orange-100",
+                        meal: "text-amber-600 bg-amber-50 border-amber-100",
+                        other: "text-slate-600 bg-slate-50 border-slate-100",
+                      }
+                      const colorClass = categoryColors[item.category] || "text-gray-600 bg-gray-50 border-gray-100"
+
+                      return (
+                        <li key={idx} className="text-sm flex items-center gap-2">
+                          <Badge variant="outline" className={`text-[10px] h-5 px-1.5 capitalize border ${colorClass}`}>
+                            {item.category}
+                          </Badge>
+                          <span className="truncate text-gray-700 font-medium">{item.name}</span>
+                        </li>
+                      )
+                    })}
+                    {itinerary.cartItems.length > 3 && (
+                      <li className="text-xs text-gray-400 pl-1 italic">
+                        +{itinerary.cartItems.length - 3} more items
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
 
               {itinerary.highlights && itinerary.highlights.length > 0 && (
                 <div className="mt-4">
@@ -1408,7 +1441,7 @@ function CollectionView({
                   size="sm"
                 >
                   <Eye className="h-4 w-4 mr-2" />
-                  View Details
+                  {itinerary.type === 'cart-combo' ? 'View Package Inclusions' : 'View Details'}
                 </Button>
                 <Button
                   asChild
@@ -1443,43 +1476,94 @@ function CollectionView({
             <div className="space-y-6">
               {/* Basic Info */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <p className="text-xs text-gray-500">Destination</p>
-                    <p className="font-medium">{selectedItinerary.destination}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <p className="text-xs text-gray-500">Duration</p>
-                    <p className="font-medium">{selectedItinerary.duration}</p>
-                  </div>
-                </div>
-                {settings.showPricing && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="text-xs text-gray-500">Price</p>
-                      <p className="font-medium">
-                        {getDisplayPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
-                      </p>
-                      {pricingOptions?.showOriginalPrice && pricingOptions.markupValue > 0 && (
-                        <p className="text-gray-400 line-through text-xs">
-                          {formatOriginalPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
-                        </p>
-                      )}
+                {selectedItinerary.type === 'cart-combo' ? (
+                  <>
+                    {/* Cart/Combo Specific Stats */}
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-purple-100 rounded-full">
+                        <Users className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">No. of Items</p>
+                        <p className="font-medium">{selectedItinerary.cartItems?.length || 0}</p>
+                      </div>
                     </div>
-                  </div>
+
+                    {settings.showPricing && (
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-green-100 rounded-full">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Price</p>
+                          <p className="font-medium">
+                            {getDisplayPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
+                          </p>
+                          {pricingOptions?.showOriginalPrice && (pricingOptions.strikethroughMarkupValue ?? 0) > 0 && (
+                            <p className="text-gray-400 line-through text-xs">
+                              {formatStrikethroughPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-blue-100 rounded-full">
+                        <Calendar className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">No. of Days</p>
+                        <p className="font-medium">
+                          {new Set(selectedItinerary.cartItems?.map((i: any) => i.date).filter(Boolean)).size} Days
+                        </p>
+                      </div>
+                    </div>
+                    {/* Empty 4th column or could be used for something else */}
+                    <div className="hidden md:block"></div>
+                  </>
+                ) : (
+                  <>
+                    {/* Standard Stats for Customized Packages etc */}
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="text-xs text-gray-500">Destination</p>
+                        <p className="font-medium">{selectedItinerary.destination}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="text-xs text-gray-500">Duration</p>
+                        <p className="font-medium">{selectedItinerary.duration}</p>
+                      </div>
+                    </div>
+                    {settings.showPricing && (
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-gray-500" />
+                        <div>
+                          <p className="text-xs text-gray-500">Price</p>
+                          <p className="font-medium">
+                            {getDisplayPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
+                          </p>
+                          {pricingOptions?.showOriginalPrice && (pricingOptions.strikethroughMarkupValue ?? 0) > 0 && (
+                            <p className="text-gray-400 line-through text-xs">
+                              {formatStrikethroughPrice(selectedItinerary.totalPrice, selectedItinerary.currency)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="text-xs text-gray-500">Days</p>
+                        <p className="font-medium">{selectedItinerary.days?.length || 0}</p>
+                      </div>
+                    </div>
+                  </>
                 )}
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <p className="text-xs text-gray-500">Days</p>
-                    <p className="font-medium">{selectedItinerary.days?.length || 0}</p>
-                  </div>
-                </div>
               </div>
 
               {/* Gallery */}
@@ -1599,19 +1683,23 @@ function CollectionView({
 
                                     {/* Activity Details */}
                                     {event.category === "activity" && (
-                                      <div className="text-xs text-gray-600 flex flex-wrap gap-2">
-                                        {event.duration && <span>⏱️ {event.duration}</span>}
-                                        {event.difficulty && <span>Difficulty: {event.difficulty}</span>}
-                                        {event.location && <span>📍 {event.location}</span>}
+                                      <div className="text-xs text-gray-600 space-y-1">
+                                        <div className="flex flex-wrap gap-2">
+                                          {event.duration && <span>⏱️ {event.duration}</span>}
+                                          {event.difficulty && <span>Difficulty: {event.difficulty}</span>}
+                                        </div>
                                       </div>
                                     )}
 
                                     {/* Meal Details */}
                                     {event.category === "meal" && event.meals && (
-                                      <div className="flex flex-wrap gap-1">
-                                        {event.meals.map((meal, idx) => (
-                                          <Badge key={idx} className="text-[10px] capitalize bg-amber-100 text-amber-800">{meal}</Badge>
-                                        ))}
+                                      <div className="text-xs text-gray-600 space-y-1">
+                                        <div className="flex flex-wrap gap-2">
+                                          {event.meals.map((meal, i) => (
+                                            <Badge key={i} variant="secondary" className="text-[10px]">{meal}</Badge>
+                                          ))}
+                                          {event.customMealDescription && <span>{event.customMealDescription}</span>}
+                                        </div>
                                       </div>
                                     )}
 
@@ -1685,26 +1773,144 @@ function CollectionView({
                 </div>
               )}
 
-              {selectedItinerary.type === "cart-combo" && selectedItinerary.cartItems && selectedItinerary.cartItems.length > 0 && (
+              {selectedItinerary.type === 'cart-combo' && selectedItinerary.cartItems && selectedItinerary.cartItems.length > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-3">Cart Items</h4>
-                  <div className="space-y-2">
-                    {selectedItinerary.cartItems.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                        <div>
-                          <p className="font-medium text-sm">{item.name}</p>
-                          <p className="text-xs text-gray-600">{item.description}</p>
-                          <Badge variant="outline" className="text-xs mt-1">{item.category}</Badge>
+                  <h4 className="font-semibold mb-3">Package Inclusions</h4>
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {selectedItinerary.cartItems.map((item: any, index: number) => {
+                      // Parse date for the "Date Box"
+                      const dateObj = item.date ? new Date(item.date) : null
+                      const day = dateObj ? dateObj.getDate() : ""
+                      const month = dateObj ? dateObj.toLocaleString('default', { month: 'short' }).toUpperCase() : ""
+                      const year = dateObj ? dateObj.getFullYear() : ""
+
+                      // Category colors for the Date Box background
+                      const categoryColors: Record<string, string> = {
+                        flight: "bg-sky-500",
+                        hotel: "bg-emerald-500",
+                        activity: "bg-purple-500",
+                        transfer: "bg-orange-500",
+                        meal: "bg-amber-500",
+                        ancillaries: "bg-indigo-500",
+                        cruise: "bg-cyan-500",
+                        others: "bg-slate-500",
+                        other: "bg-slate-500",
+                        note: "bg-yellow-500",
+                      }
+                      const boxColor = categoryColors[item.category] || "bg-blue-600"
+                      const borderColor = boxColor.replace("bg-", "border-").replace("500", "200")
+
+                      return (
+                        <div key={index} className={`flex flex-col sm:flex-row gap-4 p-4 border ${borderColor} rounded-xl bg-white shadow-sm hover:shadow-md transition-all`}>
+                          {/* Left: Date Box (Builder Style) */}
+                          <div className={`flex-shrink-0 w-full sm:w-24 h-24 ${boxColor} rounded-lg flex flex-col items-center justify-center text-white shadow-sm`}>
+                            <span className="text-3xl font-bold leading-none">{day}</span>
+                            <span className="text-xs font-semibold tracking-wider mt-1">{month}</span>
+                            <span className="text-[10px] opacity-80">{year}</span>
+                          </div>
+
+                          {/* Middle: Content */}
+                          <div className="flex-grow min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h5 className="font-bold text-lg text-gray-800 truncate mb-1">{item.name}</h5>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge variant="secondary" className="text-xs px-2 py-0.5 capitalize bg-gray-100 text-gray-600 border-gray-200">
+                                    {item.category}
+                                  </Badge>
+                                  {item.quantity && item.quantity > 1 && (
+                                    <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                                  )}
+                                </div>
+                              </div>
+                              {/* Price on Desktop (Top Right) */}
+                              {pricingOptions?.showIndividualPricing && item.price > 0 && (
+                                <div className="hidden sm:block text-right">
+                                  <p className="font-bold text-lg text-gray-900">
+                                    {getDisplayPrice(item.price, item.currency || selectedItinerary.currency)}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+
+                            {item.description && item.description !== "No description provided" && (
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+                            )}
+
+                            {/* Minute Details Block - Granular Info */}
+                            <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded-md grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                              {/* Flight Details */}
+                              {item.category === "flight" && (
+                                <>
+                                  {(item.fromCity || item.toCity) && (
+                                    <div className="col-span-full font-medium text-sky-700 mb-1">
+                                      🛫 {item.fromCity} ➝ {item.toCity}
+                                    </div>
+                                  )}
+                                  <div className="space-y-0.5">
+                                    {(item.airline || item.airlines) && <div>Airline: <span className="font-medium text-gray-800">{item.airline || item.airlines}</span></div>}
+                                    {item.flightNumber && <div>Flight #: <span className="font-medium text-gray-800">{item.flightNumber}</span></div>}
+                                    {item.flightClass && <div>Class: <span className="font-medium text-gray-800">{item.flightClass}</span></div>}
+                                    {(item.startTime || item.endTime) && (
+                                      <div className="col-span-full mt-1 pt-1 border-t border-gray-200">
+                                        Time: <span className="font-medium text-gray-800">{item.startTime} - {item.endTime}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Hotel Details */}
+                              {item.category === "hotel" && (
+                                <>
+                                  {item.hotelName && <div className="col-span-full font-medium text-emerald-700 mb-1">🏨 {item.hotelName}</div>}
+                                  <div className="space-y-0.5">
+                                    {item.roomCategory && <div>Room: <span className="font-medium text-gray-800">{item.roomCategory}</span></div>}
+                                    {item.mealPlan && <div>Meals: <span className="font-medium text-gray-800">{item.mealPlan}</span></div>}
+                                    {item.checkIn && <div>Check-in: <span className="font-medium text-gray-800">{item.checkIn}</span></div>}
+                                    {item.nights && <div>Duration: <span className="font-medium text-gray-800">{item.nights} Nights</span></div>}
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Transfer Details */}
+                              {item.category === "transfer" && (
+                                <>
+                                  {(item.fromLocation || item.toLocation) && (
+                                    <div className="col-span-full font-medium text-orange-700 mb-1">🚗 {item.fromLocation} ➝ {item.toLocation}</div>
+                                  )}
+                                  <div className="space-y-0.5">
+                                    {item.vehicleType && <div>Vehicle: <span className="font-medium text-gray-800">{item.vehicleType}</span></div>}
+                                    {item.transferType && <div>Type: <span className="font-medium text-gray-800 capitalize">{item.transferType}</span></div>}
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Default/Generic Fields for other cats */}
+                              {item.duration && <div>Duration: <span className="font-medium text-gray-800">{item.duration}</span></div>}
+                              {item.difficulty && <div>Difficulty: <span className="font-medium text-gray-800">{item.difficulty}</span></div>}
+                              {item.meals && item.meals.length > 0 && (
+                                <div className="col-span-full">Meals: <span className="font-medium text-gray-800">{item.meals.join(", ")}</span></div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Price on Mobile (Bottom) */}
+                          {pricingOptions?.showIndividualPricing && item.price > 0 && (
+                            <div className="block sm:hidden flex justify-end pt-2 border-t mt-2">
+                              <p className="font-bold text-lg text-gray-900">
+                                {getDisplayPrice(item.price, item.currency || selectedItinerary.currency)}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium text-sm">${item.price}</p>
-                          <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
+
+              {/* Removed duplicate Cart Items section to use the detailed Package Inclusions section above */}
 
               {selectedItinerary.type === "html-editor" && selectedItinerary.htmlBlocks && selectedItinerary.htmlBlocks.length > 0 && (
                 <div>
