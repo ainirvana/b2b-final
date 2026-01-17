@@ -90,9 +90,40 @@ export interface ICartItem {
   description: string
   category: "activity" | "hotel" | "flight" | "transfer" | "meal" | "other"
   price: number
+  date: string // Required: Service date in YYYY-MM-DD format
+  currency?: string // Optional: Currency for the price (default: USD)
   nights?: number // Not applicable for combo items except hotels
   quantity: number
   addedAt: Date
+
+  // Flight specific
+  fromCity?: string
+  toCity?: string
+  airline?: string
+  flightNumber?: string
+  startTime?: string
+  endTime?: string
+  flightClass?: string
+
+  // Hotel specific
+  hotelName?: string
+  location?: string
+  checkIn?: string
+  checkOut?: string
+  roomCategory?: string
+
+  // Transfer specific
+  fromLocation?: string
+  toLocation?: string
+  vehicleType?: string
+  transferType?: "private" | "shared"
+
+  // Activity specific
+  duration?: string
+  difficulty?: string
+
+  // Meal specific
+  mealType?: string
 }
 
 // NEW: HTML Block interface for HTML editor
@@ -514,6 +545,8 @@ const ItinerarySchema = new mongoose.Schema(
         id: { type: String, required: true },
         productId: { type: String, required: true },
         name: { type: String, required: true },
+        date: { type: String, required: true }, // Service date: YYYY-MM-DD
+        currency: { type: String, default: "USD" },
         description: String,
         category: {
           type: String,
@@ -524,6 +557,35 @@ const ItinerarySchema = new mongoose.Schema(
         nights: Number,
         quantity: { type: Number, default: 1 },
         addedAt: { type: Date, default: Date.now },
+
+        // Flight specific
+        fromCity: String,
+        toCity: String,
+        airline: String,
+        flightNumber: String,
+        startTime: String,
+        endTime: String,
+        flightClass: String,
+
+        // Hotel specific
+        hotelName: String,
+        location: String,
+        checkIn: String,
+        checkOut: String,
+        roomCategory: String,
+
+        // Transfer specific
+        fromLocation: String,
+        toLocation: String,
+        vehicleType: String,
+        transferType: { type: String, enum: ["private", "shared"] },
+
+        // Activity specific
+        duration: String,
+        difficulty: String,
+
+        // Meal specific
+        mealType: String,
       },
     ],
     // HTML Editor fields

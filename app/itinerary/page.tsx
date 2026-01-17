@@ -76,8 +76,29 @@ function ItineraryPageContent() {
     [toast],
   )
 
-  const handleViewItinerary = (id: string) => {
-    launchPreviewForItinerary(id)
+  const handleViewItinerary = async (id: string) => {
+    // First, check what type of itinerary this is
+    try {
+      const response = await fetch(`/api/itineraries/${id}`)
+      if (!response.ok) {
+        throw new Error(`Failed to load itinerary (${response.status})`)
+      }
+
+      const itineraryData = (await response.json()) as ItineraryWithExtras
+
+      // If it's a cart/combo, open it in builder mode with preview shown
+      if (itineraryData.type === 'cart-combo') {
+        router.push(`/itinerary/builder?id=${id}&mode=view&type=cart-combo`)
+        return
+      }
+
+      // Otherwise, use regular preview
+      launchPreviewForItinerary(id)
+    } catch (error) {
+      console.error('Failed to load itinerary for preview:', error)
+      // Fallback to regular preview if error
+      launchPreviewForItinerary(id)
+    }
   }
 
   const handleEditItinerary = (id: string) => {
