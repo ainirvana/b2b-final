@@ -29,6 +29,14 @@ import { IGalleryItem } from "@/models/Itinerary"
 import { calculateComponentPrice, getExchangeRates, PricingConfig } from "@/lib/pricing-calculator"
 
 import { formatCurrencyWithSymbol } from "@/lib/currency-utils"
+import { ItineraryTemplate4 } from "@/components/itinerary-builder/previews/template-4"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 
 
@@ -78,6 +86,8 @@ export default function ItineraryPreviewPage() {
 
   const [showPrices, setShowPrices] = useState(true)
 
+  const [selectedTemplate, setSelectedTemplate] = useState<number>(2)
+
   const [showTimings, setShowTimings] = useState(true)
 
   const [isExporting, setIsExporting] = useState(false)
@@ -103,6 +113,9 @@ export default function ItineraryPreviewPage() {
         const parsedData = JSON.parse(previewData)
 
         setItinerary(parsedData)
+        if (parsedData.previewConfig?.template) {
+          setSelectedTemplate(parsedData.previewConfig.template)
+        }
 
       } catch (error) {
 
@@ -405,24 +418,39 @@ export default function ItineraryPreviewPage() {
         <!DOCTYPE html>
 
         <html>
-
           <head>
-
             <title>${itinerary?.title || "Itinerary"} - ${itinerary?.productId}</title>
-
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script>
+              tailwind.config = {
+                theme: {
+                  extend: {
+                    fontFamily: {
+                      sans: ['Inter', 'sans-serif'],
+                      serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                      border: "hsl(var(--border))",
+                      input: "hsl(var(--input))",
+                      ring: "hsl(var(--ring))",
+                      background: "hsl(var(--background))",
+                      foreground: "hsl(var(--foreground))",
+                    }
+                  }
+                }
+              }
+            </script>
             ${styles}
-
           </head>
-
           <body>
-
             ${clonedContent.innerHTML}
-
           </body>
-
         </html>
-
       `)
+
+
 
 
 
@@ -482,7 +510,7 @@ export default function ItineraryPreviewPage() {
 
         title: `${itinerary?.title} - Travel Itinerary`,
 
-        text: `Check out this ${itinerary?.days?.length}-day travel itinerary: ${itinerary?.description}`,
+        text: `Check out this ${itinerary?.days?.length} -day travel itinerary: ${itinerary?.description} `,
 
         url: window.location.href,
 
@@ -504,7 +532,7 @@ export default function ItineraryPreviewPage() {
 
       } else {
 
-        const shareText = `${shareData.title}\n${shareData.text}\n${shareData.url}`
+        const shareText = `${shareData.title} \n${shareData.text} \n${shareData.url} `
 
         await navigator.clipboard.writeText(shareText)
 
@@ -560,9 +588,9 @@ export default function ItineraryPreviewPage() {
 
     if (rawId) {
       const idString = typeof rawId === "string" ? rawId : rawId.toString()
-      router.push(`/itinerary/builder?id=${idString}&mode=edit&type=${type}`)
+      router.push(`/ itinerary / builder ? id = ${idString}& mode=edit & type=${type} `)
     } else {
-      router.push(`/itinerary/builder?mode=edit&type=${type}`)
+      router.push(`/ itinerary / builder ? mode = edit & type=${type} `)
     }
   }
 
@@ -682,7 +710,7 @@ export default function ItineraryPreviewPage() {
       return hasEventMeal || hasConfiguredMeal
     })
     const formatLabel = (count: number, singular: string, plural: string) =>
-      count > 0 ? `${count} ${count === 1 ? singular : plural}` : plural
+      count > 0 ? `${count} ${count === 1 ? singular : plural} ` : plural
     const highlightItems = [
       {
         key: "flight",
@@ -729,14 +757,14 @@ export default function ItineraryPreviewPage() {
     }))
     const travellers: string[] = []
     if (itinerary.previewConfig?.adults) {
-      travellers.push(`${itinerary.previewConfig.adults} Adult${itinerary.previewConfig.adults > 1 ? "s" : ""}`)
+      travellers.push(`${itinerary.previewConfig.adults} Adult${itinerary.previewConfig.adults > 1 ? "s" : ""} `)
     }
     if (itinerary.previewConfig?.children) {
-      travellers.push(`${itinerary.previewConfig.children} Child${itinerary.previewConfig.children > 1 ? "ren" : ""}`)
+      travellers.push(`${itinerary.previewConfig.children} Child${itinerary.previewConfig.children > 1 ? "ren" : ""} `)
     }
     const guestsLabel = travellers.length > 0 ? travellers.join(", ") : "Tailored on request"
     const countryLabel = itinerary.country || itinerary.destination || "Multiple Destinations"
-    const durationLabel = `${itinerary.days.length} Days${itinerary.nights ? ` \u2022 ${itinerary.nights} Nights` : ""}`
+    const durationLabel = `${itinerary.days.length} Days${itinerary.nights ? ` \u2022 ${itinerary.nights} Nights` : ""} `
     const locationSummary = itinerary.days
       .map((day: any) => day.title)
       .filter(Boolean)
@@ -841,8 +869,8 @@ export default function ItineraryPreviewPage() {
                   const gradient = fallbackGradients[index % fallbackGradients.length]
                   return (
                     <div
-                      key={`placeholder-${index}`}
-                      className={`aspect-[4/3] w-full overflow-hidden rounded-[26px] bg-gradient-to-br ${gradient} shadow-[0_18px_40px_rgba(15,23,42,0.12)]`}
+                      key={`placeholder - ${index} `}
+                      className={`aspect - [4 / 3] w - full overflow - hidden rounded - [26px] bg - gradient - to - br ${gradient} shadow - [0_18px_40px_rgba(15, 23, 42, 0.12)]`}
                     >
                       <div className="flex h-full w-full items-center justify-center text-sm font-semibold uppercase tracking-[0.4em] text-white/70">
                         Image
@@ -906,10 +934,10 @@ export default function ItineraryPreviewPage() {
             {highlightItems.map(({ key, label, icon: Icon, active }) => (
               <div
                 key={key}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${active ? "border-amber-200 bg-amber-50 text-amber-700 shadow-sm" : "border-slate-200 bg-slate-100 text-slate-400"
-                  }`}
+                className={`flex items - center gap - 2 rounded - full border px - 4 py - 2 text - sm font - semibold ${active ? "border-amber-200 bg-amber-50 text-amber-700 shadow-sm" : "border-slate-200 bg-slate-100 text-slate-400"
+                  } `}
               >
-                <Icon className={`h-4 w-4 ${active ? "text-amber-600" : "text-slate-400"}`} />
+                <Icon className={`h - 4 w - 4 ${active ? "text-amber-600" : "text-slate-400"} `} />
                 {label}
               </div>
             ))}
@@ -952,7 +980,7 @@ export default function ItineraryPreviewPage() {
                       </Badge>
                       <div>
                         <h3 className="text-xl font-semibold text-slate-900 sm:text-2xl">
-                          {day.title || `Day ${day.day}`}
+                          {day.title || `Day ${day.day} `}
                         </h3>
                         <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-slate-500">
                           {dayDate && (
@@ -998,18 +1026,18 @@ export default function ItineraryPreviewPage() {
                           const hasPrice = showPrices && typeof event.price === "number" && event.price > 0
                           return (
                             <div
-                              key={`${day.day}-${eventIndex}`}
+                              key={`${day.day} -${eventIndex} `}
                               className="rounded-[24px] border border-slate-200 bg-white px-5 py-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
                             >
                               <div className="flex flex-wrap items-start justify-between gap-4">
                                 <div className="flex flex-1 gap-4">
-                                  <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${visuals.accent} text-white shadow-lg`}>
+                                  <div className={`flex h - 14 w - 14 flex - shrink - 0 items - center justify - center rounded - 2xl bg - gradient - to - br ${visuals.accent} text - white shadow - lg`}>
                                     <Icon className="h-6 w-6" />
                                   </div>
                                   <div className="space-y-2">
                                     <div className="flex flex-wrap items-center gap-3">
                                       <h4 className="text-lg font-semibold text-slate-900">{event.title}</h4>
-                                      <span className={`rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${visuals.soft}`}>
+                                      <span className={`rounded - full bg - slate - 100 px - 2.5 py - 1 text - xs font - semibold uppercase tracking - [0.18em] ${visuals.soft} `}>
                                         {visuals.label}
                                       </span>
                                     </div>
@@ -1109,10 +1137,10 @@ export default function ItineraryPreviewPage() {
                           return (
                             <div
                               key={meal.key}
-                              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] ${available
-                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                : "border-slate-200 bg-slate-100 text-slate-400"
-                                }`}
+                              className={`flex items - center gap - 2 rounded - full border px - 3 py - 1.5 text - xs font - semibold uppercase tracking - [0.2em] ${available
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                  : "border-slate-200 bg-slate-100 text-slate-400"
+                                } `}
                             >
                               {available ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
                               {meal.label}
@@ -1401,15 +1429,15 @@ export default function ItineraryPreviewPage() {
         : null
 
       return (
-        <div key={eventIndex} className={`rounded-2xl border ${config.border} ${config.bg} p-5 shadow-sm hover:shadow-md transition-shadow`}>
+        <div key={eventIndex} className={`rounded - 2xl border ${config.border} ${config.bg} p - 5 shadow - sm hover: shadow - md transition - shadow`}>
           {/* Event Header */}
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
-              <div className={`p-2.5 rounded-xl bg-white shadow-sm ${config.color}`}>
+              <div className={`p - 2.5 rounded - xl bg - white shadow - sm ${config.color} `}>
                 <DisplayIcon className="h-5 w-5" />
               </div>
               <div>
-                <span className={`text-xs font-bold uppercase tracking-wider ${config.color}`}>{displayLabel}</span>
+                <span className={`text - xs font - bold uppercase tracking - wider ${config.color} `}>{displayLabel}</span>
                 <h4 className="text-lg font-bold text-slate-900">{event.title || displayLabel}</h4>
               </div>
             </div>
@@ -1468,9 +1496,9 @@ export default function ItineraryPreviewPage() {
                 <div className="px-3 py-2 bg-white rounded-lg text-sm">
                   <span className="text-slate-500">Baggage:</span>{" "}
                   <strong>
-                    {event.checkinBags ? `${event.checkinBags}× Check-in (${event.checkinBagWeight || ""})` : ""}
+                    {event.checkinBags ? `${event.checkinBags}× Check -in (${event.checkinBagWeight || ""})` : ""}
                     {event.checkinBags && event.cabinBags ? " + " : ""}
-                    {event.cabinBags ? `${event.cabinBags}× Cabin (${event.cabinBagWeight || ""})` : ""}
+                    {event.cabinBags ? `${event.cabinBags}× Cabin(${event.cabinBagWeight || ""})` : ""}
                     {!event.checkinBags && !event.cabinBags && event.baggage ? event.baggage : ""}
                   </strong>
                 </div>
@@ -1506,7 +1534,7 @@ export default function ItineraryPreviewPage() {
                 {event.propertyType && <div className="px-3 py-2 bg-white rounded-lg"><span className="text-slate-500">Type:</span> <strong>{event.propertyType}</strong></div>}
                 {(event.adults || event.children) && (
                   <div className="px-3 py-2 bg-white rounded-lg">
-                    <span className="text-slate-500">Guests:</span> <strong>{event.adults && `${event.adults}A`}{event.adults && event.children ? " + " : ""}{event.children && `${event.children}C`}</strong>
+                    <span className="text-slate-500">Guests:</span> <strong>{event.adults && `${event.adults} A`}{event.adults && event.children ? " + " : ""}{event.children && `${event.children} C`}</strong>
                   </div>
                 )}
                 {event.mealPlan && <div className="px-3 py-2 bg-amber-50 rounded-lg text-amber-700"><UtensilsCrossed className="h-3.5 w-3.5 inline mr-1" /><strong>{event.mealPlan}</strong></div>}
@@ -1540,7 +1568,7 @@ export default function ItineraryPreviewPage() {
               {event.location && <div className="flex items-center gap-1 text-sm text-slate-600"><MapPin className="h-4 w-4" />{event.location}</div>}
               <div className="flex flex-wrap gap-2 text-sm">
                 {event.duration && <span className="px-3 py-1 bg-white rounded-full border border-slate-200"><Clock className="h-3.5 w-3.5 inline mr-1" />{event.duration}</span>}
-                {event.difficulty && <span className={`px-3 py-1 rounded-full font-medium ${event.difficulty === "easy" ? "bg-green-100 text-green-700" : event.difficulty === "moderate" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>{event.difficulty}</span>}
+                {event.difficulty && <span className={`px - 3 py - 1 rounded - full font - medium ${event.difficulty === "easy" ? "bg-green-100 text-green-700" : event.difficulty === "moderate" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"} `}>{event.difficulty}</span>}
                 {event.capacity && <span className="px-3 py-1 bg-white rounded-full border border-slate-200"><Users className="h-3.5 w-3.5 inline mr-1" />Max {event.capacity}</span>}
               </div>
               {event.highlights && event.highlights.length > 0 && (
@@ -1897,7 +1925,7 @@ export default function ItineraryPreviewPage() {
                   <div className="flex items-center gap-4">
                     <span className="text-3xl font-black">{day.day}</span>
                     <div>
-                      <h3 className="text-xl font-bold">{day.title || `Day ${day.day}`}</h3>
+                      <h3 className="text-xl font-bold">{day.title || `Day ${day.day} `}</h3>
                       {dayDate && (
                         <p className="text-sm text-emerald-100">
                           {dayDate.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -1967,8 +1995,8 @@ export default function ItineraryPreviewPage() {
               {Object.entries(categoryTotals).map(([cat, total]) => {
                 const catConfig = categoryConfig[cat] || categoryConfig.note
                 return (
-                  <div key={cat} className={`p-4 rounded-xl ${catConfig.bg} border ${catConfig.border}`}>
-                    <p className={`text-xs font-semibold uppercase tracking-wider ${catConfig.color}`}>{catConfig.label}s</p>
+                  <div key={cat} className={`p - 4 rounded - xl ${catConfig.bg} border ${catConfig.border} `}>
+                    <p className={`text - xs font - semibold uppercase tracking - wider ${catConfig.color} `}>{catConfig.label}s</p>
                     <p className="text-xl font-bold text-slate-900 mt-1">{formatCurrencyWithSymbol(total, targetCurrency)}</p>
                   </div>
                 )
@@ -1984,7 +2012,7 @@ export default function ItineraryPreviewPage() {
               <div className="text-right">
                 <p className="text-4xl font-black">{displayTotalPrice}</p>
                 <p className="text-sm text-emerald-200">
-                  for {pricingConfig.adults} adult{pricingConfig.adults > 1 ? "s" : ""}{pricingConfig.children > 0 ? ` + ${pricingConfig.children} child${pricingConfig.children > 1 ? "ren" : ""}` : ""}
+                  for {pricingConfig.adults} adult{pricingConfig.adults > 1 ? "s" : ""}{pricingConfig.children > 0 ? ` + ${pricingConfig.children} child${pricingConfig.children > 1 ? "ren" : ""} ` : ""}
                 </p>
               </div>
             </div>
@@ -2091,13 +2119,21 @@ export default function ItineraryPreviewPage() {
             </div>
 
             <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2">
-
-              <DollarSign className="h-4 w-4 text-gray-600" />
-
-              <label className="text-sm font-medium text-gray-700">Prices</label>
-
-              <Switch checked={showPrices} onCheckedChange={setShowPrices} />
-
+              <label className="text-sm font-medium text-gray-700">Template</label>
+              <Select
+                value={selectedTemplate.toString()}
+                onValueChange={(val) => setSelectedTemplate(parseInt(val))}
+              >
+                <SelectTrigger className="w-[100px] h-8 bg-white">
+                  <SelectValue placeholder="Template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Classic</SelectItem>
+                  <SelectItem value="2">Modern</SelectItem>
+                  <SelectItem value="3">Minimal</SelectItem>
+                  <SelectItem value="4">Premium</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2">
@@ -2146,289 +2182,217 @@ export default function ItineraryPreviewPage() {
 
       <div id="preview-content" className="max-w-5xl mx-auto p-4 space-y-6">
 
-        {itinerary.previewConfig?.template === 3 ? (
-          renderTemplateThree()
-        ) : itinerary.previewConfig?.template === 2 ? (
-          renderTemplateTwo()
-        ) : (
+        {(() => {
+          if (!itinerary) return null
+          const { rates: exchangeRates, baseCurrency } = getExchangeRates()
+          const targetCurrency = baseCurrency || "INR"
+          const pricingConfig: PricingConfig = {
+            adults: itinerary.previewConfig?.adults || 2,
+            children: itinerary.previewConfig?.children || 0,
+            targetCurrency: targetCurrency,
+            exchangeRates: exchangeRates,
+            baseCurrency: baseCurrency,
+          }
 
-          <>
+          if (selectedTemplate === 4) {
+            return (
+              <ItineraryTemplate4
+                itinerary={itinerary}
+                isDetailedView={isDetailedView}
+                showPrices={showPrices}
+                showTimings={showTimings}
+                pricingConfig={pricingConfig}
+              />
+            )
+          } else if (selectedTemplate === 3) {
+            return renderTemplateThree()
+          } else if (selectedTemplate === 2) {
+            return renderTemplateTwo()
+          } else {
+            return (
+              <>
 
-            {/* Hero Section */}
+                {/* Hero Section */}
 
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-6 md:p-8">
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-6 md:p-8">
 
-              <div className="absolute inset-0 opacity-20" style={{
+                  <div className="absolute inset-0 opacity-20" style={{
 
-                backgroundImage: "url('data:image/svg+xml;utf8,<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"><g fill=\"none\" fill-rule=\"evenodd\"><g fill=\"%23ffffff\" fill-opacity=\"0.05\"><circle cx=\"30\" cy=\"30\" r=\"2\"/></g></g></svg>')"
+                    backgroundImage: "url('data:image/svg+xml;utf8,<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"><g fill=\"none\" fill-rule=\"evenodd\"><g fill=\"%23ffffff\" fill-opacity=\"0.05\"><circle cx=\"30\" cy=\"30\" r=\"2\"/></g></g></svg>')"
 
-              }}></div>
+                  }}></div>
 
 
 
-              <div className="relative z-10">
+                  <div className="relative z-10">
 
-                {/* Branding Header */}
+                    {/* Branding Header */}
 
-                {itinerary.branding && (itinerary.branding.headerLogo || itinerary.branding.headerText) && (
+                    {itinerary.branding && (itinerary.branding.headerLogo || itinerary.branding.headerText) && (
 
-                  <div className="text-center mb-8">
+                      <div className="text-center mb-8">
 
-                    {itinerary.branding.headerLogo && (
+                        {itinerary.branding.headerLogo && (
+
+                          <img
+
+                            src={itinerary.branding.headerLogo || "/placeholder.svg"}
+
+                            alt="Company Logo"
+
+                            className="h-16 mx-auto mb-4 object-contain filter brightness-0 invert"
+
+                          />
+
+                        )}
+
+                        {itinerary.branding.headerText && (
+
+                          <p className="text-lg font-medium text-white/90">
+
+                            {itinerary.branding.headerText}
+
+                          </p>
+
+                        )}
+
+                      </div>
+
+                    )}
+
+
+
+                    {/* Hero Title */}
+
+                    <div className="text-center mb-8">
+
+                      <div className="mb-4">
+
+                        <h2 className="text-2xl md:text-4xl font-bold mb-2 text-white/90" style={{ fontFamily: 'Playfair Display, serif' }}>
+
+                          {itinerary.country || 'Amazing Destination'}
+
+                        </h2>
+
+                        <h1 className="hero-title text-3xl md:text-5xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent" style={{ fontFamily: 'Playfair Display, serif' }}>
+
+                          {itinerary.title}
+
+                        </h1>
+
+                      </div>
+
+                      {itinerary.description && (
+
+                        <p className="text-lg text-white/80 max-w-3xl mx-auto leading-relaxed">
+
+                          {itinerary.description}
+
+                        </p>
+
+                      )}
+
+                    </div>
+
+
+
+                    {/* Trip Stats */}
+
+                    <div className="flex flex-wrap justify-center gap-4 mb-6">
+
+                      <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
+
+                        <Calendar className="h-4 w-4 text-blue-300" />
+
+                        <span className="font-medium text-sm">
+
+                          {itinerary.days.length} {itinerary.days.length === 1 ? "Day" : "Days"} {itinerary.nights > 0 ? `${itinerary.nights} ${itinerary.nights === 1 ? "Night" : "Nights"} ` : `${Math.max(0, itinerary.days.length - 1)} ${Math.max(0, itinerary.days.length - 1) === 1 ? "Night" : "Nights"} `}
+
+                        </span>
+
+                      </div>
+
+                      {itinerary.previewConfig && (
+
+                        <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
+
+                          <Users className="h-4 w-4 text-purple-300" />
+
+                          <span className="font-medium text-sm">
+
+                            {itinerary.previewConfig.adults} Adults {itinerary.previewConfig.children > 0 ? `${itinerary.previewConfig.children} Children` : ''}
+
+                          </span>
+
+                        </div>
+
+                      )}
+
+                      {itinerary.previewConfig?.withDates && itinerary.previewConfig.startDate && (
+
+                        <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
+
+                          <Calendar className="h-4 w-4 text-green-300" />
+
+                          <span className="font-medium text-sm">
+
+                            {new Date(itinerary.previewConfig.startDate).toLocaleDateString()} - {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (itinerary.days.length - 1) * 24 * 60 * 60 * 1000).toLocaleDateString()}
+
+                          </span>
+
+                        </div>
+
+                      )}
+
+                      {showPrices && (
+
+                        <div className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full px-4 py-1.5">
+
+                          <DollarSign className="h-4 w-4" />
+
+                          <span className="font-bold">{formatPrice(itinerary.totalPrice)}</span>
+
+                        </div>
+
+                      )}
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+
+                {/* Pinterest-Style Gallery Showcase */}
+
+                {itinerary.gallery && itinerary.gallery.length > 0 && (
+
+                  <div className="rounded-2xl overflow-hidden shadow-2xl bg-white h-96">
+
+                    {itinerary.gallery.length === 1 && (
 
                       <img
 
-                        src={itinerary.branding.headerLogo || "/placeholder.svg"}
+                        src={itinerary.gallery[0].url}
 
-                        alt="Company Logo"
+                        alt="Gallery 1"
 
-                        className="h-16 mx-auto mb-4 object-contain filter brightness-0 invert"
+                        className="w-full h-full object-cover"
 
                       />
 
                     )}
 
-                    {itinerary.branding.headerText && (
+                    {itinerary.gallery.length === 2 && (
 
-                      <p className="text-lg font-medium text-white/90">
+                      <div className="flex h-full gap-2 p-2">
 
-                        {itinerary.branding.headerText}
+                        <div className="flex-1 rounded-xl overflow-hidden">
 
-                      </p>
+                          <img src={itinerary.gallery[0].url} alt="Gallery 1" className="w-full h-full object-cover" />
 
-                    )}
-
-                  </div>
-
-                )}
-
-
-
-                {/* Hero Title */}
-
-                <div className="text-center mb-8">
-
-                  <div className="mb-4">
-
-                    <h2 className="text-2xl md:text-4xl font-bold mb-2 text-white/90" style={{ fontFamily: 'Playfair Display, serif' }}>
-
-                      {itinerary.country || 'Amazing Destination'}
-
-                    </h2>
-
-                    <h1 className="hero-title text-3xl md:text-5xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent" style={{ fontFamily: 'Playfair Display, serif' }}>
-
-                      {itinerary.title}
-
-                    </h1>
-
-                  </div>
-
-                  {itinerary.description && (
-
-                    <p className="text-lg text-white/80 max-w-3xl mx-auto leading-relaxed">
-
-                      {itinerary.description}
-
-                    </p>
-
-                  )}
-
-                </div>
-
-
-
-                {/* Trip Stats */}
-
-                <div className="flex flex-wrap justify-center gap-4 mb-6">
-
-                  <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
-
-                    <Calendar className="h-4 w-4 text-blue-300" />
-
-                    <span className="font-medium text-sm">
-
-                      {itinerary.days.length} {itinerary.days.length === 1 ? "Day" : "Days"} {itinerary.nights > 0 ? `${itinerary.nights} ${itinerary.nights === 1 ? "Night" : "Nights"}` : `${Math.max(0, itinerary.days.length - 1)} ${Math.max(0, itinerary.days.length - 1) === 1 ? "Night" : "Nights"}`}
-
-                    </span>
-
-                  </div>
-
-                  {itinerary.previewConfig && (
-
-                    <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
-
-                      <Users className="h-4 w-4 text-purple-300" />
-
-                      <span className="font-medium text-sm">
-
-                        {itinerary.previewConfig.adults} Adults {itinerary.previewConfig.children > 0 ? `${itinerary.previewConfig.children} Children` : ''}
-
-                      </span>
-
-                    </div>
-
-                  )}
-
-                  {itinerary.previewConfig?.withDates && itinerary.previewConfig.startDate && (
-
-                    <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5">
-
-                      <Calendar className="h-4 w-4 text-green-300" />
-
-                      <span className="font-medium text-sm">
-
-                        {new Date(itinerary.previewConfig.startDate).toLocaleDateString()} - {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (itinerary.days.length - 1) * 24 * 60 * 60 * 1000).toLocaleDateString()}
-
-                      </span>
-
-                    </div>
-
-                  )}
-
-                  {showPrices && (
-
-                    <div className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full px-4 py-1.5">
-
-                      <DollarSign className="h-4 w-4" />
-
-                      <span className="font-bold">{formatPrice(itinerary.totalPrice)}</span>
-
-                    </div>
-
-                  )}
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-
-            {/* Pinterest-Style Gallery Showcase */}
-
-            {itinerary.gallery && itinerary.gallery.length > 0 && (
-
-              <div className="rounded-2xl overflow-hidden shadow-2xl bg-white h-96">
-
-                {itinerary.gallery.length === 1 && (
-
-                  <img
-
-                    src={itinerary.gallery[0].url}
-
-                    alt="Gallery 1"
-
-                    className="w-full h-full object-cover"
-
-                  />
-
-                )}
-
-                {itinerary.gallery.length === 2 && (
-
-                  <div className="flex h-full gap-2 p-2">
-
-                    <div className="flex-1 rounded-xl overflow-hidden">
-
-                      <img src={itinerary.gallery[0].url} alt="Gallery 1" className="w-full h-full object-cover" />
-
-                    </div>
-
-                    <div className="flex-1 rounded-xl overflow-hidden">
-
-                      <img src={itinerary.gallery[1].url} alt="Gallery 2" className="w-full h-full object-cover" />
-
-                    </div>
-
-                  </div>
-
-                )}
-
-                {itinerary.gallery.length === 3 && (
-
-                  <div className="flex h-full gap-2 p-2">
-
-                    <div className="flex-2 rounded-xl overflow-hidden">
-
-                      <img src={itinerary.gallery[0].url} alt="Gallery 1" className="w-full h-full object-cover" />
-
-                    </div>
-
-                    <div className="flex-1 flex flex-col gap-2">
-
-                      <div className="flex-1 rounded-xl overflow-hidden">
-
-                        <img src={itinerary.gallery[1].url} alt="Gallery 2" className="w-full h-full object-cover" />
-
-                      </div>
-
-                      <div className="flex-1 rounded-xl overflow-hidden">
-
-                        <img src={itinerary.gallery[2].url} alt="Gallery 3" className="w-full h-full object-cover" />
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                )}
-
-                {itinerary.gallery.length === 4 && (
-
-                  <div className="flex h-full gap-2 p-2">
-
-                    <div className="flex-1 flex flex-col gap-2">
-
-                      <div className="flex-2 rounded-xl overflow-hidden">
-
-                        <img src={itinerary.gallery[0].url} alt="Gallery 1" className="w-full h-full object-cover" />
-
-                      </div>
-
-                      <div className="flex-1 rounded-xl overflow-hidden">
-
-                        <img src={itinerary.gallery[1].url} alt="Gallery 2" className="w-full h-full object-cover" />
-
-                      </div>
-
-                    </div>
-
-                    <div className="flex-1 flex flex-col gap-2">
-
-                      <div className="flex-1 rounded-xl overflow-hidden">
-
-                        <img src={itinerary.gallery[2].url} alt="Gallery 3" className="w-full h-full object-cover" />
-
-                      </div>
-
-                      <div className="flex-2 rounded-xl overflow-hidden">
-
-                        <img src={itinerary.gallery[3].url} alt="Gallery 4" className="w-full h-full object-cover" />
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                )}
-
-                {itinerary.gallery.length >= 5 && (
-
-                  <div className="flex h-full gap-2 p-2">
-
-                    <div className="flex-1 flex flex-col gap-2">
-
-                      <div className="flex-2 rounded-xl overflow-hidden">
-
-                        <img src={itinerary.gallery[0].url} alt="Gallery 1" className="w-full h-full object-cover" />
-
-                      </div>
-
-                      <div className="flex-1 flex gap-2">
+                        </div>
 
                         <div className="flex-1 rounded-xl overflow-hidden">
 
@@ -2436,387 +2400,131 @@ export default function ItineraryPreviewPage() {
 
                         </div>
 
-                        <div className="flex-1 rounded-xl overflow-hidden">
+                      </div>
 
-                          <img src={itinerary.gallery[2].url} alt="Gallery 3" className="w-full h-full object-cover" />
+                    )}
+
+                    {itinerary.gallery.length === 3 && (
+
+                      <div className="flex h-full gap-2 p-2">
+
+                        <div className="flex-2 rounded-xl overflow-hidden">
+
+                          <img src={itinerary.gallery[0].url} alt="Gallery 1" className="w-full h-full object-cover" />
+
+                        </div>
+
+                        <div className="flex-1 flex flex-col gap-2">
+
+                          <div className="flex-1 rounded-xl overflow-hidden">
+
+                            <img src={itinerary.gallery[1].url} alt="Gallery 2" className="w-full h-full object-cover" />
+
+                          </div>
+
+                          <div className="flex-1 rounded-xl overflow-hidden">
+
+                            <img src={itinerary.gallery[2].url} alt="Gallery 3" className="w-full h-full object-cover" />
+
+                          </div>
 
                         </div>
 
                       </div>
 
-                    </div>
+                    )}
 
-                    <div className="flex-1 flex flex-col gap-2">
+                    {itinerary.gallery.length === 4 && (
 
-                      <div className="flex-1 rounded-xl overflow-hidden">
+                      <div className="flex h-full gap-2 p-2">
 
-                        <img src={itinerary.gallery[3].url} alt="Gallery 4" className="w-full h-full object-cover" />
+                        <div className="flex-1 flex flex-col gap-2">
 
-                      </div>
+                          <div className="flex-2 rounded-xl overflow-hidden">
 
-                      <div className="flex-2 relative rounded-xl overflow-hidden">
-
-                        <img src={itinerary.gallery[4].url} alt="Gallery 5" className="w-full h-full object-cover" />
-
-                        {itinerary.gallery.length > 5 && (
-
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-
-                            <div className="text-white text-center">
-
-                              <p className="text-2xl font-bold">+{itinerary.gallery.length - 5}</p>
-
-                              <p className="text-sm">more photos</p>
-
-                            </div>
+                            <img src={itinerary.gallery[0].url} alt="Gallery 1" className="w-full h-full object-cover" />
 
                           </div>
 
-                        )}
+                          <div className="flex-1 rounded-xl overflow-hidden">
 
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                )}
-
-              </div>
-
-            )}
-
-
-
-            {/* Itinerary Days */}
-
-            <div className="space-y-4">
-
-              {itinerary.days.map((day, index) => (
-
-                <Card key={index} className="avoid-break overflow-hidden border-0 shadow-lg bg-white">
-
-                  {/* Day Header */}
-
-                  <div className="luxury-gradient p-4 relative overflow-hidden">
-
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 opacity-90"></div>
-
-                    <div className="relative z-10 flex items-center justify-between text-white">
-
-                      <div>
-
-                        <h3 className="day-title text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif' }}>
-
-                          Day {day.day}: {day.title}
-
-                        </h3>
-
-                      </div>
-
-                      <div className="flex items-center space-x-4">
-
-                        {day.nights > 0 && (
-
-                          <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-
-                            {day.nights} {day.nights === 1 ? "Night" : "Nights"}
-
-                          </Badge>
-
-                        )}
-
-                        {/* Calendar Date Display */}
-
-                        {itinerary.previewConfig?.withDates && itinerary.previewConfig.startDate && (
-
-                          <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 text-center min-w-[80px]">
-
-                            <div className="text-xs uppercase tracking-wide opacity-90 leading-none">
-
-                              {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en', { month: 'short' })}-{new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).getFullYear().toString().slice(-2)}
-
-                            </div>
-
-                            <div className="text-3xl font-bold leading-none">
-
-                              {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).getDate()}
-
-                            </div>
-
-                            <div className="text-xs uppercase tracking-wide opacity-90 leading-none">
-
-                              {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en', { weekday: 'short' })}
-
-                            </div>
+                            <img src={itinerary.gallery[1].url} alt="Gallery 2" className="w-full h-full object-cover" />
 
                           </div>
 
-                        )}
+                        </div>
 
-                      </div>
+                        <div className="flex-1 flex flex-col gap-2">
 
-                    </div>
+                          <div className="flex-1 rounded-xl overflow-hidden">
 
-                  </div>
+                            <img src={itinerary.gallery[2].url} alt="Gallery 3" className="w-full h-full object-cover" />
 
+                          </div>
 
+                          <div className="flex-2 rounded-xl overflow-hidden">
 
-                  <CardContent className="p-4">
+                            <img src={itinerary.gallery[3].url} alt="Gallery 4" className="w-full h-full object-cover" />
 
-                    {/* Day Description */}
+                          </div>
 
-                    {isDetailedView && day.detailedDescription && (
-
-                      <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-
-                        <p className="text-gray-700 leading-relaxed">{day.detailedDescription}</p>
+                        </div>
 
                       </div>
 
                     )}
 
-                    {!isDetailedView && day.description && (
+                    {itinerary.gallery.length >= 5 && (
 
-                      <div className="mb-4">
+                      <div className="flex h-full gap-2 p-2">
 
-                        <p className="text-gray-700 leading-relaxed">{day.description}</p>
+                        <div className="flex-1 flex flex-col gap-2">
 
-                      </div>
+                          <div className="flex-2 rounded-xl overflow-hidden">
 
-                    )}
+                            <img src={itinerary.gallery[0].url} alt="Gallery 1" className="w-full h-full object-cover" />
 
+                          </div>
 
+                          <div className="flex-1 flex gap-2">
 
-                    {/* Events */}
+                            <div className="flex-1 rounded-xl overflow-hidden">
 
-                    <div className="space-y-3">
-
-                      {day.events.map((event, eventIndex) => (
-
-                        <div
-
-                          key={eventIndex}
-
-                          className="event-card bg-gray-50 rounded-lg p-4 border border-gray-200"
-
-                        >
-
-                          <div className="flex items-start justify-between">
-
-                            <div className="flex-1">
-
-                              <div className="flex items-center gap-2 mb-2">
-
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm">
-
-                                  {getEventIcon(event.category)}
-
-                                </div>
-
-                                <div className="flex-1">
-
-                                  <h4 className="font-bold text-lg text-gray-900" style={{ fontFamily: 'Playfair Display, serif' }}>
-
-                                    {event.title}
-
-                                  </h4>
-
-                                  {showTimings && event.time && (
-
-                                    <div className="flex items-center text-xs text-gray-500">
-
-                                      <Clock className="h-3 w-3 mr-1" />
-
-                                      {event.time}
-
-                                    </div>
-
-                                  )}
-
-                                </div>
-
-                              </div>
-
-
-
-                              {event.description && (
-
-                                <p className="text-gray-700 mb-3 leading-relaxed text-sm">{event.description}</p>
-
-                              )}
-
-
-
-                              {/* Category-specific details */}
-
-                              <div className="space-y-2 mb-3">
-
-                                {event.category === "flight" && (event.fromCity || event.toCity) && (
-
-                                  <div className="flex items-center text-xs text-gray-600 bg-blue-50 rounded p-2">
-
-                                    <Plane className="h-3 w-3 mr-1 text-blue-500" />
-
-                                    <span className="font-medium">Route:</span>
-
-                                    <span className="ml-1">{event.fromCity} → {event.toCity}</span>
-
-                                  </div>
-
-                                )}
-
-
-
-                                {event.category === "hotel" && (event.checkIn || event.checkOut) && (
-
-                                  <div className="flex items-center text-xs text-gray-600 bg-green-50 rounded p-2">
-
-                                    <Hotel className="h-3 w-3 mr-1 text-green-500" />
-
-                                    <span>
-
-                                      <span className="font-medium">Check-in:</span> {event.checkIn} |
-
-                                      <span className="font-medium"> Check-out:</span> {event.checkOut}
-
-                                    </span>
-
-                                  </div>
-
-                                )}
-
-
-
-                                {event.category === "activity" && (event.duration || event.difficulty) && (
-
-                                  <div className="flex items-center text-xs text-gray-600 bg-purple-50 rounded p-2">
-
-                                    <Star className="h-3 w-3 mr-1 text-purple-500" />
-
-                                    <span>
-
-                                      {event.duration && (
-
-                                        <span>
-
-                                          <span className="font-medium">Duration:</span> {event.duration}
-
-                                        </span>
-
-                                      )}
-
-                                      {event.duration && event.difficulty && " | "}
-
-                                      {event.difficulty && (
-
-                                        <span>
-
-                                          <span className="font-medium">Difficulty:</span> {event.difficulty}
-
-                                        </span>
-
-                                      )}
-
-                                    </span>
-
-                                  </div>
-
-                                )}
-
-
-
-                                {event.location && (
-
-                                  <div className="flex items-center text-xs text-gray-600 bg-orange-50 rounded p-2">
-
-                                    <MapPin className="h-3 w-3 mr-1 text-orange-500" />
-
-                                    <span className="font-medium">Location:</span>
-
-                                    <span className="ml-1">{event.location}</span>
-
-                                  </div>
-
-                                )}
-
-                              </div>
-
-
-
-                              {/* Highlights */}
-
-                              {isDetailedView && event.highlights && event.highlights.length > 0 && (
-
-                                <div className="mb-3">
-
-                                  <h5 className="text-xs font-semibold text-gray-700 mb-1 flex items-center">
-
-                                    <Heart className="h-3 w-3 mr-1 text-red-400" />
-
-                                    Highlights
-
-                                  </h5>
-
-                                  <div className="flex flex-wrap gap-1">
-
-                                    {event.highlights.map((highlight, idx) => (
-
-                                      <Badge key={idx} variant="secondary" className="bg-gradient-to-r from-pink-100 to-purple-100 text-purple-700 border-purple-200 px-2 py-0.5 text-xs">
-
-                                        {highlight}
-
-                                      </Badge>
-
-                                    ))}
-
-                                  </div>
-
-                                </div>
-
-                              )}
-
-
-
-                              {/* Image preview */}
-
-                              {event.category === "image" && event.imageUrl && (
-
-                                <div className="mt-2">
-
-                                  <img
-
-                                    src={event.imageUrl || "/placeholder.svg"}
-
-                                    alt={event.imageAlt || event.title}
-
-                                    className="w-full h-32 object-cover rounded-lg"
-
-                                  />
-
-                                  {event.imageCaption && (
-
-                                    <p className="text-xs text-gray-600 mt-1 italic text-center">{event.imageCaption}</p>
-
-                                  )}
-
-                                </div>
-
-                              )}
+                              <img src={itinerary.gallery[1].url} alt="Gallery 2" className="w-full h-full object-cover" />
 
                             </div>
 
+                            <div className="flex-1 rounded-xl overflow-hidden">
 
+                              <img src={itinerary.gallery[2].url} alt="Gallery 3" className="w-full h-full object-cover" />
 
-                            {/* Price */}
+                            </div>
 
-                            {showPrices && event.price > 0 && (
+                          </div>
 
-                              <div className="ml-4">
+                        </div>
 
-                                <div className="price-tag bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full font-bold text-xs">
+                        <div className="flex-1 flex flex-col gap-2">
 
-                                  {formatPrice(event.price)}
+                          <div className="flex-1 rounded-xl overflow-hidden">
+
+                            <img src={itinerary.gallery[3].url} alt="Gallery 4" className="w-full h-full object-cover" />
+
+                          </div>
+
+                          <div className="flex-2 relative rounded-xl overflow-hidden">
+
+                            <img src={itinerary.gallery[4].url} alt="Gallery 5" className="w-full h-full object-cover" />
+
+                            {itinerary.gallery.length > 5 && (
+
+                              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+
+                                <div className="text-white text-center">
+
+                                  <p className="text-2xl font-bold">+{itinerary.gallery.length - 5}</p>
+
+                                  <p className="text-sm">more photos</p>
 
                                 </div>
 
@@ -2828,113 +2536,541 @@ export default function ItineraryPreviewPage() {
 
                         </div>
 
-                      ))}
+                      </div>
 
-                    </div>
+                    )}
+
+                  </div>
+
+                )}
 
 
 
-                    {/* Day Meals */}
+                {/* Itinerary Days */}
 
-                    {day.meals && (day.meals.breakfast || day.meals.lunch || day.meals.dinner) && (
+                <div className="space-y-4">
 
-                      <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200">
+                  {itinerary.days.map((day, index) => (
 
-                        <h5 className="font-bold text-amber-800 mb-2 flex items-center text-sm">
+                    <Card key={index} className="avoid-break overflow-hidden border-0 shadow-lg bg-white">
 
-                          <UtensilsCrossed className="h-4 w-4 mr-1" />
+                      {/* Day Header */}
 
-                          Meals Included
+                      <div className="luxury-gradient p-4 relative overflow-hidden">
 
-                        </h5>
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 opacity-90"></div>
 
-                        <div className="flex gap-3 text-amber-700">
+                        <div className="relative z-10 flex items-center justify-between text-white">
 
-                          {day.meals.breakfast && (
+                          <div>
 
-                            <div className="flex items-center bg-white/60 rounded px-2 py-1">
+                            <h3 className="day-title text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif' }}>
 
-                              <span className="text-sm mr-1">🍳</span>
+                              Day {day.day}: {day.title}
 
-                              <span className="font-medium text-xs">Breakfast</span>
+                            </h3>
 
-                            </div>
+                          </div>
 
-                          )}
+                          <div className="flex items-center space-x-4">
 
-                          {day.meals.lunch && (
+                            {day.nights > 0 && (
 
-                            <div className="flex items-center bg-white/60 rounded px-2 py-1">
+                              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
 
-                              <span className="text-sm mr-1">🥗</span>
+                                {day.nights} {day.nights === 1 ? "Night" : "Nights"}
 
-                              <span className="font-medium text-xs">Lunch</span>
+                              </Badge>
 
-                            </div>
+                            )}
 
-                          )}
+                            {/* Calendar Date Display */}
 
-                          {day.meals.dinner && (
+                            {itinerary.previewConfig?.withDates && itinerary.previewConfig.startDate && (
 
-                            <div className="flex items-center bg-white/60 rounded px-2 py-1">
+                              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 text-center min-w-[80px]">
 
-                              <span className="text-sm mr-1">🍽️</span>
+                                <div className="text-xs uppercase tracking-wide opacity-90 leading-none">
 
-                              <span className="font-medium text-xs">Dinner</span>
+                                  {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en', { month: 'short' })}-{new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).getFullYear().toString().slice(-2)}
 
-                            </div>
+                                </div>
 
-                          )}
+                                <div className="text-3xl font-bold leading-none">
+
+                                  {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).getDate()}
+
+                                </div>
+
+                                <div className="text-xs uppercase tracking-wide opacity-90 leading-none">
+
+                                  {new Date(new Date(itinerary.previewConfig.startDate).getTime() + (day.day - 1) * 24 * 60 * 60 * 1000).toLocaleDateString('en', { weekday: 'short' })}
+
+                                </div>
+
+                              </div>
+
+                            )}
+
+                          </div>
 
                         </div>
 
                       </div>
 
-                    )}
-
-                  </CardContent>
-
-                </Card>
-
-              ))}
-
-            </div>
 
 
+                      <CardContent className="p-4">
 
-            {/* Additional Sections */}
+                        {/* Day Description */}
 
-            {itinerary.additionalSections && Object.keys(itinerary.additionalSections).length > 0 && (
+                        {isDetailedView && day.detailedDescription && (
 
-              <div className="space-y-4">
+                          <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
 
-                {Object.entries(itinerary.additionalSections).map(([key, content]) => (
+                            <p className="text-gray-700 leading-relaxed">{day.detailedDescription}</p>
 
-                  <Card key={key} className="avoid-break border-0 shadow-lg bg-white overflow-hidden">
+                          </div>
 
-                    <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-100 p-3">
+                        )}
 
-                      <h3 className="section-title text-lg font-bold text-gray-900 capitalize" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        {!isDetailedView && day.description && (
 
-                        {key.replace(/([A-Z])/g, " $1").trim()}
+                          <div className="mb-4">
 
-                      </h3>
+                            <p className="text-gray-700 leading-relaxed">{day.description}</p>
 
-                    </CardHeader>
+                          </div>
 
-                    <CardContent className="p-4">
+                        )}
 
-                      <div className="prose max-w-none">
 
-                        {content.split("\n").map((paragraph, idx) => (
 
-                          <p key={idx} className="mb-2 text-gray-700 leading-relaxed text-sm">
+                        {/* Events */}
 
-                            {paragraph}
+                        <div className="space-y-3">
 
-                          </p>
+                          {day.events.map((event, eventIndex) => (
 
-                        ))}
+                            <div
+
+                              key={eventIndex}
+
+                              className="event-card bg-gray-50 rounded-lg p-4 border border-gray-200"
+
+                            >
+
+                              <div className="flex items-start justify-between">
+
+                                <div className="flex-1">
+
+                                  <div className="flex items-center gap-2 mb-2">
+
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm">
+
+                                      {getEventIcon(event.category)}
+
+                                    </div>
+
+                                    <div className="flex-1">
+
+                                      <h4 className="font-bold text-lg text-gray-900" style={{ fontFamily: 'Playfair Display, serif' }}>
+
+                                        {event.title}
+
+                                      </h4>
+
+                                      {showTimings && event.time && (
+
+                                        <div className="flex items-center text-xs text-gray-500">
+
+                                          <Clock className="h-3 w-3 mr-1" />
+
+                                          {event.time}
+
+                                        </div>
+
+                                      )}
+
+                                    </div>
+
+                                  </div>
+
+
+
+                                  {event.description && (
+
+                                    <p className="text-gray-700 mb-3 leading-relaxed text-sm">{event.description}</p>
+
+                                  )}
+
+
+
+                                  {/* Category-specific details */}
+
+                                  <div className="space-y-2 mb-3">
+
+                                    {event.category === "flight" && (event.fromCity || event.toCity) && (
+
+                                      <div className="flex items-center text-xs text-gray-600 bg-blue-50 rounded p-2">
+
+                                        <Plane className="h-3 w-3 mr-1 text-blue-500" />
+
+                                        <span className="font-medium">Route:</span>
+
+                                        <span className="ml-1">{event.fromCity} → {event.toCity}</span>
+
+                                      </div>
+
+                                    )}
+
+
+
+                                    {event.category === "hotel" && (event.checkIn || event.checkOut) && (
+
+                                      <div className="flex items-center text-xs text-gray-600 bg-green-50 rounded p-2">
+
+                                        <Hotel className="h-3 w-3 mr-1 text-green-500" />
+
+                                        <span>
+
+                                          <span className="font-medium">Check-in:</span> {event.checkIn} |
+
+                                          <span className="font-medium"> Check-out:</span> {event.checkOut}
+
+                                        </span>
+
+                                      </div>
+
+                                    )}
+
+
+
+                                    {event.category === "activity" && (event.duration || event.difficulty) && (
+
+                                      <div className="flex items-center text-xs text-gray-600 bg-purple-50 rounded p-2">
+
+                                        <Star className="h-3 w-3 mr-1 text-purple-500" />
+
+                                        <span>
+
+                                          {event.duration && (
+
+                                            <span>
+
+                                              <span className="font-medium">Duration:</span> {event.duration}
+
+                                            </span>
+
+                                          )}
+
+                                          {event.duration && event.difficulty && " | "}
+
+                                          {event.difficulty && (
+
+                                            <span>
+
+                                              <span className="font-medium">Difficulty:</span> {event.difficulty}
+
+                                            </span>
+
+                                          )}
+
+                                        </span>
+
+                                      </div>
+
+                                    )}
+
+
+
+                                    {event.location && (
+
+                                      <div className="flex items-center text-xs text-gray-600 bg-orange-50 rounded p-2">
+
+                                        <MapPin className="h-3 w-3 mr-1 text-orange-500" />
+
+                                        <span className="font-medium">Location:</span>
+
+                                        <span className="ml-1">{event.location}</span>
+
+                                      </div>
+
+                                    )}
+
+                                  </div>
+
+
+
+                                  {/* Highlights */}
+
+                                  {isDetailedView && event.highlights && event.highlights.length > 0 && (
+
+                                    <div className="mb-3">
+
+                                      <h5 className="text-xs font-semibold text-gray-700 mb-1 flex items-center">
+
+                                        <Heart className="h-3 w-3 mr-1 text-red-400" />
+
+                                        Highlights
+
+                                      </h5>
+
+                                      <div className="flex flex-wrap gap-1">
+
+                                        {event.highlights.map((highlight, idx) => (
+
+                                          <Badge key={idx} variant="secondary" className="bg-gradient-to-r from-pink-100 to-purple-100 text-purple-700 border-purple-200 px-2 py-0.5 text-xs">
+
+                                            {highlight}
+
+                                          </Badge>
+
+                                        ))}
+
+                                      </div>
+
+                                    </div>
+
+                                  )}
+
+
+
+                                  {/* Image preview */}
+
+                                  {event.category === "image" && event.imageUrl && (
+
+                                    <div className="mt-2">
+
+                                      <img
+
+                                        src={event.imageUrl || "/placeholder.svg"}
+
+                                        alt={event.imageAlt || event.title}
+
+                                        className="w-full h-32 object-cover rounded-lg"
+
+                                      />
+
+                                      {event.imageCaption && (
+
+                                        <p className="text-xs text-gray-600 mt-1 italic text-center">{event.imageCaption}</p>
+
+                                      )}
+
+                                    </div>
+
+                                  )}
+
+                                </div>
+
+
+
+                                {/* Price */}
+
+                                {showPrices && event.price > 0 && (
+
+                                  <div className="ml-4">
+
+                                    <div className="price-tag bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1 rounded-full font-bold text-xs">
+
+                                      {formatPrice(event.price)}
+
+                                    </div>
+
+                                  </div>
+
+                                )}
+
+                              </div>
+
+                            </div>
+
+                          ))}
+
+                        </div>
+
+
+
+                        {/* Day Meals */}
+
+                        {day.meals && (day.meals.breakfast || day.meals.lunch || day.meals.dinner) && (
+
+                          <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200">
+
+                            <h5 className="font-bold text-amber-800 mb-2 flex items-center text-sm">
+
+                              <UtensilsCrossed className="h-4 w-4 mr-1" />
+
+                              Meals Included
+
+                            </h5>
+
+                            <div className="flex gap-3 text-amber-700">
+
+                              {day.meals.breakfast && (
+
+                                <div className="flex items-center bg-white/60 rounded px-2 py-1">
+
+                                  <span className="text-sm mr-1">🍳</span>
+
+                                  <span className="font-medium text-xs">Breakfast</span>
+
+                                </div>
+
+                              )}
+
+                              {day.meals.lunch && (
+
+                                <div className="flex items-center bg-white/60 rounded px-2 py-1">
+
+                                  <span className="text-sm mr-1">🥗</span>
+
+                                  <span className="font-medium text-xs">Lunch</span>
+
+                                </div>
+
+                              )}
+
+                              {day.meals.dinner && (
+
+                                <div className="flex items-center bg-white/60 rounded px-2 py-1">
+
+                                  <span className="text-sm mr-1">🍽️</span>
+
+                                  <span className="font-medium text-xs">Dinner</span>
+
+                                </div>
+
+                              )}
+
+                            </div>
+
+                          </div>
+
+                        )}
+
+                      </CardContent>
+
+                    </Card>
+
+                  ))}
+
+                </div>
+
+
+
+                {/* Additional Sections */}
+
+                {itinerary.additionalSections && Object.keys(itinerary.additionalSections).length > 0 && (
+
+                  <div className="space-y-4">
+
+                    {Object.entries(itinerary.additionalSections).map(([key, content]) => (
+
+                      <Card key={key} className="avoid-break border-0 shadow-lg bg-white overflow-hidden">
+
+                        <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-100 p-3">
+
+                          <h3 className="section-title text-lg font-bold text-gray-900 capitalize" style={{ fontFamily: 'Playfair Display, serif' }}>
+
+                            {key.replace(/([A-Z])/g, " $1").trim()}
+
+                          </h3>
+
+                        </CardHeader>
+
+                        <CardContent className="p-4">
+
+                          <div className="prose max-w-none">
+
+                            {content.split("\n").map((paragraph, idx) => (
+
+                              <p key={idx} className="mb-2 text-gray-700 leading-relaxed text-sm">
+
+                                {paragraph}
+
+                              </p>
+
+                            ))}
+
+                          </div>
+
+                        </CardContent>
+
+                      </Card>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+
+
+                {/* Total Summary */}
+
+                {showPrices && (
+
+                  <Card className="mt-4 border-0 shadow-lg bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 overflow-hidden">
+
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 to-emerald-400/10"></div>
+
+                    <CardContent className="p-4 relative z-10">
+
+                      <div className="flex items-center justify-between">
+
+                        <div>
+
+                          <h3 className="section-title text-xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>
+
+                            Total Investment
+
+                          </h3>
+
+                          <div className="flex items-center space-x-4 text-gray-600">
+
+                            <div className="flex items-center space-x-1">
+
+                              <Calendar className="h-4 w-4 text-blue-500" />
+
+                              <span className="font-medium text-sm">{itinerary.days.length} days</span>
+
+                            </div>
+
+                            <div className="flex items-center space-x-1">
+
+                              <Globe className="h-4 w-4 text-purple-500" />
+
+                              <span className="font-medium text-sm">
+
+                                {itinerary.days.reduce((sum, day) => sum + day.events.length, 0)} activities
+
+                              </span>
+
+                            </div>
+
+                          </div>
+
+                        </div>
+
+                        <div className="text-right">
+
+                          <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-1">
+
+                            {formatPrice(itinerary.totalPrice)}
+
+                          </div>
+
+                          <p className="text-xs text-gray-600 font-medium">All prices in USD</p>
+
+                          <Badge variant="secondary" className="mt-1 bg-green-100 text-green-700 border-green-200 text-xs">
+
+                            Best Value Guaranteed
+
+                          </Badge>
+
+                        </div>
 
                       </div>
 
@@ -2942,147 +3078,71 @@ export default function ItineraryPreviewPage() {
 
                   </Card>
 
-                ))}
-
-              </div>
-
-            )}
+                )}
 
 
 
-            {/* Total Summary */}
+                {/* Branding Footer */}
 
-            {showPrices && (
+                {itinerary.branding && (itinerary.branding.footerLogo || itinerary.branding.footerText) && (
 
-              <Card className="mt-4 border-0 shadow-lg bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 overflow-hidden">
+                  <Card className="mt-4 border-0 shadow-lg bg-gradient-to-r from-slate-900 to-gray-900 text-white overflow-hidden">
 
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 to-emerald-400/10"></div>
+                    <CardContent className="p-4 text-center relative z-10">
 
-                <CardContent className="p-4 relative z-10">
+                      {itinerary.branding.footerLogo && (
 
-                  <div className="flex items-center justify-between">
+                        <img
 
-                    <div>
+                          src={itinerary.branding.footerLogo || "/placeholder.svg"}
 
-                      <h3 className="section-title text-xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>
+                          alt="Footer Logo"
 
-                        Total Investment
+                          className="h-12 mx-auto mb-2 object-contain filter brightness-0 invert"
 
-                      </h3>
+                        />
 
-                      <div className="flex items-center space-x-4 text-gray-600">
+                      )}
 
-                        <div className="flex items-center space-x-1">
+                      {itinerary.branding.footerText && (
 
-                          <Calendar className="h-4 w-4 text-blue-500" />
+                        <p className="text-sm font-medium text-white/90">
 
-                          <span className="font-medium text-sm">{itinerary.days.length} days</span>
+                          {itinerary.branding.footerText}
 
-                        </div>
+                        </p>
 
-                        <div className="flex items-center space-x-1">
+                      )}
 
-                          <Globe className="h-4 w-4 text-purple-500" />
+                      <div className="mt-3 pt-3 border-t border-white/20">
 
-                          <span className="font-medium text-sm">
+                        <p className="text-xs text-white/60">
 
-                            {itinerary.days.reduce((sum, day) => sum + day.events.length, 0)} activities
+                          Created with ❤️ for unforgettable journeys
 
-                          </span>
-
-                        </div>
+                        </p>
 
                       </div>
 
-                    </div>
+                    </CardContent>
 
-                    <div className="text-right">
+                  </Card>
 
-                      <div className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-1">
+                )}
 
-                        {formatPrice(itinerary.totalPrice)}
-
-                      </div>
-
-                      <p className="text-xs text-gray-600 font-medium">All prices in USD</p>
-
-                      <Badge variant="secondary" className="mt-1 bg-green-100 text-green-700 border-green-200 text-xs">
-
-                        Best Value Guaranteed
-
-                      </Badge>
-
-                    </div>
-
-                  </div>
-
-                </CardContent>
-
-              </Card>
-
-            )}
-
-
-
-            {/* Branding Footer */}
-
-            {itinerary.branding && (itinerary.branding.footerLogo || itinerary.branding.footerText) && (
-
-              <Card className="mt-4 border-0 shadow-lg bg-gradient-to-r from-slate-900 to-gray-900 text-white overflow-hidden">
-
-                <CardContent className="p-4 text-center relative z-10">
-
-                  {itinerary.branding.footerLogo && (
-
-                    <img
-
-                      src={itinerary.branding.footerLogo || "/placeholder.svg"}
-
-                      alt="Footer Logo"
-
-                      className="h-12 mx-auto mb-2 object-contain filter brightness-0 invert"
-
-                    />
-
-                  )}
-
-                  {itinerary.branding.footerText && (
-
-                    <p className="text-sm font-medium text-white/90">
-
-                      {itinerary.branding.footerText}
-
-                    </p>
-
-                  )}
-
-                  <div className="mt-3 pt-3 border-t border-white/20">
-
-                    <p className="text-xs text-white/60">
-
-                      Created with ❤️ for unforgettable journeys
-
-                    </p>
-
-                  </div>
-
-                </CardContent>
-
-              </Card>
-
-            )}
-
-          </>
-
-        )}
+              </>
+            )
+          }
+        })()}
 
       </div>
 
-    </div>
+    </div >
 
   )
 
 }
+
 
 
 
