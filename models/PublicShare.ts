@@ -31,6 +31,12 @@ export interface IPublicShare {
       companyName?: string
       contactEmail?: string
       contactPhone?: string
+      instagram?: string
+      whatsapp?: string
+      facebook?: string
+      youtube?: string
+      website?: string
+      twitter?: string
     }
   }
   // Global pricing markup options (for individual shares or default for collections)
@@ -115,12 +121,20 @@ const publicShareSchema = new mongoose.Schema({
     showPricing: { type: Boolean, default: true },
     showContactInfo: { type: Boolean, default: true },
     customBranding: {
-      logo: { type: String },
-      primaryColor: { type: String },
-      secondaryColor: { type: String },
-      companyName: { type: String },
-      contactEmail: { type: String },
-      contactPhone: { type: String }
+      type: mongoose.Schema.Types.Mixed,
+      default: {
+        logo: '',
+        primaryColor: '',
+        companyName: '',
+        contactEmail: '',
+        contactPhone: '',
+        instagram: '',
+        whatsapp: '',
+        facebook: '',
+        youtube: '',
+        website: '',
+        twitter: ''
+      }
     }
   },
   // Global pricing markup options
@@ -146,13 +160,12 @@ const publicShareSchema = new mongoose.Schema({
   timestamps: true
 })
 
-// Add indexes for better performance
-publicShareSchema.index({ shareId: 1 })
-publicShareSchema.index({ slug: 1 })
+// Add indexes for better performance (shareId and slug already indexed via field definitions)
 publicShareSchema.index({ createdBy: 1 })
 publicShareSchema.index({ shareType: 1 })
 publicShareSchema.index({ isActive: 1 })
 publicShareSchema.index({ expiresAt: 1 })
+
 
 shareViewSchema.index({ shareId: 1, viewedAt: -1 })
 

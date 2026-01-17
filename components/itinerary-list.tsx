@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Calendar, MapPin, Clock, Edit, Package, ShoppingCart, FileText, Users, DollarSign, Share2, Copy, FileDigit, Loader2 } from "lucide-react"
+import { Plus, Calendar, MapPin, Clock, Edit, Package, ShoppingCart, FileText, Users, DollarSign, Share2, Copy, FileDigit, Loader2, Trash2 } from "lucide-react"
 import { IItinerary } from "@/models/Itinerary"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -29,7 +29,7 @@ const TYPE_CONFIG = {
     color: "bg-blue-50 border-blue-200 text-blue-800",
   },
   "customized-package": {
-    label: "Customized Package", 
+    label: "Customized Package",
     icon: Package,
     color: "bg-green-50 border-green-200 text-green-800",
   },
@@ -52,7 +52,10 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
   const [selectedItinerary, setSelectedItinerary] = useState<IItinerary | null>(null)
   const [clientInfo, setClientInfo] = useState({ name: "", email: "", phone: "", referenceNo: "", notes: "" })
   const [convertDialogOpen, setConvertDialogOpen] = useState(false)
-  
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [itineraryToDelete, setItineraryToDelete] = useState<IItinerary | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -115,7 +118,7 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
 
       // Copy to clipboard
       await navigator.clipboard.writeText(shareUrl)
-      
+
       toast({
         title: "Share Link Created",
         description: "Public share link copied to clipboard!"
@@ -145,13 +148,13 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
 
   const handleConvertToQuotation = async () => {
     if (!selectedItinerary || !selectedItinerary._id) return
-    
+
     try {
       const quotationId = await convertItineraryToQuotation(
         selectedItinerary._id,
         clientInfo
       )
-      
+
       if (quotationId) {
         setConvertDialogOpen(false)
         setSelectedItinerary(null)
@@ -167,7 +170,49 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
     }
   }
 
-  const filteredItineraries = itineraries.filter(itinerary => 
+  const handleDeleteClick = (itinerary: IItinerary) => {
+    setItineraryToDelete(itinerary)
+    setDeleteDialogOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!itineraryToDelete || !itineraryToDelete._id) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/itineraries/${itineraryToDelete._id}`, {
+        method: "DELETE"
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete itinerary")
+      }
+
+      // Update the itineraries list by removing the deleted item
+      setItineraries(prevItineraries =>
+        prevItineraries.filter(item => item._id !== itineraryToDelete._id)
+      )
+
+      toast({
+        title: "Itinerary Deleted",
+        description: `"${itineraryToDelete.title}" has been deleted successfully.`
+      })
+
+      setDeleteDialogOpen(false)
+      setItineraryToDelete(null)
+    } catch (error) {
+      console.error("Error deleting itinerary:", error)
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete itinerary. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const filteredItineraries = itineraries.filter(itinerary =>
     itinerary.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     itinerary.destination.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -189,8 +234,8 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
         <div className="space-y-1">
           <h2 className="text-2xl font-bold">{selectForQuotation ? "Select Itinerary for Quotation" : "Itineraries"}</h2>
           <p className="text-sm text-gray-500">
-            {selectForQuotation 
-              ? "Select an itinerary to convert to a quotation" 
+            {selectForQuotation
+              ? "Select an itinerary to convert to a quotation"
               : "Create and manage your travel itineraries"}
           </p>
         </div>
@@ -324,7 +369,7 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
                     )}
 
                     <p className="text-sm text-gray-600 line-clamp-2">{itinerary.description}</p>
-                    
+
                     {/* Creator and Updated info */}
                     <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t">
                       <span>
@@ -333,7 +378,7 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
                       <span>
                         {new Date(itinerary.updatedAt).toLocaleDateString('en-US', {
                           day: '2-digit',
-                          month: 'short', 
+                          month: 'short',
                           year: '2-digit'
                         })}
                       </span>
@@ -341,9 +386,9 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
 
                     <div className="flex justify-end space-x-2 mt-4">
                       {selectForQuotation ? (
-                        <Button 
-                          variant="default" 
-                          size="sm" 
+                        <Button
+                          variant="default"
+                          size="sm"
                           className="w-full"
                           onClick={() => handleItinerarySelect(itinerary)}
                         >
@@ -371,13 +416,22 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
                             <Edit className="h-4 w-4 mr-1" />
                             Edit
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => createQuickShare(itinerary)}
                             title="Create quick public share"
                           >
                             <Share2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteClick(itinerary)}
+                            title="Delete itinerary"
+                            className="hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </>
                       )}
@@ -399,71 +453,95 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
               You'll be able to adjust pricing options on the next screen.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Client Name *</Label>
-              <Input 
-                id="name" 
-                value={clientInfo.name} 
+              <Input
+                id="name"
+                value={clientInfo.name}
                 onChange={(e) => handleClientInfoChange("name", e.target.value)}
                 placeholder="Enter client name"
                 required
               />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="email">Email (Optional)</Label>
-              <Input 
-                id="email" 
+              <Input
+                id="email"
                 type="email"
-                value={clientInfo.email} 
+                value={clientInfo.email}
                 onChange={(e) => handleClientInfoChange("email", e.target.value)}
                 placeholder="client@example.com"
               />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="phone">Phone (Optional)</Label>
-              <Input 
-                id="phone" 
-                value={clientInfo.phone} 
+              <Input
+                id="phone"
+                value={clientInfo.phone}
                 onChange={(e) => handleClientInfoChange("phone", e.target.value)}
                 placeholder="+1 234 567 8900"
               />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="referenceNo">Reference No. (Optional)</Label>
-              <Input 
-                id="referenceNo" 
-                value={clientInfo.referenceNo} 
+              <Input
+                id="referenceNo"
+                value={clientInfo.referenceNo}
                 onChange={(e) => handleClientInfoChange("referenceNo", e.target.value)}
                 placeholder="QT-12345"
               />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="notes">Notes (Optional)</Label>
-              <Textarea 
-                id="notes" 
-                value={clientInfo.notes} 
+              <Textarea
+                id="notes"
+                value={clientInfo.notes}
                 onChange={(e) => handleClientInfoChange("notes", e.target.value)}
                 placeholder="Any special requirements or notes"
                 rows={3}
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setConvertDialogOpen(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleConvertToQuotation}
               disabled={!clientInfo.name || isConverting}
             >
               {isConverting ? "Converting..." : "Create Quotation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Itinerary</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{itineraryToDelete?.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

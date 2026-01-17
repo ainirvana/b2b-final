@@ -24,6 +24,12 @@ interface CreateShareRequest {
       companyName?: string
       contactEmail?: string
       contactPhone?: string
+      instagram?: string
+      whatsapp?: string
+      facebook?: string
+      youtube?: string
+      website?: string
+      twitter?: string
     }
   }
   // Pricing markup options
@@ -213,8 +219,12 @@ export async function POST(request: NextRequest) {
       shareData.itineraryIds = body.itineraryIds
     }
 
+    console.log('[API POST] Social media BEFORE save:', JSON.stringify(shareData.settings?.customBranding, null, 2))
+
     const newShare = new PublicShare(shareData)
     await newShare.save()
+
+    console.log('[API POST] Social media AFTER save:', JSON.stringify(newShare.settings?.customBranding, null, 2))
 
     // Populate the response
     await newShare.populate([

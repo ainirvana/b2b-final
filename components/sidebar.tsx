@@ -40,7 +40,7 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "library", label: "Library", icon: BookOpen },
-    { id: "shares", label: "Weblinks", icon: Share2 },
+    { id: "weblinks", label: "Weblinks", icon: Share2 },
     { id: "rfqs", label: "RFQs", icon: MessageSquare },
     { id: "finance", label: "Finance", icon: DollarSign },
     { id: "quotation-builder", label: "Quotation Builder", icon: FileText },

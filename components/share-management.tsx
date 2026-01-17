@@ -39,10 +39,12 @@ interface CreateShareModalProps {
   isOpen: boolean
   onClose: () => void
   onShareCreated: (share: ShareWithItineraries) => void
+  onShareUpdated?: (share: ShareWithItineraries) => void
   availableItineraries: IItinerary[]
+  initialShare?: ShareWithItineraries | null
 }
 
-function CreateShareModal({ isOpen, onClose, onShareCreated, availableItineraries }: CreateShareModalProps) {
+function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, availableItineraries, initialShare }: CreateShareModalProps) {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -62,7 +64,13 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
         contactEmail: "",
         contactPhone: "",
         primaryColor: "",
-        logo: ""
+        logo: "",
+        instagram: "",
+        whatsapp: "",
+        facebook: "",
+        youtube: "",
+        website: "",
+        twitter: ""
       }
     },
     // Global pricing markup options (used for individual shares)
@@ -87,6 +95,54 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
   })
   const [creating, setCreating] = useState(false)
   const { toast } = useToast()
+
+  // Populate form when editing
+  useEffect(() => {
+    if (initialShare) {
+      console.log('Loading initial share data:', initialShare)
+      console.log('Social media from initial share:', initialShare.settings?.customBranding)
+
+      setFormData({
+        title: initialShare.title,
+        description: initialShare.description || "",
+        shareType: initialShare.shareType,
+        itineraryId: initialShare.shareType === "individual" ? (initialShare.itineraryId?._id || initialShare.itineraryId || "") : "",
+        itineraryIds: initialShare.shareType === "collection" ? (initialShare.itineraryIds?.map((i: any) => i._id || i) || []) : [],
+        expiresAt: initialShare.expiresAt ? new Date(initialShare.expiresAt).toISOString().slice(0, 16) : "",
+        expiryMessage: initialShare.expiryMessage || "",
+        passwordProtected: initialShare.passwordProtected || false,
+        password: initialShare.password || "",
+        settings: {
+          allowComments: initialShare.settings?.allowComments || false,
+          showPricing: initialShare.settings?.showPricing ?? true,
+          showContactInfo: initialShare.settings?.showContactInfo ?? true,
+          customBranding: {
+            companyName: initialShare.settings?.customBranding?.companyName || "",
+            contactEmail: initialShare.settings?.customBranding?.contactEmail || "",
+            contactPhone: initialShare.settings?.customBranding?.contactPhone || "",
+            primaryColor: initialShare.settings?.customBranding?.primaryColor || "",
+            logo: initialShare.settings?.customBranding?.logo || "",
+            instagram: initialShare.settings?.customBranding?.instagram || "",
+            whatsapp: initialShare.settings?.customBranding?.whatsapp || "",
+            facebook: initialShare.settings?.customBranding?.facebook || "",
+            youtube: initialShare.settings?.customBranding?.youtube || "",
+            website: initialShare.settings?.customBranding?.website || "",
+            twitter: initialShare.settings?.customBranding?.twitter || ""
+          }
+        },
+        pricingOptions: {
+          markupType: initialShare.pricingOptions?.markupType || "percentage",
+          markupValue: initialShare.pricingOptions?.markupValue || 0,
+          showOriginalPrice: initialShare.pricingOptions?.showOriginalPrice || false,
+          strikethroughMarkupType: initialShare.pricingOptions?.strikethroughMarkupType || "percentage",
+          strikethroughMarkupValue: initialShare.pricingOptions?.strikethroughMarkupValue || 0,
+          showIndividualPricing: initialShare.pricingOptions?.showIndividualPricing ?? true,
+          pricingCurrency: initialShare.pricingOptions?.pricingCurrency || "INR"
+        },
+        perItineraryPricing: initialShare.perItineraryPricing || []
+      })
+    }
+  }, [initialShare])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,8 +176,16 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
 
     try {
       setCreating(true)
-      const response = await fetch("/api/shares", {
-        method: "POST",
+
+      const isEditing = !!initialShare
+      const url = isEditing ? `/api/shares/${initialShare.shareId}` : "/api/shares"
+      const method = isEditing ? "PUT" : "POST"
+
+      console.log('Submitting form data:', formData)
+      console.log('Social media being sent:', formData.settings.customBranding)
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json"
         },
@@ -130,57 +194,71 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || "Failed to create share")
+        throw new Error(error.error || `Failed to ${isEditing ? 'update' : 'create'} share`)
       }
 
       const result = await response.json()
-      onShareCreated(result.share)
+
+      if (isEditing && onShareUpdated) {
+        onShareUpdated(result.share)
+      } else {
+        onShareCreated(result.share)
+      }
+
       onClose()
 
       toast({
-        title: "Share Created",
-        description: `Your ${formData.shareType} share has been created successfully!`
+        title: isEditing ? "Weblink Updated" : "Weblink Created",
+        description: `Your ${formData.shareType} share has been ${isEditing ? 'updated' : 'created'} successfully!`
       })
 
-      // Reset form
-      setFormData({
-        title: "",
-        description: "",
-        shareType: "individual",
-        itineraryId: "",
-        itineraryIds: [],
-        expiresAt: "",
-        expiryMessage: "",
-        passwordProtected: false,
-        password: "",
-        settings: {
-          allowComments: false,
-          showPricing: true,
-          showContactInfo: true,
-          customBranding: {
-            companyName: "",
-            contactEmail: "",
-            contactPhone: "",
-            primaryColor: "",
-            logo: ""
-          }
-        },
-        pricingOptions: {
-          markupType: "percentage",
-          markupValue: 0,
-          showOriginalPrice: false,
-          strikethroughMarkupType: "percentage",
-          strikethroughMarkupValue: 0,
-          showIndividualPricing: true,
-          pricingCurrency: "INR"
-        },
-        perItineraryPricing: []
-      })
+      // Reset form only if creating (not editing)
+      if (!isEditing) {
+        setFormData({
+          title: "",
+          description: "",
+          shareType: "individual",
+          itineraryId: "",
+          itineraryIds: [],
+          expiresAt: "",
+          expiryMessage: "",
+          passwordProtected: false,
+          password: "",
+          settings: {
+            allowComments: false,
+            showPricing: true,
+            showContactInfo: true,
+            customBranding: {
+              companyName: "",
+              contactEmail: "",
+              contactPhone: "",
+              primaryColor: "",
+              logo: "",
+              instagram: "",
+              whatsapp: "",
+              facebook: "",
+              youtube: "",
+              website: "",
+              twitter: ""
+            }
+          },
+          pricingOptions: {
+            markupType: "percentage",
+            markupValue: 0,
+            showOriginalPrice: false,
+            strikethroughMarkupType: "percentage",
+            strikethroughMarkupValue: 0,
+            showIndividualPricing: true,
+            pricingCurrency: "INR"
+          },
+          perItineraryPricing: []
+        })
+      }
     } catch (err) {
-      console.error("Error creating share:", err)
+      console.error(`Error ${initialShare ? 'updating' : 'creating'} share:`, err)
       toast({
-        title: "Creation Failed",
-        description: err instanceof Error ? err.message : "Failed to create share",
+        title: initialShare ? "Update Failed" : "Creation Failed",
+        description: err instanceof Error ? err.message : `Failed to ${initialShare ? 'update' : 'create'} share`,
         variant: "destructive"
       })
     } finally {
@@ -234,7 +312,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Share</DialogTitle>
+          <DialogTitle>{initialShare ? 'Edit Weblink' : 'Create Weblink'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -768,6 +846,170 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
                   placeholder="contact@company.com"
                 />
               </div>
+
+              <div>
+                <Label htmlFor="contact-phone" className="text-sm">Contact Phone</Label>
+                <Input
+                  id="contact-phone"
+                  type="tel"
+                  value={formData.settings.customBranding.contactPhone}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    settings: {
+                      ...prev.settings,
+                      customBranding: {
+                        ...prev.settings.customBranding,
+                        contactPhone: e.target.value
+                      }
+                    }
+                  }))}
+                  placeholder="+1 234 567 8900"
+                />
+              </div>
+
+              {/* Social Media Links */}
+              <div className="col-span-2 pt-4 border-t border-gray-200">
+                <h5 className="font-medium text-sm mb-3 text-gray-700">Social Media Links (Optional)</h5>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="instagram" className="text-xs flex items-center gap-1">
+                      <span className="text-pink-600">●</span> Instagram
+                    </Label>
+                    <Input
+                      id="instagram"
+                      type="url"
+                      value={formData.settings.customBranding.instagram || ""}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        settings: {
+                          ...prev.settings,
+                          customBranding: {
+                            ...prev.settings.customBranding,
+                            instagram: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="https://instagram.com/yourcompany"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="whatsapp" className="text-xs flex items-center gap-1">
+                      <span className="text-green-600">●</span> WhatsApp
+                    </Label>
+                    <Input
+                      id="whatsapp"
+                      type="tel"
+                      value={formData.settings.customBranding.whatsapp || ""}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        settings: {
+                          ...prev.settings,
+                          customBranding: {
+                            ...prev.settings.customBranding,
+                            whatsapp: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="+1234567890"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="facebook" className="text-xs flex items-center gap-1">
+                      <span className="text-blue-600">●</span> Facebook
+                    </Label>
+                    <Input
+                      id="facebook"
+                      type="url"
+                      value={formData.settings.customBranding.facebook || ""}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        settings: {
+                          ...prev.settings,
+                          customBranding: {
+                            ...prev.settings.customBranding,
+                            facebook: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="https://facebook.com/yourcompany"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="twitter" className="text-xs flex items-center gap-1">
+                      <span className="text-gray-900">●</span> X (Twitter)
+                    </Label>
+                    <Input
+                      id="twitter"
+                      type="url"
+                      value={formData.settings.customBranding.twitter || ""}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        settings: {
+                          ...prev.settings,
+                          customBranding: {
+                            ...prev.settings.customBranding,
+                            twitter: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="https://x.com/yourcompany"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="youtube" className="text-xs flex items-center gap-1">
+                      <span className="text-red-600">●</span> YouTube
+                    </Label>
+                    <Input
+                      id="youtube"
+                      type="url"
+                      value={formData.settings.customBranding.youtube || ""}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        settings: {
+                          ...prev.settings,
+                          customBranding: {
+                            ...prev.settings.customBranding,
+                            youtube: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="https://youtube.com/@yourcompany"
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="website" className="text-xs flex items-center gap-1">
+                      <span className="text-indigo-600">●</span> Website
+                    </Label>
+                    <Input
+                      id="website"
+                      type="url"
+                      value={formData.settings.customBranding.website || ""}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        settings: {
+                          ...prev.settings,
+                          customBranding: {
+                            ...prev.settings.customBranding,
+                            website: e.target.value
+                          }
+                        }
+                      }))}
+                      placeholder="https://yourcompany.com"
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -780,12 +1022,11 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, availableItinerarie
               {creating ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Creating...
+                  {initialShare ? "Updating..." : "Creating..."}
                 </>
               ) : (
                 <>
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Create Share
+                  {initialShare ? "Update Weblink" : "Create Weblink"}
                 </>
               )}
             </Button>
@@ -804,6 +1045,7 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
   const [shares, setShares] = useState<ShareWithItineraries[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingShare, setEditingShare] = useState<ShareWithItineraries | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -961,7 +1203,7 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Create Share
+          Create Weblink
         </Button>
       </div>
 
@@ -1077,6 +1319,15 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => setEditingShare(share)}
+                      title="Edit share"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => {
                         const slug = share.slug || (share.title?.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim())
                         window.open(`/weblinks/${slug}`, '_blank')
@@ -1112,14 +1363,23 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
         </div>
       )}
 
-      {/* Create Share Modal */}
+      {/* Create/Edit Share Modal */}
       <CreateShareModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        isOpen={showCreateModal || !!editingShare}
+        onClose={() => {
+          setShowCreateModal(false)
+          setEditingShare(null)
+        }}
         onShareCreated={(newShare) => {
           setShares(prev => [newShare, ...prev])
         }}
+        onShareUpdated={(updatedShare) => {
+          setShares(prev => prev.map(share =>
+            share.shareId === updatedShare.shareId ? updatedShare : share
+          ))
+        }}
         availableItineraries={availableItineraries}
+        initialShare={editingShare}
       />
     </div>
   )

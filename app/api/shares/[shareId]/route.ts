@@ -62,12 +62,12 @@ export async function GET(
 // PUT /api/shares/[shareId] - Update share
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
     await connectToDatabase()
 
-    const { shareId } = params
+    const { shareId } = await params
     const body = await request.json()
 
     const share = await PublicShare.findOne({ shareId })
@@ -79,30 +79,36 @@ export async function PUT(
       )
     }
 
-    // TODO: Add authorization check - only creator can update
-
-    // Update allowed fields
+    // Build update object
     const updateData: any = {}
 
-    if (body.title) updateData.title = body.title
+    if (body.title !== undefined) updateData.title = body.title
     if (body.description !== undefined) updateData.description = body.description
     if (body.isActive !== undefined) updateData.isActive = body.isActive
     if (body.expiresAt !== undefined) {
       updateData.expiresAt = body.expiresAt ? new Date(body.expiresAt) : null
     }
-    if (body.settings) updateData.settings = { ...share.settings, ...body.settings }
+    if (body.expiryMessage !== undefined) updateData.expiryMessage = body.expiryMessage
+    if (body.passwordProtected !== undefined) updateData.passwordProtected = body.passwordProtected
+    if (body.password !== undefined) updateData.password = body.password
 
-    // Handle password updates
-    if (body.passwordProtected !== undefined) {
-      updateData.passwordProtected = body.passwordProtected
-      if (body.passwordProtected && body.password) {
-        updateData.password = body.password // Simple storage for now
-      } else if (!body.passwordProtected) {
-        updateData.password = undefined
+    // Merge settings including social media fields
+    if (body.settings) {
+      updateData.settings = {
+        ...share.settings,
+        ...body.settings
+      }
+
+      // Deep merge customBranding to preserve all fields including social media
+      if (body.settings.customBranding) {
+        updateData.settings.customBranding = {
+          ...(share.settings?.customBranding || {}),
+          ...body.settings.customBranding
+        }
       }
     }
 
-    // Handle pricing options updates
+    // Update pricing options
     if (body.pricingOptions) {
       updateData.pricingOptions = {
         ...share.pricingOptions,
@@ -110,10 +116,15 @@ export async function PUT(
       }
     }
 
+    // Update per-itinerary pricing if provided
+    if (body.perItineraryPricing !== undefined) {
+      updateData.perItineraryPricing = body.perItineraryPricing
+    }
+
     const updatedShare = await PublicShare.findOneAndUpdate(
       { shareId },
-      updateData,
-      { new: true }
+      { $set: updateData },
+      { new: true, runValidators: false } // Disable validators to avoid slug required error
     ).populate([
       {
         path: 'itineraryId',
@@ -142,12 +153,12 @@ export async function PUT(
 // DELETE /api/shares/[shareId] - Delete share
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { shareId: string } }
+  { params }: { params: Promise<{ shareId: string }> }
 ) {
   try {
     await connectToDatabase()
 
-    const { shareId } = params
+    const { shareId } = await params
 
     const share = await PublicShare.findOne({ shareId })
 

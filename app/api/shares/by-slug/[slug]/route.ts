@@ -58,10 +58,23 @@ export async function GET(
 
         // Check if share has expired
         if (share.expiresAt && new Date() > share.expiresAt) {
+            // Transform the data to show even when expired
+            const transformedShare = {
+                ...share.toObject(),
+                itinerary: share.shareType === "individual" ? share.itineraryId : undefined,
+                itineraries: share.shareType === "collection" ? share.itineraryIds : undefined
+            }
+
+            // Remove the original populated fields
+            delete transformedShare.itineraryId
+            delete transformedShare.itineraryIds
+
             return NextResponse.json(
                 {
                     error: "Weblink has expired",
-                    expiryMessage: share.expiryMessage || null // Include custom message if available
+                    expiryMessage: share.expiryMessage || null,
+                    expiresAt: share.expiresAt,
+                    share: transformedShare // Include full share data for contact info display
                 },
                 { status: 410 }
             )
