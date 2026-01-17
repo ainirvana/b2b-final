@@ -424,80 +424,149 @@ export default function PublicWeblinkPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header - Premium Design */}
-      <header
-        className="sticky top-0 z-50 backdrop-blur-lg bg-white/80 shadow-lg border-b border-white/20"
-        style={{
-          background: getBrandingProp('primaryColor')
-            ? `linear-gradient(135deg, ${getBrandingProp('primaryColor')}ee, ${getBrandingProp('primaryColor')}dd)`
-            : "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9))",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Main Header Content */}
-          <div className="py-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex-1">
-                <h2
-                  className="text-3xl md:text-4xl font-bold mb-2 tracking-tight"
-                  style={{ color: getBrandingProp('primaryColor') ? "#ffffff" : "#111827" }}
-                >
-                  {shareData.title}
-                </h2>
-                {shareData.description && (
-                  <p
-                    className="text-base md:text-lg opacity-90 max-w-2xl"
-                    style={{ color: getBrandingProp('primaryColor') ? "#ffffff" : "#4b5563" }}
-                  >
-                    {shareData.description}
-                  </p>
-                )}
-              </div>
+    <div className="min-h-screen bg-slate-50 selection:bg-brand-primary-100 selection:text-brand-primary-900 font-sans relative">
+      {/* Hero Background Image */}
+      {/* Hero Background Image */}
+      {getBrandingProp('heroImage') && (
+        <div className="absolute top-0 left-0 right-0 h-[600px] z-0 overflow-hidden animate-fade-in">
+          <img
+            src={getBrandingProp('heroImage')}
+            alt="Hero Background"
+            className="w-full h-full object-cover"
+          />
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-slate-50" />
+        </div>
+      )}
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold px-6"
+      {/* Premium Background Mesh */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] right-[-5%] w-[40rem] h-[40rem] rounded-full bg-blue-100 blur-3xl opacity-50 mix-blend-multiply filter animate-blob" />
+        <div className="absolute top-[20%] left-[-10%] w-[35rem] h-[35rem] rounded-full bg-purple-100 blur-3xl opacity-50 mix-blend-multiply filter animate-blob animation-delay-2000" />
+        <div className="absolute bottom-[-10%] right-[10%] w-[45rem] h-[45rem] rounded-full bg-yellow-50 blur-3xl opacity-50 mix-blend-multiply filter animate-blob animation-delay-4000" />
+      </div>
+
+      {/* Premium Sticky Header */}
+      <header
+        className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-white/20 transition-all duration-300"
+      >
+        {/* Gradient Top Border */}
+        <div
+          className="h-1 w-full bg-gradient-to-r from-transparent via-current to-transparent opacity-50"
+          style={{ color: getBrandingProp('primaryColor') || '#eab308' }}
+        />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="h-20 flex items-center justify-between gap-4">
+            {/* Left: Branding */}
+            <div className="flex items-center gap-4">
+              {getBrandingProp('logo') && (
+                <img
+                  src={getBrandingProp('logo')}
+                  alt="Logo"
+                  className="h-12 w-auto object-contain hover:scale-105 transition-transform duration-300"
+                />
+              )}
+              {getBrandingProp('companyName') && (
+                <h1
+                  className="text-xl font-bold tracking-tight hidden md:block bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600"
                 >
-                  <a href="https://ticketing.aivialabs.com/forms/enquire-now-from-weblinks" target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-5 w-5 mr-2" />
-                    Enquire Now
-                  </a>
-                </Button>
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold px-6"
-                  onClick={() => {
-                    // Dummy placeholder - can be connected later
-                    alert('Book Now feature coming soon!')
-                  }}
-                >
-                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Book Now
-                </Button>
-                <Button
-                  onClick={handleShare}
-                  variant="outline"
-                  size="lg"
-                  className="border-2 hover:bg-white/50 backdrop-blur transition-all duration-300"
-                  style={{
-                    borderColor: getBrandingProp('primaryColor') || "#d1d5db",
-                    color: getBrandingProp('primaryColor') || "#4b5563"
-                  }}
-                >
-                  <Share2 className="h-5 w-5 mr-2" />
-                  Share
-                </Button>
-              </div>
+                  {getBrandingProp('companyName')}
+                </h1>
+              )}
+            </div>
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-3">
+              <Button
+                asChild
+                className="hidden md:flex bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all duration-300 rounded-full"
+              >
+                <a href="https://ticketing.aivialabs.com/forms/enquire-now-from-weblinks" target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Enquire
+                </a>
+              </Button>
+              <Button
+                className="hidden md:flex bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all duration-300 rounded-full"
+                onClick={() => alert('Book Now feature coming soon!')}
+              >
+                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Book Now
+              </Button>
+              <Button
+                onClick={handleShare}
+                variant="outline"
+                size="icon"
+                className="rounded-full border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
+              >
+                <Share2 className="h-4 w-4 text-gray-600" />
+              </Button>
+
+              {/* Mobile Menu Button - could be added here if needed */}
             </div>
           </div>
         </div>
       </header>
+
+      {/* Hero Section */}
+      <div className="relative z-10 pt-16 pb-12 px-4 sm:px-6 lg:px-8 text-center max-w-5xl mx-auto">
+        <div
+          className={`inline-flex items-center justify-center p-1 rounded-full mb-6 backdrop-blur-sm shadow-sm animate-fade-in ${getBrandingProp('heroImage')
+              ? 'bg-white/10 border border-white/20'
+              : 'bg-white/50 border border-white/50'
+            }`}
+        >
+          <span className={`px-4 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${getBrandingProp('heroImage')
+              ? 'bg-white/20 text-white border-transparent'
+              : 'bg-white text-gray-900 border-gray-100 border'
+            }`}>
+            Exclusive Collection
+          </span>
+        </div>
+
+        <h1
+          className={`text-4xl md:text-6xl font-black mb-6 tracking-tight drop-shadow-sm animate-slide-in ${getBrandingProp('heroImage') ? 'text-white' : 'text-gray-900'
+            }`}
+          style={!getBrandingProp('heroImage') ? {
+            backgroundImage: getBrandingProp('primaryColor')
+              ? `linear-gradient(135deg, #111827 0%, ${getBrandingProp('primaryColor')} 100%)`
+              : undefined,
+            backgroundClip: getBrandingProp('primaryColor') ? 'text' : undefined,
+            WebkitBackgroundClip: getBrandingProp('primaryColor') ? 'text' : undefined,
+            color: getBrandingProp('primaryColor') ? 'transparent' : '#111827'
+          } : { textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+        >
+          {shareData.title}
+        </h1>
+
+        {shareData.description && (
+          <p className={`text-lg md:text-xl max-w-2xl mx-auto leading-relaxed animate-fade-in delay-100 ${getBrandingProp('heroImage') ? 'text-gray-100 drop-shadow-md' : 'text-gray-600'
+            }`}>
+            {shareData.description}
+          </p>
+        )}
+
+        {/* Mobile Action Bar (Visible only on small screens) */}
+        <div className="mt-8 flex md:hidden justify-center gap-3 animate-fade-in delay-200">
+          <Button
+            asChild
+            className="flex-1 max-w-[140px] bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full"
+          >
+            <a href="https://ticketing.aivialabs.com/forms/enquire-now-from-weblinks" target="_blank" rel="noopener noreferrer">
+              Enquire
+            </a>
+          </Button>
+          <Button
+            className="flex-1 max-w-[140px] bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-full"
+            onClick={() => alert('Book Now feature coming soon!')}
+          >
+            Book Now
+          </Button>
+        </div>
+      </div>
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1325,137 +1394,181 @@ function CollectionView({
     setShowModal(false)
   }
   return (
-    <div className="space-y-8">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold mb-2">Travel Collection</h2>
-        <p className="text-gray-600">
-          Explore {itineraries.length} carefully curated travel experiences
-        </p>
+    <div className="space-y-12">
+      <div className="text-center relative">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-gray-200"></div>
+        </div>
+        <div className="relative flex justify-center">
+          <span className="px-6 py-2 bg-slate-50 text-sm font-medium text-gray-500 uppercase tracking-widest rounded-full border border-gray-100">
+            Available Packages ({itineraries.length})
+          </span>
+        </div>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {itineraries.map((itinerary, index) => (
-          <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
-            {itinerary.gallery && itinerary.gallery.length > 0 && (
-              <div className="h-48 overflow-hidden">
+          <div
+            key={index}
+            className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full"
+            onClick={() => handleViewItinerary(itinerary)}
+          >
+            {/* Image Section */}
+            <div className="aspect-[4/3] overflow-hidden relative">
+              {itinerary.gallery && itinerary.gallery.length > 0 ? (
                 <img
                   src={itinerary.gallery[0].url}
                   alt={itinerary.gallery[0].altText || itinerary.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-              </div>
-            )}
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="font-semibold text-lg">{itinerary.title}</h3>
-                <Badge className={getTypeColor(itinerary.type)} variant="secondary">
+              ) : (
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                  <MapPin className="h-12 w-12 text-gray-300" />
+                </div>
+              )}
+              {/* Type Badge Overlay */}
+              <div className="absolute top-4 right-4">
+                <Badge className={`${getTypeColor(itinerary.type)} backdrop-blur-md bg-opacity-90 shadow-sm border-0`}>
                   {getTypeLabel(itinerary.type)}
                 </Badge>
               </div>
+            </div>
 
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {itinerary.description}
-              </p>
+            {/* Content Section */}
+            <div className="p-6 flex flex-col flex-1">
+              <div className="mb-4">
+                <h3 className="font-bold text-xl text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1">
+                  {itinerary.title}
+                </h3>
+                <p className="text-gray-500 text-sm line-clamp-2 leading-relaxed">
+                  {itinerary.description}
+                </p>
+              </div>
 
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span>{itinerary.destination}</span>
+              {/* Meta Details */}
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm mb-6">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <div className="p-1.5 bg-blue-50 rounded-full text-blue-600 group-hover:bg-blue-100 transition-colors">
+                    <MapPin className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="truncate max-w-[100px]">{itinerary.destination}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
+                <div className="flex items-center gap-2 text-gray-600">
+                  <div className="p-1.5 bg-amber-50 rounded-full text-amber-600 group-hover:bg-amber-100 transition-colors">
+                    <Clock className="h-3.5 w-3.5" />
+                  </div>
                   <span>{itinerary.duration}</span>
                 </div>
-                {settings.showPricing && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-gray-500" />
-                    <span className="font-semibold">
-                      {getDisplayPrice(itinerary.totalPrice, itinerary.currency)}
-                    </span>
-                    {pricingOptions?.showOriginalPrice && (pricingOptions.strikethroughMarkupValue ?? 0) > 0 && (
-                      <span className="text-gray-400 line-through text-xs">
-                        {formatStrikethroughPrice(itinerary.totalPrice, itinerary.currency)}
+              </div>
+
+              {/* Cart/Combo Inclusions Preview */}
+              {itinerary.type === 'cart-combo' && itinerary.cartItems && itinerary.cartItems.length > 0 && (
+                <div className="mb-6 flex-1">
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Includes</div>
+                  <div className="flex flex-wrap gap-2">
+                    {itinerary.cartItems.slice(0, 3).map((item, idx) => {
+                      const categoryColors = {
+                        flight: "bg-sky-50 text-sky-700 border-sky-100",
+                        hotel: "bg-emerald-50 text-emerald-700 border-emerald-100",
+                        activity: "bg-purple-50 text-purple-700 border-purple-100",
+                        transfer: "bg-orange-50 text-orange-700 border-orange-100",
+                        meal: "bg-amber-50 text-amber-700 border-amber-100",
+                        other: "bg-slate-50 text-slate-700 border-slate-100",
+                      } as const;
+                      const colorClass = categoryColors[item.category as keyof typeof categoryColors] || "bg-gray-50 text-gray-700 border-gray-100";
+
+                      return (
+                        <span key={idx} className={`text-[10px] px-2 py-1 rounded-md font-medium border ${colorClass} capitalize`}>
+                          {item.category}
+                        </span>
+                      );
+                    })}
+                    {itinerary.cartItems.length > 3 && (
+                      <span className="text-[10px] px-2 py-1 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-100">
+                        +{itinerary.cartItems.length - 3} more
                       </span>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Customized Package Inclusions Preview */}
+              {itinerary.type === 'customized-package' && itinerary.days && itinerary.days.length > 0 && (
+                <div className="mb-6 flex-1">
+                  <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Includes</div>
+                  <div className="flex flex-wrap gap-2">
+                    {(() => {
+                      const cats = new Set<string>()
+                      itinerary.days.forEach(d => d.events?.forEach(e => e.category && cats.add(e.category)))
+                      const uniqueCats = Array.from(cats)
+
+                      if (uniqueCats.length === 0) return <span className="text-xs text-gray-400 opacity-70">View details for inclusions</span>
+
+                      return uniqueCats.slice(0, 5).map((cat, idx) => {
+                        const categoryColors: Record<string, string> = {
+                          flight: "bg-sky-50 text-sky-700 border-sky-100",
+                          hotel: "bg-emerald-50 text-emerald-700 border-emerald-100",
+                          activity: "bg-purple-50 text-purple-700 border-purple-100",
+                          transfer: "bg-orange-50 text-orange-700 border-orange-100",
+                          meal: "bg-amber-50 text-amber-700 border-amber-100",
+                          other: "bg-slate-50 text-slate-700 border-slate-100",
+                          ancillaries: "bg-indigo-50 text-indigo-700 border-indigo-100",
+                        }
+                        const colorClass = categoryColors[cat.toLowerCase()] || "bg-gray-50 text-gray-700 border-gray-100"
+
+                        return (
+                          <span key={idx} className={`text-[10px] px-2 py-1 rounded-md font-medium border ${colorClass} capitalize`}>
+                            {cat}
+                          </span>
+                        )
+                      })
+                    })()}
+                    {(() => {
+                      const totalCats = new Set<string>()
+                      itinerary.days.forEach(d => d.events?.forEach(e => e.category && totalCats.add(e.category)))
+                      return totalCats.size > 5 ? (
+                        <span className="text-[10px] px-2 py-1 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-100">
+                          +{totalCats.size - 5} more
+                        </span>
+                      ) : null
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              {/* Footer: Price & Action */}
+              <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                {settings.showPricing ? (
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium uppercase">Total Price</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-bold text-gray-900 text-heading-md">
+                        {getDisplayPrice(itinerary.totalPrice, itinerary.currency)}
+                      </span>
+                      {pricingOptions?.showOriginalPrice && (pricingOptions.strikethroughMarkupValue ?? 0) > 0 && (
+                        <span className="text-xs text-gray-400 line-through">
+                          {formatStrikethroughPrice(itinerary.totalPrice, itinerary.currency)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div>{/* Spacer if price hidden */}</div>
                 )}
-              </div>
 
-              {itinerary.type === 'cart-combo' && itinerary.cartItems && itinerary.cartItems.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-gray-100">
-                  <h4 className="font-medium text-xs mb-2 text-gray-500 uppercase tracking-wider">Package Inclusions:</h4>
-                  <ul className="space-y-2">
-                    {itinerary.cartItems.slice(0, 3).map((item, idx) => {
-                      const categoryColors: Record<string, string> = {
-                        flight: "text-sky-600 bg-sky-50 border-sky-100",
-                        hotel: "text-emerald-600 bg-emerald-50 border-emerald-100",
-                        activity: "text-purple-600 bg-purple-50 border-purple-100",
-                        transfer: "text-orange-600 bg-orange-50 border-orange-100",
-                        meal: "text-amber-600 bg-amber-50 border-amber-100",
-                        other: "text-slate-600 bg-slate-50 border-slate-100",
-                      }
-                      const colorClass = categoryColors[item.category] || "text-gray-600 bg-gray-50 border-gray-100"
-
-                      return (
-                        <li key={idx} className="text-sm flex items-center gap-2">
-                          <Badge variant="outline" className={`text-[10px] h-5 px-1.5 capitalize border ${colorClass}`}>
-                            {item.category}
-                          </Badge>
-                          <span className="truncate text-gray-700 font-medium">{item.name}</span>
-                        </li>
-                      )
-                    })}
-                    {itinerary.cartItems.length > 3 && (
-                      <li className="text-xs text-gray-400 pl-1 italic">
-                        +{itinerary.cartItems.length - 3} more items
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              )}
-
-              {itinerary.highlights && itinerary.highlights.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-medium text-sm mb-2">Key Highlights:</h4>
-                  <ul className="space-y-1">
-                    {itinerary.highlights.slice(0, 3).map((highlight, idx) => (
-                      <li key={idx} className="text-xs text-gray-600 flex items-center gap-1">
-                        <div className="w-1 h-1 bg-blue-500 rounded-full" />
-                        {highlight}
-                      </li>
-                    ))}
-                    {itinerary.highlights.length > 3 && (
-                      <li className="text-xs text-gray-500">
-                        +{itinerary.highlights.length - 3} more highlights
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              )}
-
-              {/* View Details Button */}
-              <div className="mt-4 pt-4 border-t space-y-2">
                 <Button
-                  onClick={() => handleViewItinerary(itinerary)}
-                  className="w-full"
                   size="sm"
+                  className="rounded-full bg-gray-900 text-white hover:bg-black shadow-md group-hover:shadow-lg transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewItinerary(itinerary);
+                  }}
                 >
-                  <Eye className="h-4 w-4 mr-2" />
-                  {itinerary.type === 'cart-combo' ? 'View Package Inclusions' : 'View Details'}
-                </Button>
-                <Button
-                  asChild
-                  className="w-full bg-amber-500 hover:bg-amber-600"
-                  size="sm"
-                >
-                  <a href="https://ticketing.aivialabs.com/forms/enquire-now-from-weblinks" target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Enquire Now
-                  </a>
+                  View Details
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 

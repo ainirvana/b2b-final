@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -24,7 +24,8 @@ import {
   Plus,
   Loader2,
   Settings,
-  Percent
+  Percent,
+  Upload
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { IPublicShare } from "@/models/PublicShare"
@@ -65,6 +66,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
         contactPhone: "",
         primaryColor: "",
         logo: "",
+        heroImage: "",
         instagram: "",
         whatsapp: "",
         facebook: "",
@@ -94,7 +96,72 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
     }>
   })
   const [creating, setCreating] = useState(false)
+  const [isUploadingHero, setIsUploadingHero] = useState(false)
+  const heroImageInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+
+  const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploadingHero(true)
+    const file = files[0]
+
+    try {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please upload an image file')
+      }
+
+      // Validate file size (7MB limit)
+      if (file.size > 7 * 1024 * 1024) {
+        throw new Error('Image is too large. Maximum size is 7MB')
+      }
+
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Upload failed')
+      }
+
+      const result = await response.json()
+
+      setFormData(prev => ({
+        ...prev,
+        settings: {
+          ...prev.settings,
+          customBranding: {
+            ...prev.settings.customBranding,
+            heroImage: result.url
+          }
+        }
+      }))
+
+      toast({
+        title: "Image Uploaded",
+        description: "Hero image uploaded successfully",
+      })
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload image",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploadingHero(false)
+      if (heroImageInputRef.current) {
+        heroImageInputRef.current.value = ''
+      }
+    }
+  }
 
   // Populate form when editing
   useEffect(() => {
@@ -122,6 +189,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
             contactPhone: initialShare.settings?.customBranding?.contactPhone || "",
             primaryColor: initialShare.settings?.customBranding?.primaryColor || "",
             logo: initialShare.settings?.customBranding?.logo || "",
+            heroImage: initialShare.settings?.customBranding?.heroImage || "",
             instagram: initialShare.settings?.customBranding?.instagram || "",
             whatsapp: initialShare.settings?.customBranding?.whatsapp || "",
             facebook: initialShare.settings?.customBranding?.facebook || "",
@@ -169,6 +237,15 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
       toast({
         title: "Itineraries Required",
         description: "Please select at least one itinerary for the collection",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!formData.settings.customBranding.heroImage) {
+      toast({
+        title: "Hero Image Required",
+        description: "Please upload a hero image for weblink background",
         variant: "destructive"
       })
       return
@@ -234,6 +311,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
               contactPhone: "",
               primaryColor: "",
               logo: "",
+              heroImage: "",
               instagram: "",
               whatsapp: "",
               facebook: "",
@@ -786,6 +864,64 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
             {/* Custom Branding */}
             <div className="space-y-3">
               <h5 className="font-medium text-sm">Custom Branding (Optional)</h5>
+
+              {/* Hero Image Upload */}
+              <div className="space-y-2">
+                <Label>Hero Image *</Label>
+                <div className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 text-center">
+                  <input
+                    ref={heroImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleHeroImageUpload}
+                    className="hidden"
+                  />
+
+                  {formData.settings.customBranding.heroImage ? (
+                    <div className="relative aspect-video w-full max-w-sm mx-auto rounded-md overflow-hidden bg-gray-100 group">
+                      <img
+                        src={formData.settings.customBranding.heroImage}
+                        alt="Hero"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => heroImageInputRef.current?.click()}
+                        >
+                          Change Image
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-4">
+                      <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                        <Upload className="h-5 w-5 text-gray-500" />
+                      </div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">Click to upload hero image</p>
+                      <p className="text-xs text-gray-500 mb-3">Recommended size: 1920x1080px (Max 7MB)</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => heroImageInputRef.current?.click()}
+                        disabled={isUploadingHero}
+                      >
+                        {isUploadingHero ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          "Select Image"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

@@ -26,6 +26,7 @@ export interface IPublicShare {
     showContactInfo: boolean
     customBranding?: {
       logo?: string
+      heroImage?: string
       primaryColor?: string
       secondaryColor?: string
       companyName?: string
@@ -124,6 +125,7 @@ const publicShareSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.Mixed,
       default: {
         logo: '',
+        heroImage: '',
         primaryColor: '',
         companyName: '',
         contactEmail: '',
