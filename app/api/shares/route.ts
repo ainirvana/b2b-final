@@ -11,6 +11,7 @@ interface CreateShareRequest {
   itineraryId?: string
   itineraryIds?: string[]
   expiresAt?: string
+  expiryMessage?: string
   passwordProtected?: boolean
   password?: string
   settings: {
@@ -40,6 +41,19 @@ interface CreateShareRequest {
     showIndividualPricing: boolean
     pricingCurrency: string
   }
+  globalEnquireLink?: string
+  perItineraryPricing?: Array<{
+    itineraryId: string
+    markupType: "percentage" | "fixed"
+    markupValue: number
+    showOriginalPrice: boolean
+    strikethroughMarkupType: "percentage" | "fixed"
+    strikethroughMarkupValue: number
+  }>
+  perItinerarySettings?: Array<{
+    itineraryId: string
+    enquireLink?: string
+  }>
 }
 
 // GET /api/shares - List user's shares
@@ -201,7 +215,9 @@ export async function POST(request: NextRequest) {
         pricingCurrency: "INR"
       },
       // Per-itinerary pricing for collection shares
-      perItineraryPricing: body.perItineraryPricing || []
+      perItineraryPricing: body.perItineraryPricing || [],
+      globalEnquireLink: body.globalEnquireLink,
+      perItinerarySettings: body.perItinerarySettings || []
     }
 
     if (body.expiresAt) {

@@ -128,6 +128,9 @@ export async function PUT(
       updateData.perItineraryPricing = body.perItineraryPricing
     }
 
+    if (body.globalEnquireLink !== undefined) updateData.globalEnquireLink = body.globalEnquireLink
+    if (body.perItinerarySettings !== undefined) updateData.perItinerarySettings = body.perItinerarySettings
+
     const updatedShare = await PublicShare.findOneAndUpdate(
       { shareId },
       { $set: updateData },

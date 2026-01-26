@@ -59,6 +59,13 @@ export interface IPublicShare {
     strikethroughMarkupType?: "percentage" | "fixed"
     strikethroughMarkupValue?: number
   }>
+  // Global enquire link
+  globalEnquireLink?: string
+  // Per-itinerary settings (e.g. enquire links)
+  perItinerarySettings?: Array<{
+    itineraryId: string
+    enquireLink?: string
+  }>
 }
 
 export interface IShareView {
@@ -157,6 +164,11 @@ const publicShareSchema = new mongoose.Schema({
     showOriginalPrice: { type: Boolean, default: false },
     strikethroughMarkupType: { type: String, enum: ["percentage", "fixed"], default: "percentage" },
     strikethroughMarkupValue: { type: Number, default: 0 }
+  }],
+  globalEnquireLink: { type: String },
+  perItinerarySettings: [{
+    itineraryId: { type: mongoose.Schema.Types.ObjectId, ref: "Itinerary" },
+    enquireLink: { type: String }
   }]
 }, {
   timestamps: true

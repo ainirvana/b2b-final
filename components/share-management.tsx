@@ -93,6 +93,11 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
       showOriginalPrice: boolean
       strikethroughMarkupType: "percentage" | "fixed"
       strikethroughMarkupValue: number
+    }>,
+    globalEnquireLink: "",
+    perItinerarySettings: [] as Array<{
+      itineraryId: string
+      enquireLink: string
     }>
   })
   const [creating, setCreating] = useState(false)
@@ -211,7 +216,18 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
           ...p,
           strikethroughMarkupType: p.strikethroughMarkupType || "percentage",
           strikethroughMarkupValue: p.strikethroughMarkupValue || 0
-        })) || []
+        })) || [],
+        globalEnquireLink: initialShare.globalEnquireLink || "",
+        perItinerarySettings: initialShare.shareType === "collection"
+          ? ((initialShare.itineraryIds as any[])?.map((i: any) => {
+            const id = i._id || i
+            const existing = initialShare.perItinerarySettings?.find(s => (s.itineraryId as any)?._id === id || s.itineraryId === id)
+            return {
+              itineraryId: id,
+              enquireLink: existing?.enquireLink || ""
+            }
+          }) || [])
+          : []
       })
     }
   }, [initialShare])
@@ -333,7 +349,9 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
             showIndividualPricing: true,
             pricingCurrency: "INR"
           },
-          perItineraryPricing: []
+          perItineraryPricing: [],
+          globalEnquireLink: "",
+          perItinerarySettings: []
         })
       }
     } catch (err) {
@@ -372,10 +390,22 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
           }]
         : prev.perItineraryPricing.filter(p => p.itineraryId !== itineraryId)
 
+      // Also update perItinerarySettings
+      const alreadyExistsSettings = prev.perItinerarySettings.some(s => s.itineraryId === itineraryId)
+      const newPerItinerarySettings = checked
+        ? alreadyExistsSettings
+          ? prev.perItinerarySettings
+          : [...prev.perItinerarySettings, {
+            itineraryId,
+            enquireLink: ""
+          }]
+        : prev.perItinerarySettings.filter(s => s.itineraryId !== itineraryId)
+
       return {
         ...prev,
         itineraryIds: newItineraryIds,
-        perItineraryPricing: newPerItineraryPricing
+        perItineraryPricing: newPerItineraryPricing,
+        perItinerarySettings: newPerItinerarySettings
       }
     })
   }
@@ -1151,6 +1181,60 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Enquire Now Link Configuration */}
+          <div className="space-y-4 pt-4 border-t border-gray-200">
+            <h4 className="font-medium">Enquiry Options</h4>
+            <div>
+              <Label htmlFor="global-enquire">Global Enquire Link (Optional)</Label>
+              <Input
+                id="global-enquire"
+                value={formData.globalEnquireLink}
+                onChange={(e) => setFormData(prev => ({ ...prev, globalEnquireLink: e.target.value }))}
+                placeholder="e.g., https://wa.me/1234567890 or https://forms.google.com/..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Adds an "Enquire Now" button to the top right of the weblink
+              </p>
+            </div>
+
+            {/* Per-Itinerary Links - Only for collection shares with itineraries selected */}
+            {formData.shareType === "collection" && formData.itineraryIds.length > 0 && (
+              <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h5 className="font-medium text-sm">Itinerary Specific Enquiry Links</h5>
+                <p className="text-xs text-gray-600 mb-3">
+                  Add specific enquiry links for each itinerary. If left empty, no button will be shown on the itinerary card.
+                </p>
+
+                <div className="space-y-4">
+                  {formData.perItinerarySettings.map((setting) => {
+                    const itinerary = availableItineraries.find(i => i._id === setting.itineraryId)
+                    if (!itinerary) return null
+                    return (
+                      <div key={setting.itineraryId}>
+                        <Label className="text-xs mb-1 block">{itinerary.title}</Label>
+                        <Input
+                          value={setting.enquireLink}
+                          onChange={(e) => {
+                            // Update per-itinerary settings inline since helper might not be available or clean to use inside map callback in this context if not defined
+                            const newVal = e.target.value
+                            setFormData(prev => ({
+                              ...prev,
+                              perItinerarySettings: prev.perItinerarySettings.map(s =>
+                                s.itineraryId === setting.itineraryId ? { ...s, enquireLink: newVal } : s
+                              )
+                            }))
+                          }}
+                          placeholder="Specific enquiry form link..."
+                          className="text-sm"
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit */}

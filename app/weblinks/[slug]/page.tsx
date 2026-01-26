@@ -18,6 +18,11 @@ import { getExchangeRates } from "@/lib/pricing-calculator"
 interface PublicShareData extends IPublicShare {
   itinerary?: IItinerary
   itineraries?: IItinerary[]
+  globalEnquireLink?: string
+  perItinerarySettings?: Array<{
+    itineraryId: string
+    enquireLink?: string
+  }>
 }
 
 export default function PublicWeblinkPage() {
@@ -478,15 +483,15 @@ export default function PublicWeblinkPage() {
 
             {/* Right: Actions */}
             <div className="flex items-center gap-3">
-              <Button
-                asChild
-                className="hidden md:flex bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all duration-300 rounded-full"
-              >
-                <a href="https://ticketing.aivialabs.com/forms/enquire-now-from-weblinks" target="_blank" rel="noopener noreferrer">
+              {(shareData.globalEnquireLink || getBrandingProp('contactPhone')) && (
+                <Button
+                  onClick={() => window.open(shareData.globalEnquireLink || `tel:${getBrandingProp('contactPhone')}`, '_blank')}
+                  className="hidden md:flex bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 transition-all duration-300 rounded-full"
+                >
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Enquire
-                </a>
-              </Button>
+                </Button>
+              )}
               <Button
                 className="hidden md:flex bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all duration-300 rounded-full"
                 onClick={() => alert('Book Now feature coming soon!')}
@@ -575,12 +580,15 @@ export default function PublicWeblinkPage() {
             itinerary={shareData.itinerary}
             settings={shareData.settings}
             pricingOptions={shareData.pricingOptions}
+            globalEnquireLink={shareData.globalEnquireLink}
           />
         ) : shareData.shareType === "collection" && shareData.itineraries ? (
           <CollectionView
             itineraries={shareData.itineraries}
             settings={shareData.settings}
             pricingOptions={shareData.pricingOptions}
+            perItinerarySettings={shareData.perItinerarySettings}
+            globalEnquireLink={shareData.globalEnquireLink}
           />
         ) : (
           <div className="text-center py-12">
@@ -737,7 +745,8 @@ export default function PublicWeblinkPage() {
 function IndividualItineraryView({
   itinerary,
   settings,
-  pricingOptions
+  pricingOptions,
+  globalEnquireLink
 }: {
   itinerary: IItinerary
   settings: any
@@ -750,6 +759,7 @@ function IndividualItineraryView({
     showIndividualPricing?: boolean
     pricingCurrency?: string
   }
+  globalEnquireLink?: string
 }) {
   // Get exchange rates for currency conversion
   const { rates: exchangeRates, baseCurrency } = getExchangeRates()
@@ -1243,7 +1253,9 @@ function IndividualItineraryView({
 function CollectionView({
   itineraries,
   settings,
-  pricingOptions
+  pricingOptions,
+  perItinerarySettings,
+  globalEnquireLink
 }: {
   itineraries: IItinerary[]
   settings: any
@@ -1256,6 +1268,11 @@ function CollectionView({
     showIndividualPricing?: boolean
     pricingCurrency?: string
   }
+  perItinerarySettings?: Array<{
+    itineraryId: string
+    enquireLink?: string
+  }>
+  globalEnquireLink?: string
 }) {
   const [selectedItinerary, setSelectedItinerary] = useState<IItinerary | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -1537,9 +1554,9 @@ function CollectionView({
               )}
 
               {/* Footer: Price & Action */}
-              <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-                {settings.showPricing ? (
-                  <div>
+              <div className="mt-auto pt-4 border-t border-gray-100">
+                {settings.showPricing && (
+                  <div className="mb-4">
                     <p className="text-xs text-gray-400 font-medium uppercase">Total Price</p>
                     <div className="flex items-baseline gap-2">
                       <span className="text-lg font-bold text-gray-900 text-heading-md">
@@ -1552,20 +1569,54 @@ function CollectionView({
                       )}
                     </div>
                   </div>
-                ) : (
-                  <div>{/* Spacer if price hidden */}</div>
                 )}
 
-                <Button
-                  size="sm"
-                  className="rounded-full bg-gray-900 text-white hover:bg-black shadow-md group-hover:shadow-lg transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleViewItinerary(itinerary);
-                  }}
-                >
-                  View Details
-                </Button>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-xs sm:text-sm border-gray-300 hover:bg-gray-50 hover:text-gray-900"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewItinerary(itinerary);
+                    }}
+                  >
+                    View Details
+                  </Button>
+
+                  {(perItinerarySettings?.find(s => s.itineraryId === itinerary._id)?.enquireLink || globalEnquireLink) && (
+                    <Button
+                      size="sm"
+                      className="w-full text-xs sm:text-sm bg-orange-500 hover:bg-orange-600 text-white border-none shadow-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const link = perItinerarySettings?.find(s => s.itineraryId === itinerary._id)?.enquireLink || globalEnquireLink
+                        if (link) window.open(link, '_blank')
+                      }}
+                    >
+                      Enquire
+                    </Button>
+                  )}
+
+                  {(settings.customBranding?.whatsapp || settings.customBranding?.contactPhone) && (
+                    <Button
+                      size="sm"
+                      className="w-full text-xs sm:text-sm bg-[#25D366] hover:bg-[#128C7E] text-white border-none shadow-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const phoneNumber = settings.customBranding?.whatsapp || settings.customBranding?.contactPhone
+                        const cleanPhone = phoneNumber.replace(/[^\d+]/g, '')
+                        const message = `Hi, I would like to enquire on ${itinerary.title}`
+                        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`
+                        window.open(whatsappUrl, '_blank')
+                      }}
+                      title="Share on WhatsApp"
+                    >
+                      <span className="hidden sm:inline">WhatsApp</span>
+                      <MessageCircle className="h-4 w-4 sm:hidden" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

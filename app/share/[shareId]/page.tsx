@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Eye, Lock, Calendar, MapPin, DollarSign, Users, Clock, Loader2, Share2, Download } from "lucide-react"
+import { Eye, Lock, Calendar, MapPin, DollarSign, Users, Clock, Loader2, Share2, Download, MessageCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { IPublicShare } from "@/models/PublicShare"
 import { IItinerary } from "@/models/Itinerary"
@@ -330,6 +330,15 @@ export default function PublicSharePage() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              {shareData.globalEnquireLink && (
+                <Button
+                  onClick={() => window.open(shareData.globalEnquireLink, '_blank')}
+                  size="sm"
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  Enquire Now
+                </Button>
+              )}
               <Button
                 onClick={handleShare}
                 variant="outline"
@@ -351,12 +360,15 @@ export default function PublicSharePage() {
             itinerary={shareData.itinerary}
             settings={shareData.settings}
             pricingOptions={shareData.pricingOptions}
+            globalEnquireLink={shareData.globalEnquireLink}
           />
         ) : shareData.shareType === "collection" && shareData.itineraries ? (
           <CollectionView
             itineraries={shareData.itineraries}
             settings={shareData.settings}
             pricingOptions={shareData.pricingOptions}
+            perItinerarySettings={shareData.perItinerarySettings}
+            globalEnquireLink={shareData.globalEnquireLink}
           />
         ) : (
           <div className="text-center py-12">
@@ -388,7 +400,8 @@ export default function PublicSharePage() {
 function IndividualItineraryView({
   itinerary,
   settings,
-  pricingOptions
+  pricingOptions,
+  globalEnquireLink
 }: {
   itinerary: IItinerary
   settings: any
@@ -399,6 +412,7 @@ function IndividualItineraryView({
     showIndividualPricing?: boolean
     pricingCurrency?: string
   }
+  globalEnquireLink?: string
 }) {
   // Get exchange rates for currency conversion
   const { rates: exchangeRates, baseCurrency } = getExchangeRates()
@@ -537,6 +551,13 @@ function IndividualItineraryView({
           </div>
         </CardContent>
       </Card>
+
+      {/* Global Enquire Button (Mobile/Prominent placement) */}
+      {/* If globalEnquireLink is present, we already showed it in header, but we can also show it here or keep it just in header. 
+          The user requested "right top of each weblink", which is the header. 
+          For individual view, they also said "view detail option on each itinerary in it i want you to add a enquire now button also in each itinerary over there".
+          Since this is the Individual View itself, the header button serves this purpose. 
+      */}
 
       {/* Highlights */}
       {itinerary.highlights && itinerary.highlights.length > 0 && (
@@ -854,7 +875,8 @@ function IndividualItineraryView({
 function CollectionView({
   itineraries,
   settings,
-  pricingOptions
+  pricingOptions,
+  perItinerarySettings
 }: {
   itineraries: IItinerary[]
   settings: any
@@ -865,6 +887,11 @@ function CollectionView({
     showIndividualPricing?: boolean
     pricingCurrency?: string
   }
+  perItinerarySettings?: Array<{
+    itineraryId: string
+    enquireLink?: string
+  }>
+  globalEnquireLink?: string
 }) {
   const [selectedItinerary, setSelectedItinerary] = useState<IItinerary | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -1041,15 +1068,50 @@ function CollectionView({
               )}
 
               {/* View Details Button */}
-              <div className="mt-4 pt-4 border-t">
+              <div className="mt-4 pt-4 border-t flex flex-wrap gap-2">
+                {/* View Details Button */}
                 <Button
                   onClick={() => handleViewItinerary(itinerary)}
-                  className="w-full"
+                  className="flex-1"
                   size="sm"
+                  variant="outline"
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   View Details
                 </Button>
+
+                {/* Enquire Button */}
+                {(perItinerarySettings?.find(s => s.itineraryId === itinerary._id)?.enquireLink || globalEnquireLink) && (
+                  <Button
+                    onClick={() => {
+                      const link = perItinerarySettings?.find(s => s.itineraryId === itinerary._id)?.enquireLink || globalEnquireLink
+                      if (link) window.open(link, '_blank')
+                    }}
+                    className="flex-1"
+                    size="sm"
+                  >
+                    Enquire
+                  </Button>
+                )}
+
+                {/* WhatsApp Button */}
+                {(settings.customBranding?.whatsapp || settings.customBranding?.contactPhone) && (
+                  <Button
+                    onClick={() => {
+                      const phoneNumber = settings.customBranding?.whatsapp || settings.customBranding?.contactPhone
+                      // Clean phone number (remove non-digits, ensure country code if needed - simple trim for now)
+                      const cleanPhone = phoneNumber.replace(/[^\d+]/g, '')
+                      const message = `Hi, I would like to enquire on ${itinerary.title}`
+                      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`
+                      window.open(whatsappUrl, '_blank')
+                    }}
+                    className="flex-none bg-green-600 hover:bg-green-700 text-white"
+                    size="sm"
+                    title="Enquire on WhatsApp"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1080,6 +1142,17 @@ function CollectionView({
                     <p className="font-medium">{selectedItinerary.destination}</p>
                   </div>
                 </div>
+                {/* Enquire Button inside Details Modal */}
+                {perItinerarySettings?.find(s => s.itineraryId === selectedItinerary._id)?.enquireLink && (
+                  <div className="col-span-2 md:col-span-4 flex justify-end">
+                    <Button
+                      onClick={() => window.open(perItinerarySettings?.find(s => s.itineraryId === selectedItinerary._id)?.enquireLink, '_blank')}
+                      size="sm"
+                    >
+                      Enquire Now
+                    </Button>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-gray-500" />
                   <div>
