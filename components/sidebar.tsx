@@ -26,11 +26,11 @@ import { PriceSettingsDialog } from "@/components/price-settings-dialog"
 
 interface SidebarProps {
   activeView?: string
-  onViewChange?: (view: string) => void
+  collapsed: boolean
+  setCollapsed: (collapsed: boolean) => void
 }
 
-export function Sidebar({ activeView, onViewChange }: SidebarProps) {
-  const [collapsed, setCollapsed] = useState(false)
+export function Sidebar({ activeView, collapsed, setCollapsed }: SidebarProps) {
   const [showPriceSettings, setShowPriceSettings] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
@@ -52,16 +52,16 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
     <>
       <div
         className={cn(
-          "bg-white border-r border-neutral-200 flex flex-col transition-all duration-300 shadow-brand-sm",
+          "bg-white border-r border-neutral-200 flex flex-col transition-all duration-300 shadow-brand-sm h-full",
           collapsed ? "w-16" : "w-64",
         )}
       >
         {/* Header */}
-        <div className="p-4 border-b border-yellow-200 flex items-center justify-between bg-gradient-to-r from-yellow-400 to-yellow-500">
+        <div className="p-4 border-b border-yellow-200 flex items-center justify-between bg-gradient-to-r from-yellow-400 to-yellow-500 min-h-[64px]">
           {!collapsed && (
             <div className="flex items-center space-x-2">
-              <div className="w-full h-12 bg-white rounded-lg p-1 flex items-center justify-center">
-                <Image src={travLogo} alt="trav b2b logo" className="object-contain w-full h-full" />
+              <div className="w-full h-8 bg-white rounded-lg p-1 flex items-center justify-center">
+                <div className="font-bold text-yellow-600">TRAV PLATFORMS</div>
               </div>
             </div>
           )}
@@ -69,14 +69,14 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
             variant="ghost"
             size="sm"
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1 text-white hover:bg-white/20"
+            className="p-1 text-white hover:bg-white/20 ml-auto"
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon
@@ -85,25 +85,21 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
                 <li key={item.id}>
                   <button
                     className={cn(
-                      "w-full flex items-center transition-all duration-200 rounded-lg",
+                      "w-full flex items-center transition-all duration-200 rounded-lg group hover:bg-yellow-50",
                       collapsed ? "px-2 py-3 justify-center" : "px-3 py-2 justify-start",
-                      isActive ? "nav-item-active" : "nav-item",
+                      isActive ? "bg-yellow-100 text-yellow-800 font-medium" : "text-gray-600",
                     )}
                     onClick={() => {
                       if (item.id === "price-settings") {
                         setShowPriceSettings(true)
                         return
                       }
-
-                      if (onViewChange) {
-                        onViewChange(item.id)
-                      } else {
-                        router.push(`/${item.id}`)
-                      }
+                      router.push(`/${item.id}`)
                     }}
+                    title={collapsed ? item.label : undefined}
                   >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    {!collapsed && <span className="ml-3 text-label-md">{item.label}</span>}
+                    <Icon className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-yellow-600" : "text-gray-500 group-hover:text-yellow-600")} />
+                    {!collapsed && <span className="ml-3 text-sm">{item.label}</span>}
                   </button>
                 </li>
               )
@@ -115,17 +111,18 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
         <div className="p-4 border-t border-neutral-200">
           <button
             className={cn(
-              "w-full flex items-center nav-item",
+              "w-full flex items-center hover:bg-gray-50 rounded-lg transition-colors",
               collapsed ? "px-2 py-3 justify-center" : "px-3 py-2 justify-start",
             )}
+            title={collapsed ? "User Profile" : undefined}
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-brand-primary-400 to-brand-accent-400 rounded-full flex items-center justify-center flex-shrink-0">
-              <User className="h-4 w-4 text-white" />
+            <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xs shadow-sm">
+              JD
             </div>
             {!collapsed && (
-              <div className="ml-3 text-left">
-                <div className="text-label-md text-neutral-900">John Doe</div>
-                <div className="text-body-xs text-neutral-500">Travel Agent</div>
+              <div className="ml-3 text-left overflow-hidden">
+                <div className="text-sm font-medium text-neutral-900 truncate">John Doe</div>
+                <div className="text-xs text-neutral-500 truncate">Travel Agent</div>
               </div>
             )}
           </button>

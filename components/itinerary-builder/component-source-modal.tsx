@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Library, Star, Clock, Filter, Copy, Heart, StickyNote } from "lucide-react"
+import { Search, Plus, Library, Star, Clock, Filter, Heart, StickyNote } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLibrary } from "@/hooks/use-library"
 import { LibraryToItineraryConverter } from "@/lib/library-converter"
@@ -27,150 +27,7 @@ interface ComponentSourceModalProps {
   onSelectLibrary: (libraryItem: any) => void
 }
 
-interface ComponentTemplate {
-  id: string
-  name: string
-  description: string
-  category: string
-  template: any
-  isPopular?: boolean
-  difficulty?: "Easy" | "Medium" | "Advanced"
-}
-
-const COMPONENT_TEMPLATES: ComponentTemplate[] = [
-  // Flight Templates
-  {
-    id: "flight-domestic",
-    name: "Domestic Flight",
-    description: "Standard domestic flight with basic details",
-    category: "flight",
-    template: {
-      title: "Domestic Flight",
-      description: "Domestic flight within the country",
-      fromCity: "Origin City",
-      toCity: "Destination City",
-      mainPoint: "Economy Class",
-      time: "09:00",
-      highlights: ["Economy Class", "Checked Baggage"],
-    },
-    isPopular: true,
-    difficulty: "Easy",
-  },
-  {
-    id: "flight-international",
-    name: "International Flight",
-    description: "International flight with premium features",
-    category: "flight",
-    template: {
-      title: "International Flight",
-      description: "International flight with premium services",
-      fromCity: "Origin Country",
-      toCity: "Destination Country",
-      mainPoint: "Business Class",
-      time: "14:00",
-      highlights: ["Business Class", "Priority Boarding", "Lounge Access", "Extra Baggage"],
-    },
-    difficulty: "Medium",
-  },
-  // Hotel Templates
-  {
-    id: "hotel-luxury",
-    name: "Luxury Hotel",
-    description: "5-star luxury accommodation",
-    category: "hotel",
-    template: {
-      title: "Luxury Resort & Spa",
-      description: "5-star luxury accommodation with premium amenities",
-      location: "Prime Location",
-      checkIn: "15:00",
-      checkOut: "11:00",
-      nights: 2,
-      highlights: ["5-Star Rating", "Spa Services", "Pool", "Fine Dining", "Concierge"],
-    },
-    isPopular: true,
-    difficulty: "Easy",
-  },
-  {
-    id: "hotel-boutique",
-    name: "Boutique Hotel",
-    description: "Unique boutique accommodation",
-    category: "hotel",
-    template: {
-      title: "Boutique Hotel",
-      description: "Charming boutique hotel with personalized service",
-      location: "Historic District",
-      checkIn: "14:00",
-      checkOut: "12:00",
-      nights: 1,
-      highlights: ["Unique Design", "Local Character", "Personalized Service"],
-    },
-    difficulty: "Easy",
-  },
-  // Activity Templates
-  {
-    id: "activity-cultural",
-    name: "Cultural Tour",
-    description: "Guided cultural experience",
-    category: "activity",
-    template: {
-      title: "Cultural Heritage Tour",
-      description: "Explore local culture and historical sites with expert guide",
-      location: "Historic Center",
-      duration: "4 hours",
-      difficulty: "Easy",
-      capacity: 15,
-      time: "09:00",
-      highlights: ["Expert Guide", "Historical Sites", "Cultural Insights", "Photo Opportunities"],
-    },
-    isPopular: true,
-    difficulty: "Easy",
-  },
-  {
-    id: "activity-adventure",
-    name: "Adventure Activity",
-    description: "Thrilling outdoor adventure",
-    category: "activity",
-    template: {
-      title: "Adventure Experience",
-      description: "Exciting outdoor adventure for thrill seekers",
-      location: "Adventure Park",
-      duration: "6 hours",
-      difficulty: "Hard",
-      capacity: 8,
-      time: "08:00",
-      highlights: ["Professional Equipment", "Safety Briefing", "Certified Instructors", "Action Photos"],
-    },
-    difficulty: "Advanced",
-  },
-  // Transfer Templates
-  {
-    id: "transfer-private",
-    name: "Private Transfer",
-    description: "Comfortable private transportation",
-    category: "transfer",
-    template: {
-      title: "Private Car Transfer",
-      description: "Comfortable private transfer with professional driver",
-      mainPoint: "Private Vehicle",
-      highlights: ["Professional Driver", "Air Conditioning", "Door-to-Door Service"],
-    },
-    isPopular: true,
-    difficulty: "Easy",
-  },
-  {
-    id: "transfer-luxury",
-    name: "Luxury Transfer",
-    description: "Premium luxury transportation",
-    category: "transfer",
-    template: {
-      title: "Luxury Transfer Service",
-      description: "Premium luxury transfer with VIP treatment",
-      mainPoint: "Luxury Vehicle",
-      highlights: ["Luxury Vehicle", "VIP Service", "Refreshments", "WiFi", "Professional Chauffeur"],
-    },
-    difficulty: "Easy",
-  },
-]
+// Templates removed as per requirement
 
 export function ComponentSourceModal({
   isOpen,
@@ -182,7 +39,7 @@ export function ComponentSourceModal({
 }: ComponentSourceModalProps) {
   const { items } = useLibrary()
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedSource, setSelectedSource] = useState<"manual" | "library" | "templates" | null>(null)
+  const [selectedSource, setSelectedSource] = useState<"manual" | "library" | null>(null)
   const [sortBy, setSortBy] = useState<"name" | "price" | "rating" | "recent">("name")
   const [filterBy, setFilterBy] = useState<"all" | "popular" | "recent" | "favorites">("all")
   const [recentComponents, setRecentComponents] = useState<string[]>([])
@@ -351,20 +208,7 @@ export function ComponentSourceModal({
       }
     })
 
-  // Filter component templates
-  const filteredTemplates = COMPONENT_TEMPLATES.filter((template) => {
-    const matchesCategory = template.category.toLowerCase() === componentType.toLowerCase()
-    const matchesSearch =
-      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase())
 
-    let matchesFilter = true
-    if (filterBy === "popular") {
-      matchesFilter = template.isPopular || false
-    }
-
-    return matchesCategory && matchesSearch && matchesFilter
-  })
 
   // When the user chooses Manual from the options, show a manual editor
   // for additionalInformation. For other component types we simply call the
@@ -983,31 +827,7 @@ export function ComponentSourceModal({
     setManualArrivalTime("")
   }
 
-  const handleSelectTemplate = (template: ComponentTemplate) => {
-    // Create a manual component with template data
-    const templateEvent = {
-      ...template.template,
-      id: `event-${Date.now()}`,
-      category: template.category,
-      componentSource: "manual",
-      versionHistory: [
-        {
-          timestamp: new Date(),
-          action: "created",
-          source: "template",
-        },
-      ],
-    }
 
-    // Add to recent components
-    const updatedRecent = [template.id, ...recentComponents.filter((id) => id !== template.id)].slice(0, 10)
-    setRecentComponents(updatedRecent)
-    localStorage.setItem("recent-components", JSON.stringify(updatedRecent))
-
-    onSelectManual(templateEvent)
-    onClose()
-    setSelectedSource(null)
-  }
 
   const handleSelectLibraryItem = (item: any) => {
     // Add to recent components
@@ -1095,7 +915,7 @@ export function ComponentSourceModal({
               How would you like to add this {componentTitle.toLowerCase()} component?
             </p>
 
-            <div className="grid grid-cols-3 gap-4 flex-1">
+            <div className="grid grid-cols-2 gap-4 flex-1">
               {/* Manual Option */}
               <Card
                 className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-400 flex flex-col"
@@ -1111,23 +931,6 @@ export function ComponentSourceModal({
                   </p>
                   <Button className="mt-auto w-full">
                     Create New
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Templates Option */}
-              <Card
-                className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-purple-400 flex flex-col"
-                onClick={() => setSelectedSource("templates")}
-              >
-                <CardContent className="p-6 text-center flex flex-col items-center justify-center flex-1">
-                  <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Copy className="h-10 w-10 text-purple-600" />
-                  </div>
-                  <h3 className="text-base font-semibold mb-2">Use Template</h3>
-                  <p className="text-gray-600 text-xs mb-4">Start with {filteredTemplates.length} pre-designed templates</p>
-                  <Button variant="outline" className="mt-auto w-full bg-transparent">
-                    Browse Templates ({filteredTemplates.length})
                   </Button>
                 </CardContent>
               </Card>
@@ -2206,106 +2009,7 @@ export function ComponentSourceModal({
           </div>
         )}
 
-        {selectedSource === "templates" && (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-2 border-b">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Choose {componentTitle} Template</h3>
-                <Button variant="ghost" onClick={() => setSelectedSource(null)}>
-                  Back to Options
-                </Button>
-              </div>
 
-              {/* Search and Filters */}
-              <div className="flex gap-4 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder={`Search ${componentTitle.toLowerCase()} templates...`}
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Select value={filterBy} onValueChange={(value) => setFilterBy(value as "all" | "popular" | "recent" | "favorites")}>
-                  <SelectTrigger className="w-40">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Templates</SelectItem>
-                    <SelectItem value="popular">Popular</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto min-h-0 border border-gray-200 rounded p-4 pr-3">
-              {filteredTemplates.length === 0 ? (
-                <div className="text-center py-12">
-                  <Copy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-2">No templates found</p>
-                  <p className="text-sm text-gray-400">Try creating one manually instead</p>
-                  <Button variant="outline" className="mt-4 bg-transparent" onClick={handleSelectManual}>
-                    Create Manually
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredTemplates.map((template) => (
-                    <Card
-                      key={template.id}
-                      className={`${getColor(template.category)} cursor-pointer hover:shadow-md transition-all`}
-                      onClick={() => handleSelectTemplate(template)}
-                    >
-                      <CardContent className="p-2">
-                        <div className="flex items-start space-x-3">
-                          <div className="text-2xl">{getIcon(template.category)}</div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between">
-                              <h4 className="font-semibold text-lg text-gray-900">{template.name}</h4>
-                              <div className="flex gap-1 ml-2">
-                                {template.isPopular && (
-                                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                                    <Star className="h-3 w-3 mr-1" />
-                                    Popular
-                                  </Badge>
-                                )}
-                                {template.difficulty && (
-                                  <Badge className={getDifficultyColor(template.difficulty)}>
-                                    {template.difficulty}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-
-                            <p className="text-sm text-gray-600 mt-1">{template.description}</p>
-
-                            <div className="flex items-center justify-between mt-3">
-                              <div className="flex flex-wrap gap-1">
-                                {template.template.highlights?.slice(0, 2).map((highlight: string, idx: number) => (
-                                  <Badge key={idx} variant="outline" className="text-xs">
-                                    {highlight}
-                                  </Badge>
-                                ))}
-                                {template.template.highlights?.length > 2 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{template.template.highlights.length - 2} more
-                                  </Badge>
-                                )}
-                              </div>
-                              <Button size="sm">Use Template</Button>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {selectedSource === "library" && (
           <div className="flex-1 flex flex-col overflow-hidden">

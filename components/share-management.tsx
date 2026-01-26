@@ -1259,7 +1259,8 @@ export default function ShareManagement({ availableItineraries }: ShareManagemen
       })
 
       if (!response.ok) {
-        throw new Error("Failed to delete share")
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || "Failed to delete share")
       }
 
       setShares(prev => prev.filter(share => share.shareId !== shareId))

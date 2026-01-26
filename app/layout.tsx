@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import { MainLayout } from '@/components/main-layout'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'Trav Platforms',
+  description: 'B2B Travel Platform',
 }
 
 export default function RootLayout({
@@ -29,7 +29,9 @@ html {
 }
         `}</style>
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <MainLayout>{children}</MainLayout>
+      </body>
     </html>
   )
 }

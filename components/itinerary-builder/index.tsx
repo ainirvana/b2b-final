@@ -1702,13 +1702,13 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
       {/* Vertical EDITOR MODE strip for customized-package */}
       {(itineraryTypeParam === 'customized-package' && (isNewMode || currentItineraryId)) && (
         <div
-          className="fixed left-0 top-0 bottom-0 w-7 flex items-center justify-center z-50 shadow-md"
+          className="w-7 flex-none flex items-center justify-center shadow-md relative z-40"
           style={{
             background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
           }}
         >
           <span
-            className="text-white font-bold text-sm tracking-widest whitespace-nowrap uppercase"
+            className="text-white font-bold text-sm tracking-widest whitespace-nowrap uppercase sticky top-1/2 -translate-y-1/2"
             style={{
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
@@ -1720,7 +1720,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </span>
         </div>
       )}
-      <div className={`flex-1 p-3 overflow-y-auto h-full ${(itineraryTypeParam === 'customized-package' && (isNewMode || currentItineraryId)) ? 'ml-7' : ''}`}>
+      <div className="flex-1 p-3 overflow-y-auto h-full">
         {/* Header Card */}
         <div className="bg-white rounded-xl shadow-sm border mb-4 p-3 flex flex-col gap-0">
           {/* Itinerary Title - Biggest Font Size */}

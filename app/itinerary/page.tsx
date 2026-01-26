@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, Suspense } from "react"
 import { ItineraryList } from "@/components/itinerary-list"
 import { ItineraryBuilder } from "@/components/itinerary-builder"
 import { TopHeader } from "@/components/top-header"
-import { Sidebar } from "@/components/sidebar"
 import { ItinerarySetupModal } from "@/components/itinerary-setup-modal"
 import { PreviewConfigModal, PreviewConfig } from "@/components/preview-config-modal"
 import { Button } from "@/components/ui/button"
@@ -235,8 +234,7 @@ function ItineraryPageContent() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-neutral-50 to-brand-primary-50/30">
-      <Sidebar />
+    <div className="flex flex-col h-full bg-gradient-to-br from-neutral-50 to-brand-primary-50/30 overflow-hidden">
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopHeader />
 

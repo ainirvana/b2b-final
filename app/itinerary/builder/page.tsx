@@ -11,7 +11,7 @@ function ItineraryBuilderContent() {
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
   const itineraryType = searchParams.get('type') || 'customized-package'
   const itineraryId = searchParams.get('id')
 
@@ -35,36 +35,54 @@ function ItineraryBuilderContent() {
   }
 
   // Route to appropriate builder based on type
-  switch (itineraryType) {
-    case 'fixed-group-tour':
-      return (
-        <div className="min-h-screen flex flex-col">
-          <FixedGroupTourBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
-        </div>
-      )
-    
-    case 'cart-combo':
-      return (
-        <div className="min-h-screen flex flex-col">
-          <CartComboBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
-        </div>
-      )
-    
-    case 'html-editor':
-      return (
-        <div className="min-h-screen flex flex-col">
-          <HtmlEditorBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
-        </div>
-      )
-    
-    case 'customized-package':
-    default:
-      return (
-        <div className="min-h-screen flex flex-col">
-          <ItineraryBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
-        </div>
-      )
+  const renderContent = () => {
+    switch (itineraryType) {
+      case 'fixed-group-tour':
+        return (
+          <div className="flex-1 flex flex-col">
+            <FixedGroupTourBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
+          </div>
+        )
+
+      case 'cart-combo':
+        return (
+          <div className="flex-1 flex flex-col">
+            <CartComboBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
+          </div>
+        )
+
+      case 'html-editor':
+        return (
+          <div className="flex-1 flex flex-col">
+            <HtmlEditorBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
+          </div>
+        )
+
+      case 'customized-package':
+      default:
+        return (
+          <div className="flex-1 flex flex-col">
+            <ItineraryBuilder itineraryId={itineraryId || undefined} onBack={handleBack} />
+          </div>
+        )
+    }
   }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <div className="bg-white border-b px-6 py-3 flex items-center justify-between shadow-sm z-10">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push('/itinerary')}
+            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            ← Back to Itineraries
+          </button>
+        </div>
+      </div>
+      {renderContent()}
+    </div>
+  )
 }
 
 export default function ItineraryBuilderPage() {

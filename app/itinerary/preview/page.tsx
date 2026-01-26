@@ -571,26 +571,25 @@ export default function ItineraryPreviewPage() {
 
 
   const handleEdit = () => {
-    if (!itinerary) return
-    let type = itinerary.itineraryType || "customized-package"
-    let rawId = itinerary.itineraryId ?? itinerary._id ?? null
+    // If no itinerary data, try to recover from local storage or fail safe
+    const type = itinerary?.itineraryType || "customized-package"
+    // Prefer the ID from the object, but if missing (e.g. new preview), check URL or storage
+    let rawId = itinerary?.itineraryId || itinerary?._id
 
     if (!rawId && typeof window !== "undefined") {
-      const fallbackId = window.localStorage.getItem("last-preview-itinerary-id")
+      // Fallback to what might have been stored during the builder session
+      const fallbackId = window.localStorage.getItem("currentItineraryId")
       if (fallbackId) {
         rawId = fallbackId
-      }
-      const fallbackType = window.localStorage.getItem("last-preview-itinerary-type")
-      if (fallbackType) {
-        type = fallbackType
       }
     }
 
     if (rawId) {
-      const idString = typeof rawId === "string" ? rawId : rawId.toString()
-      router.push(`/ itinerary / builder ? id = ${idString}& mode=edit & type=${type} `)
+      router.push(`/itinerary/builder?id=${rawId.toString()}&mode=edit&type=${type}`)
     } else {
-      router.push(`/ itinerary / builder ? mode = edit & type=${type} `)
+      // If we really don't have an ID, we might be previewing a fresh unsaved state?
+      // But typically we should have an ID. If not, just go back to builder base.
+      router.push(`/itinerary/builder?mode=edit&type=${type}`)
     }
   }
 
@@ -1138,8 +1137,8 @@ export default function ItineraryPreviewPage() {
                             <div
                               key={meal.key}
                               className={`flex items - center gap - 2 rounded - full border px - 3 py - 1.5 text - xs font - semibold uppercase tracking - [0.2em] ${available
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                  : "border-slate-200 bg-slate-100 text-slate-400"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 bg-slate-100 text-slate-400"
                                 } `}
                             >
                               {available ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}

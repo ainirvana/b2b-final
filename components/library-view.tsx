@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { SelectCategoryModal } from "@/components/select-category-modal"
-import { Sidebar } from "@/components/sidebar"
 import { toast } from "sonner"
 // (no additional types required here)
 
@@ -51,9 +50,9 @@ export function LibraryView() {
   const [showManageLibraryModal, setShowManageLibraryModal] = useState(false)
   const [manageAction, setManageAction] = useState<'edit' | 'delete' | null>(null)
   const [selectedManageLibraryId, setSelectedManageLibraryId] = useState<string | null>(null)
-  
+
   const { items: dbItems, libraries, loading, librariesLoading, deleteItem, createLibrary, updateLibrary, deleteLibrary, fetchLibraries } = useLibrary()
-  
+
   // Transform DB items to component format
   const items: ILibraryItem[] = dbItems.map(item => {
     const createdDate = item.createdAt ? new Date(item.createdAt) : new Date()
@@ -130,7 +129,7 @@ export function LibraryView() {
   const ungroupedExists = items.some(item => !item.libraryId)
 
   const libraryOptions = useMemo(() => {
-    const base: Array<{id:string,name:string,description?:string,isVirtual:boolean}> = []
+    const base: Array<{ id: string, name: string, description?: string, isVirtual: boolean }> = []
 
     // Add an "All Items" option to show items across all libraries
     base.push({
@@ -187,8 +186,8 @@ export function LibraryView() {
 
   const handleSelectItem = (id: string) => {
     if (isEditMode) {
-      setSelectedItems(prev => 
-        prev.includes(id) 
+      setSelectedItems(prev =>
+        prev.includes(id)
           ? prev.filter(itemId => itemId !== id)
           : [...prev, id]
       )
@@ -255,50 +254,50 @@ export function LibraryView() {
     }
   }
 
-    // Edit Library
-    const openEditLibrary = (lib: { id: string; name: string; description?: string }) => {
-      setEditLibraryId(lib.id)
-      setEditLibraryName(lib.name)
-      setEditLibraryDescription(lib.description || '')
-      setShowEditLibraryModal(true)
+  // Edit Library
+  const openEditLibrary = (lib: { id: string; name: string; description?: string }) => {
+    setEditLibraryId(lib.id)
+    setEditLibraryName(lib.name)
+    setEditLibraryDescription(lib.description || '')
+    setShowEditLibraryModal(true)
+  }
+
+  const handleEditLibrarySubmit = async () => {
+    if (!editLibraryId) return
+    const name = editLibraryName.trim()
+    if (!name) {
+      toast.error('Library name is required')
+      return
     }
 
-    const handleEditLibrarySubmit = async () => {
-      if (!editLibraryId) return
-      const name = editLibraryName.trim()
-      if (!name) {
-        toast.error('Library name is required')
-        return
-      }
-
-      setEditingLibrary(true)
-      try {
-        await updateLibrary(editLibraryId, { name, description: editLibraryDescription.trim() || undefined })
-        toast.success('Library updated')
-        setShowEditLibraryModal(false)
-        setEditLibraryId(null)
-        await fetchLibraries()
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to update library'
-        toast.error(message)
-      } finally {
-        setEditingLibrary(false)
-      }
+    setEditingLibrary(true)
+    try {
+      await updateLibrary(editLibraryId, { name, description: editLibraryDescription.trim() || undefined })
+      toast.success('Library updated')
+      setShowEditLibraryModal(false)
+      setEditLibraryId(null)
+      await fetchLibraries()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update library'
+      toast.error(message)
+    } finally {
+      setEditingLibrary(false)
     }
+  }
 
-    const handleDeleteLibrary = async (id: string) => {
-      if (!confirm('Are you sure you want to delete this library? Items inside will become ungrouped.')) return
-      try {
-        await deleteLibrary(id)
-        toast.success('Library deleted')
-        if (activeLibraryGroupId === id) {
-          setActiveLibraryGroupId('all')
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to delete library'
-        toast.error(message)
+  const handleDeleteLibrary = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this library? Items inside will become ungrouped.')) return
+    try {
+      await deleteLibrary(id)
+      toast.success('Library deleted')
+      if (activeLibraryGroupId === id) {
+        setActiveLibraryGroupId('all')
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete library'
+      toast.error(message)
     }
+  }
 
   useEffect(() => {
     if (!showCreateLibraryModal) {
@@ -308,10 +307,8 @@ export function LibraryView() {
   }, [showCreateLibraryModal])
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar activeView="library" />
-      
+    <div className="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden">
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Library Type Tabs (Products view) */}
@@ -324,11 +321,10 @@ export function LibraryView() {
               <Button
                 key={library.id}
                 onClick={() => setActiveLibraryTab(library.id as any)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeLibraryTab === library.id
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeLibraryTab === library.id
+                  ? 'bg-yellow-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {library.label}
               </Button>
@@ -349,7 +345,7 @@ export function LibraryView() {
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                   /* products is default view inside LibraryView */
                   'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 Products
               </Button>
@@ -479,7 +475,7 @@ export function LibraryView() {
                         ))}
                       </select>
                     </div>
-                    
+
                     {/* Sort Filter */}
                     <div className="flex items-center space-x-2">
                       <label className="text-sm font-medium text-gray-700">Sort:</label>
@@ -493,12 +489,12 @@ export function LibraryView() {
                       </select>
                     </div>
                   </div>
-                  
+
                   {/* Search */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input 
-                      placeholder="Search library items..." 
+                    <Input
+                      placeholder="Search library items..."
                       className="pl-10 pr-4 py-2 w-64 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 text-sm"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}

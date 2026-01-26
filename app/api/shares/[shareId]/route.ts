@@ -181,7 +181,15 @@ export async function DELETE(
     await PublicShare.findOneAndDelete({ shareId })
 
     // Optional: Also delete related share views
-    await ShareView.deleteMany({ shareId })
+    // Use a separate try-catch to ensure main deletion succeeds even if this fails
+    try {
+      if (ShareView) {
+        await ShareView.deleteMany({ shareId })
+      }
+    } catch (viewError) {
+      console.error("Error deleting share views:", viewError)
+      // Continue execution, don't fail the request
+    }
 
     return NextResponse.json({
       message: "Share deleted successfully"
@@ -190,7 +198,7 @@ export async function DELETE(
   } catch (error) {
     console.error("Error deleting share:", error)
     return NextResponse.json(
-      { error: "Failed to delete share" },
+      { error: error instanceof Error ? error.message : "Failed to delete share" },
       { status: 500 }
     )
   }
