@@ -41,24 +41,86 @@ export class LibraryToItineraryConverter {
     'experience': 'activity'
   }
 
+  private static mapExtraFieldsToEvent(libraryItem: LibraryItem): Partial<IItineraryEvent> {
+    if (!libraryItem.extraFields) return {}
+    const ef = libraryItem.extraFields
+    const mappings: any = {}
+
+    // 1. Direct String Mappings
+    const stringKeys = [
+      'flightNumber', 'airlines', 'flightClass', 'pnr', 'refundable', 'bookingId', 'seatNumber', 'inFlightMeals', 'checkinBagWeight', 'cabinBagWeight',
+      'vehicleType', 'fuelType', 'carModel', 'transmission', 'busNumber', 'trainNumber', 'transferClass', 'transferLink', 'airportName',
+      'hotelName', 'roomCategory', 'hotelNotes', 'propertyType', 'confirmationNumber', 'mealPlan', 'hotelGroupId',
+      'visaType', 'visaDuration', 'entryMethod', 'forexCurrency', 'baseCurrency', 'insuranceType', 'insuranceNotes', 'policyNumber', 'insuranceProvider', 'coverageDetails',
+      'simProvider', 'dataLimit', 'validity',
+      'imageUrl', 'imageCaption', 'imageAlt', 'subCategory',
+      'difficulty', 'duration', 'baggage', 'stops'
+    ]
+
+    stringKeys.forEach(key => {
+      if (ef[key]) mappings[key] = String(ef[key])
+    })
+
+    // 2. Numeric Mappings
+    const numberKeys = [
+      'price', 'nights', 'adults', 'children', 'checkinBags', 'cabinBags', 'numberOfStops',
+      'serviceCharge', 'giftAmount', 'amount', 'noOfTravellers', 'sumInsured', 'capacity',
+      'noOfHours', 'noOfDays', 'hotelRating', 'hotelTotalNights', 'hotelNightIndex', 'maxParticipants', 'currentBookings'
+    ]
+
+    numberKeys.forEach(key => {
+      if (ef[key] !== undefined && ef[key] !== "") mappings[key] = Number(ef[key])
+    })
+
+    // 3. Specific Field Aliases & Conversions
+    if (ef.departure) mappings.fromCity = ef.departure
+    if (ef.arrival) mappings.toCity = ef.arrival
+    if (ef.checkin) mappings.checkIn = ef.checkin
+    if (ef.checkout) mappings.checkOut = ef.checkout
+
+    // Flight/Transfer times
+    if (ef.startTime) mappings.startTime = ef.startTime
+    if (ef.endTime) mappings.endTime = ef.endTime
+    if (ef.pickupTime) mappings.pickupTime = ef.pickupTime
+    if (ef.dropTime) mappings.dropTime = ef.dropTime
+
+    // Transfer locations
+    if (ef.fromLocation) mappings.fromLocation = ef.fromLocation
+    if (ef.toLocation) mappings.toLocation = ef.toLocation
+
+    // Arrays
+    if (Array.isArray(ef.destinations)) mappings.destinations = ef.destinations
+    if (Array.isArray(ef.stopLocations)) mappings.stopLocations = ef.stopLocations
+    if (Array.isArray(ef.amenities)) mappings.amenities = ef.amenities
+    if (Array.isArray(ef.stopsList)) mappings.stopsList = ef.stopsList
+    if (Array.isArray(ef.products)) mappings.products = ef.products
+    if (Array.isArray(ef.travelGears)) mappings.travelGears = ef.travelGears
+    if (Array.isArray(ef.additionalVehicles)) mappings.additionalVehicles = ef.additionalVehicles
+
+    return mappings
+  }
+
   static convertToItineraryEvent(libraryItem: LibraryItem, customTime?: string): IItineraryEvent {
     const category = this.categoryMapping[libraryItem.category.toLowerCase()] || 'activity'
     const baseTime = customTime || this.getDefaultTimeForCategory(category)
-    
+    const mappedExtras = this.mapExtraFieldsToEvent(libraryItem)
+
     const baseEvent: IItineraryEvent = {
       id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       category,
-      source: "library",
+      componentSource: "my-library",
       libraryItemId: libraryItem._id,
-      isEdited: false,
+
       title: libraryItem.title,
       description: this.buildDescription(libraryItem),
-      time: baseTime,
+      time: mappedExtras.time || baseTime,
       location: this.buildLocation(libraryItem),
       highlights: this.extractHighlights(libraryItem),
       images: libraryItem.multimedia || [],
       price: libraryItem.basePrice || 0,
-      libraryItemId: libraryItem._id
+
+      // Spread mapped extra fields to ensure data transfer
+      ...mappedExtras
     }
 
     // Add category-specific fields
@@ -111,31 +173,16 @@ export class LibraryToItineraryConverter {
   }
 
   private static buildDescription(libraryItem: LibraryItem): string {
-    let description = libraryItem.notes || `${libraryItem.title} from library`
-    
-    // Add subcategory if available
-    if (libraryItem.subCategory) {
-      description += ` (${libraryItem.subCategory})`
-    }
-    
-    // Add labels if available
-    if (libraryItem.labels) {
-      description += `\n\nLabels: ${libraryItem.labels}`
-    }
-    
-    // Add extra fields if available
-    if (libraryItem.extraFields) {
-      const extraInfo = Object.entries(libraryItem.extraFields)
-        .filter(([_, value]) => value && value !== '')
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', ')
-      
-      if (extraInfo) {
-        description += `\n\nAdditional Info: ${extraInfo}`
-      }
+    // Priority: Notes -> Description field -> Empty
+    if (libraryItem.notes && libraryItem.notes.trim()) {
+      return libraryItem.notes
     }
 
-    return description
+    if (libraryItem.extraFields?.description && typeof libraryItem.extraFields.description === 'string' && libraryItem.extraFields.description.trim()) {
+      return libraryItem.extraFields.description
+    }
+
+    return ""
   }
 
   private static buildLocation(libraryItem: LibraryItem): string {
@@ -145,17 +192,17 @@ export class LibraryToItineraryConverter {
 
   private static extractHighlights(libraryItem: LibraryItem): string[] {
     const highlights: string[] = []
-    
+
     // Add labels as highlights
     if (libraryItem.labels) {
       highlights.push(...libraryItem.labels.split(',').map(label => label.trim()))
     }
-    
+
     // Add variants as highlights
     if (libraryItem.variants) {
       highlights.push(libraryItem.variants)
     }
-    
+
     // Add transfer options as highlights
     if (libraryItem.transferOptions && libraryItem.transferOptions.length > 0) {
       highlights.push(...libraryItem.transferOptions)
@@ -181,11 +228,11 @@ export class LibraryToItineraryConverter {
       checkIn: checkInTime,
       checkOut: checkOutTime,
       nights: nights,
-      meals: {
-        breakfast: libraryItem.extraFields?.breakfast === true || libraryItem.extraFields?.breakfast === 'true',
-        lunch: libraryItem.extraFields?.lunch === true || libraryItem.extraFields?.lunch === 'true',
-        dinner: libraryItem.extraFields?.dinner === true || libraryItem.extraFields?.dinner === 'true'
-      }
+      meals: [
+        (libraryItem.extraFields?.breakfast === true || libraryItem.extraFields?.breakfast === 'true') ? 'breakfast' : '',
+        (libraryItem.extraFields?.lunch === true || libraryItem.extraFields?.lunch === 'true') ? 'lunch' : '',
+        (libraryItem.extraFields?.dinner === true || libraryItem.extraFields?.dinner === 'true') ? 'dinner' : ''
+      ].filter(Boolean)
     }
   }
 
@@ -193,11 +240,11 @@ export class LibraryToItineraryConverter {
     return {
       // Activities can include meals too
       ...(libraryItem.extraFields?.includesMeals && {
-        meals: {
-          breakfast: libraryItem.extraFields?.breakfast === true,
-          lunch: libraryItem.extraFields?.lunch === true,
-          dinner: libraryItem.extraFields?.dinner === true
-        }
+        meals: [
+          libraryItem.extraFields?.breakfast === true ? 'breakfast' : '',
+          libraryItem.extraFields?.lunch === true ? 'lunch' : '',
+          libraryItem.extraFields?.dinner === true ? 'dinner' : ''
+        ].filter(Boolean)
       })
     }
   }
