@@ -124,7 +124,7 @@ export function LibraryView() {
     }
   }, [libraries, dbItems, activeLibraryGroupId])
 
-  const categories = ['all', 'flight', 'hotel', 'activity', 'transfer', 'ancillaries', 'package', 'others', 'meal']
+  const categories = ['all', 'flight', 'hotel', 'activity', 'transfer', 'ancillaries', 'others', 'meal', 'note']
 
   const ungroupedExists = items.some(item => !item.libraryId)
 

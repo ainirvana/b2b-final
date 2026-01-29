@@ -345,6 +345,8 @@ export interface IItineraryEvent {
     description: string
     currency?: string
   }[]
+  giftAmount?: number // Ensure this is present
+  products?: { name: string; price: number; description: string; currency?: string }[] // Generic products list
 
   // Ancillaries specific
   // Visa
@@ -352,13 +354,12 @@ export interface IItineraryEvent {
   visaType?: string
   visaDuration?: string
   entryMethod?: string
-  departureDate?: string
-  returnDate?: string
-  lengthOfStay?: string
+  visaCountry?: string // Added
   // Forex
   forexCurrency?: string
   baseCurrency?: string
   amount?: number
+  exchangeRate?: string // Added
   // Travel Insurance
   destinations?: string[]
   startDate?: string
@@ -367,6 +368,14 @@ export interface IItineraryEvent {
   insuranceType?: string
   sumInsured?: number
   insuranceNotes?: string
+  insuranceProvider?: string // Added
+  policyNumber?: string // Added
+  coverageDetails?: string // Added
+  // SIM Card
+  simProvider?: string // Added
+  dataLimit?: string // Added
+  validity?: string // Added
+
 
   // Image specific
   imageUrl?: string

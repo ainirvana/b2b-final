@@ -1,33 +1,33 @@
 "use client"
 
-import React, { useState, useCallback, useEffect } from "react"
-import { City, Country } from "country-state-city"
-import { 
-  ArrowLeft, X, MapPin, Hotel, Plane, Car, Info, Calendar, Upload, User, 
-  MapPin as LocationPin, Utensils, Ticket, Shield, CreditCard, Briefcase, 
-  Gift, Luggage, Bus, Train, Shuffle, Home, Building, ShoppingBag, Badge,
-  Package, DollarSign, Calendar as CalendarIcon, MoreHorizontal, Navigation, Activity
+import React, { useState, useEffect } from "react"
+import {
+  X, Plane, Hotel, Activity, Utensils, Bus, ShoppingBag,
+  FileText, Info, Ship, Box
 } from "lucide-react"
-
-interface CityData {
-  name: string;
-  countryCode: string;
-  countryName: string;
-  stateCode?: string;
-  latitude?: string;
-  longitude?: string;
-  key: string;
-}
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLibrary } from "@/hooks/use-library"
 import { toast } from "sonner"
+import { IItineraryEvent } from "@/models/Itinerary"
+
+// Import Shared Forms
+import { FlightForms } from "./itinerary-builder/flight-forms"
+import { HotelForms } from "./itinerary-builder/hotel-forms"
+import { ActivityForms } from "./itinerary-builder/activity-forms"
+import { MealForms } from "./itinerary-builder/meal-forms"
+import { TransferForms } from "./itinerary-builder/transfer-forms"
+import { AncillariesForms } from "./itinerary-builder/ancillaries-forms"
+import { OthersForms } from "./itinerary-builder/others-forms"
+import {
+  transferSubCategories,
+  ancillariesSubCategories,
+  othersSubCategories
+} from "./itinerary-builder/constants"
+import { NoteForms } from "./itinerary-builder/note-forms"
+import { ImageForms } from "./itinerary-builder/image-forms"
+
 
 interface SelectCategoryModalProps {
   isOpen: boolean
@@ -38,961 +38,766 @@ interface SelectCategoryModalProps {
 }
 
 export function SelectCategoryModal({ isOpen, onClose, onItemCreated, editingItem, defaultLibraryId }: SelectCategoryModalProps) {
-  const [selectedCategory, setSelectedCategory] = useState("Flight")
-  const [selectedSubCategory, setSelectedSubCategory] = useState("Flight")
-  const [selectedTransferOptions, setSelectedTransferOptions] = useState<string[]>(["any"])
-  const [formData, setFormData] = useState({
+  const [selectedCategory, setSelectedCategory] = useState("Flights")
+  const [isSaving, setIsSaving] = useState(false)
+  const { createItem, updateItem, libraries } = useLibrary()
+  const [targetLibraryId, setTargetLibraryId] = useState<string>("")
+
+  useEffect(() => {
+    if (defaultLibraryId) {
+      setTargetLibraryId(defaultLibraryId)
+    } else if (libraries.length > 0) {
+      setTargetLibraryId(libraries[0]._id)
+    }
+  }, [defaultLibraryId, libraries])
+
+  // Initialize Item Form State with comprehensive defaults
+  const [itemForm, setItemForm] = useState<Partial<IItineraryEvent>>({
     title: "",
-    additionalInfo: [] as string[],
-    city: "Bangkok",
-    country: "Thailand",
-    startDate: "",
-    endDate: "",
+    description: "",
+    category: "flight",
+    price: 0,
+    currency: "USD",
+
+
+    // Common fields
+    location: "",
+    duration: "",
+    difficulty: "",
+    startTime: "",
+    endTime: "",
+    flightNumber: "",
+
+    fromCity: "",
+    toCity: "",
+    checkIn: "",
+    checkOut: "",
+    hotelName: "",
+    roomCategory: "",
+    nights: 0,
+    vehicleType: "",
+    transferType: "private",
+
+    // Extended fields
+    subCategory: "",
+    country: "",
+    visaType: "",
+    visaDuration: "",
+    entryMethod: "",
+    departureDate: "",
+    returnDate: "",
+    imageUrl: "",
+    imageCaption: "",
+    imageAlt: "",
+    // Arrays
+    destinations: [],
+    products: [],
+    stopsList: [],
+    additionalVehicles: [],
+    amenities: [],
+    highlights: [],
+    stopLocations: [],
+    // Extended Flight
+    checkinBags: 0,
+    checkinBagWeight: "",
+    cabinBags: 0,
+    cabinBagWeight: "",
+    numberOfStops: 0,
+    bookingId: "",
+    seatNumber: "",
+    inFlightMeals: "",
+    refundable: "",
+    pnr: "",
+    // Extended Transfer
+    pickupTime: "",
+    dropTime: "",
+    noOfHours: 0,
+    noOfDays: 0,
+    busNumber: "",
+    trainNumber: "",
+    transferLink: "",
+    transferClass: "",
+    fuelType: "",
+    carModel: "",
+    transmission: "",
+    pickupDrop: "pickup",
+    airportName: "",
+    // Extended Hotel
+    adults: 2,
+    children: 0,
+    mealPlan: "",
+    propertyType: "",
+    address: "",
+    hotelLink: "",
+    confirmationNumber: "",
+    hotelRating: 0,
+    // Extended Ancillaries
+    forexCurrency: "",
+    baseCurrency: "INR",
+    amount: 0,
+    insuranceProvider: "",
+    policyNumber: "",
+    coverageDetails: "",
+    insuranceType: "",
+    sumInsured: 0,
+    insuranceNotes: "",
+    serviceCharge: 0,
+    giftAmount: 0,
+    // Additional Info
     labels: "",
     notes: "",
-    basePrice: "",
-    currency: "USD",
-    availableFrom: "",
-    availableUntil: "",
-    variants: ""
   })
-  const [advancedPricing, setAdvancedPricing] = useState({
-    enabled: false,
-    paxPricing: Array.from({ length: 21 }, (_, i) => ({ paxCount: i, price: "" }))
-  })
-  const [citySuggestions, setCitySuggestions] = useState<CityData[]>([])
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
-  const [uploading, setUploading] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedLibraryId, setSelectedLibraryId] = useState<string>("")
-  const [newLibraryName, setNewLibraryName] = useState("")
-  const [creatingLibrary, setCreatingLibrary] = useState(false)
-  
-  const { createItem, updateItem, libraries, createLibrary, fetchLibraries } = useLibrary()
-  const isEditing = !!editingItem
 
-  // Initialize form with editing data
-  React.useEffect(() => {
+  // Populate form when editing
+  useEffect(() => {
     if (editingItem) {
-      const rawAdditional = editingItem.extraFields && editingItem.extraFields.additionalInfo !== undefined ? editingItem.extraFields.additionalInfo : undefined
-      const additionalArray = Array.isArray(rawAdditional)
-        ? rawAdditional
-        : (rawAdditional ? [String(rawAdditional)] : [])
-
-      setFormData({
+      // Map basic fields
+      const baseForm: Partial<IItineraryEvent> = {
         title: editingItem.title || "",
-        additionalInfo: additionalArray,
-        city: editingItem.city || "Bangkok",
-        country: editingItem.country || "Thailand",
-        startDate: editingItem.startDate || "",
-        endDate: editingItem.endDate || "",
-        labels: editingItem.labels || "",
-        notes: editingItem.notes || "",
-        basePrice: editingItem.basePrice?.toString() || "",
+        category: editingItem.category || "flight",
+        price: editingItem.basePrice || 0,
         currency: editingItem.currency || "USD",
-        availableFrom: editingItem.availableFrom ? (() => {
-          const date = new Date(editingItem.availableFrom)
-          return date instanceof Date && !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : ""
-        })() : "",
-        availableUntil: editingItem.availableUntil ? (() => {
-          const date = new Date(editingItem.availableUntil)
-          return date instanceof Date && !isNaN(date.getTime()) ? date.toISOString().split('T')[0] : ""
-        })() : "",
-        variants: editingItem.variants || ""
-      })
-      setSelectedCategory(editingItem.category || "Flight")
-      setSelectedSubCategory(editingItem.subCategory || "Flight")
-      setSelectedTransferOptions(editingItem.transferOptions || ["any"])
-      setUploadedFiles(editingItem.multimedia || [])
-      
-      // Initialize advanced pricing
-      if (editingItem.advancedPricing) {
-        const paxPricing = Array.from({ length: 21 }, (_, i) => {
-          const existing = editingItem.advancedPricing.paxPricing?.find(p => p.paxCount === i)
-          return { paxCount: i, price: existing?.price?.toString() || "" }
-        })
-        setAdvancedPricing({
-          enabled: editingItem.advancedPricing.enabled || false,
-          paxPricing
-        })
+        location: editingItem.city || editingItem.location || "",
+        country: editingItem.country || "",
+        imageUrl: editingItem.multimedia?.[0] || "",
+        // ... map other base fields if they exist on LibraryItem
       }
+
+      // Map extraFields back to top-level for the form
+      if (editingItem.extraFields) {
+        Object.assign(baseForm, editingItem.extraFields)
+      }
+
+      setItemForm(prev => ({ ...prev, ...baseForm }))
+
+      // Map category to display category
+      const cat = (editingItem.category || "").toLowerCase()
+      const subCat = (editingItem.subCategory || editingItem.extraFields?.subCategory || "")
+
+      if (cat === "flight") setSelectedCategory("Flights")
+      else if (cat === "transfer") setSelectedCategory("Transfer")
+      else if (cat === "hotel") setSelectedCategory("Hotel")
+      else if (cat === "activity") setSelectedCategory("Activity")
+      else if (cat === "meal") setSelectedCategory("Meals")
+      else if (cat === "ancillaries") setSelectedCategory("Ancillaries")
+      else if (cat === "note") {
+        if (subCat === "Additional Information") setSelectedCategory("Additional Information")
+        else setSelectedCategory("Notes")
+      }
+      else if (cat === "others") {
+        if (subCat === "Cruise") setSelectedCategory("Cruise")
+        else setSelectedCategory("Others")
+      }
+      else setSelectedCategory("Others")
     }
   }, [editingItem])
 
-  useEffect(() => {
-    if (!isOpen) {
-      return
-    }
+  // --- Helper Functions ---
 
-    if (libraries.length === 0) {
-      fetchLibraries().catch((error) => console.error('Failed to refresh libraries', error))
-    }
-
-    if (editingItem?.libraryCollection?._id) {
-      setSelectedLibraryId(editingItem.libraryCollection._id)
-      return
-    }
-
-    if (defaultLibraryId && libraries.some((library) => library._id === defaultLibraryId)) {
-      setSelectedLibraryId(defaultLibraryId)
-      return
-    }
-
-    if (selectedLibraryId && libraries.some((library) => library._id === selectedLibraryId)) {
-      return
-    }
-
-    if (libraries.length > 0) {
-      setSelectedLibraryId(libraries[0]._id)
-    } else {
-      setSelectedLibraryId('')
-    }
-  }, [isOpen, editingItem, defaultLibraryId, selectedLibraryId, libraries, fetchLibraries])
-
-  const categories = [
-    { id: "Flight", label: "Flight", icon: Plane },
-    { id: "Hotel", label: "Hotel", icon: Hotel },
-    { id: "Activity", label: "Activity & Experiences", icon: Activity },
-    { id: "AdditionalInfo", label: "Additional Information", icon: Badge },
-    { id: "Transfer", label: "Transfer", icon: Car },
-    { id: "Ancillaries", label: "Ancillaries", icon: MoreHorizontal },
-    { id: "Package", label: "Packages", icon: Navigation },
-    { id: "Others", label: "Others", icon: ShoppingBag },
-    { id: "Meal", label: "Meal", icon: Utensils }
-  ]
-
-  const subCategories = {
-    Flight: [
-      { id: "Flight", label: "Flight", icon: Plane },
-      { id: "Charter", label: "Charter", icon: Plane },
-      { id: "Private", label: "Private", icon: Plane },
-      { id: "Others", label: "Others", icon: Plane }
-    ],
-    Hotel: [
-      { id: "Hotel", label: "Hotel", icon: Hotel },
-      { id: "Homestays", label: "Homestays & Villas", icon: Home },
-      { id: "Others", label: "Others", icon: Hotel }
-    ],
-    Activity: [
-      { id: "Tickets", label: "Tickets", icon: Ticket },
-      { id: "Tours", label: "Tours", icon: MapPin },
-      { id: "Experiences", label: "Experiences", icon: MapPin },
-      { id: "Others", label: "Others", icon: MapPin }
-    ],
-    Transfer: [
-      { id: "Airport Transfer", label: "Airport Transfer", icon: Plane },
-      { id: "On-demand Transfers", label: "On-demand Transfers", icon: Car },
-      { id: "Rentals", label: "Rentals", icon: Car },
-      { id: "Inter-city", label: "Inter-city", icon: Bus },
-      { id: "Others", label: "Others", icon: Shuffle }
-    ],
-    Ancillaries: [
-      { id: "Visa", label: "Visa", icon: Badge },
-      { id: "Forex", label: "Forex", icon: CreditCard },
-      { id: "Travel Insurance", label: "Travel Insurance", icon: Shield },
-      { id: "Event Management", label: "Event Management", icon: Briefcase },
-      { id: "Services", label: "Services", icon: User }
-    ],
-    Package: [
-      { id: "7n8d", label: "7N/8D", icon: Package },
-      { id: "5n6d", label: "5N/6D", icon: Package },
-      { id: "3n4d", label: "3N/4D", icon: Package },
-      { id: "10n11d", label: "10N/11D", icon: Package },
-      { id: "14n15d", label: "14N/15D", icon: Package },
-      { id: "custom", label: "Custom", icon: Package }
-    ],
-    Others: [
-      { id: "Travel Gear", label: "Travel Gear", icon: Luggage },
-      { id: "Gifts", label: "Gifts", icon: Gift },
-      { id: "Souvenirs", label: "Souvenirs", icon: ShoppingBag }
-    ],
-    Meal: [
-      { id: "Breakfast", label: "B", icon: Utensils },
-      { id: "Lunch", label: "L", icon: Utensils },
-      { id: "Dinner", label: "D", icon: Utensils },
-      { id: "Others", label: "Others", icon: Utensils }
-    ]
+  const handleFieldChange = (field: keyof IItineraryEvent, value: any) => {
+    setItemForm(prev => ({ ...prev, [field]: value }))
   }
 
-  const transferOptions = [
-    { id: "any", label: "Any" },
-    { id: "car-only", label: "Car Only" },
-    { id: "bus", label: "Bus" },
-    { id: "trains", label: "Trains" },
-    { id: "shuttle", label: "Shuttle" },
-    { id: "other-combo", label: "Other Combo" }
-  ]
+  const handleArrayChange = (field: keyof IItineraryEvent, index: number, value: any) => {
+    const currentArray = (itemForm[field] as any[]) || []
+    const newArray = [...currentArray]
+    newArray[index] = value
+    setItemForm(prev => ({ ...prev, [field]: newArray }))
+  }
 
-  const searchCities = useCallback((search: string) => {
-    if (search.length < 2) {
-      setCitySuggestions([]);
-      return;
+  const handleArrayAdd = (field: keyof IItineraryEvent, initialValue: any = "") => {
+    const currentArray = (itemForm[field] as any[]) || []
+    setItemForm(prev => ({ ...prev, [field]: [...currentArray, initialValue] }))
+  }
+
+  const handleArrayRemove = (field: keyof IItineraryEvent, index: number) => {
+    const currentArray = (itemForm[field] as any[]) || []
+    setItemForm(prev => ({ ...prev, [field]: currentArray.filter((_, i) => i !== index) }))
+  }
+
+  const handleObjectArrayChange = (field: keyof IItineraryEvent, index: number, key: string, value: any) => {
+    const currentArray = (itemForm[field] as any[]) || []
+    const newArray = [...currentArray]
+    newArray[index] = { ...newArray[index], [key]: value }
+    setItemForm(prev => ({ ...prev, [field]: newArray }))
+  }
+
+  const calculateFlightDuration = (start: string, end: string) => {
+    if (!start || !end) return ""
+    const [startH, startM] = start.split(":").map(Number)
+    const [endH, endM] = end.split(":").map(Number)
+    let diffM = endM - startM
+    let diffH = endH - startH
+    if (diffM < 0) {
+      diffM += 60
+      diffH -= 1
     }
+    if (diffH < 0) diffH += 24
+    return `${diffH}h ${diffM}m`
+  }
 
-    const countries = Country.getAllCountries();
-    const searchLower = search.toLowerCase();
-    
-    let matches: CityData[] = [];
-    let uniqueCities = new Set();
-    
-    countries.forEach(country => {
-      const cities = City.getCitiesOfCountry(country.isoCode);
-      if (cities) {
-        cities.forEach(city => {
-          if (city.name.toLowerCase().includes(searchLower)) {
-            // Create a unique identifier using all available data
-            const uniqueId = `${city.name}-${country.isoCode}-${city.stateCode || ''}-${city.latitude || ''}-${city.longitude || ''}`;
-            
-            // Only add if we haven't seen this exact city before
-            if (!uniqueCities.has(uniqueId)) {
-              uniqueCities.add(uniqueId);
-              matches.push({
-                name: city.name,
-                countryCode: country.isoCode,
-                countryName: country.name,
-                stateCode: city.stateCode,
-                latitude: city.latitude,
-                longitude: city.longitude,
-                key: uniqueId
-              });
-            }
-          }
-        });
-      }
-    });
+  // --- Render Logic ---
 
-    // Limit to top 10 matches for better performance
-    setCitySuggestions(matches.slice(0, 10));
-  }, []);
+  const renderFormContent = () => {
+    switch (selectedCategory) {
+      case "Flights":
+        return (
+          <FlightForms
+            manualFromCity={itemForm.fromCity || ""}
+            setManualFromCity={(v) => handleFieldChange("fromCity", v)}
+            manualToCity={itemForm.toCity || ""}
+            setManualToCity={(v) => handleFieldChange("toCity", v)}
+            manualTime={itemForm.time || itemForm.startTime || ""}
+            setManualTime={(v) => handleFieldChange("startTime", v)} // Unified to startTime
+            manualEndTime={itemForm.endTime || ""}
+            setManualEndTime={(v) => handleFieldChange("endTime", v)}
+            manualAirline={itemForm.airlines || ""}
+            setManualAirline={(v) => handleFieldChange("airlines", v)}
+            manualClass={itemForm.flightClass || ""}
+            setManualClass={(v) => handleFieldChange("flightClass", v)}
+            manualPrice={itemForm.price || ""}
+            setManualPrice={(v) => handleFieldChange("price", v)}
+            manualCurrency={itemForm.currency || "USD"}
+            setManualCurrency={(v) => handleFieldChange("currency", v)}
+            manualDuration={itemForm.duration || ""}
+            setManualDuration={(v) => handleFieldChange("duration", v)}
+            manualTitle={itemForm.title || ""}
+            setManualTitle={(v) => handleFieldChange("title", v)}
+            manualFlightNumber={itemForm.flightNumber || ""}
+            setManualFlightNumber={(v) => handleFieldChange("flightNumber", v)}
+            manualPnr={itemForm.pnr || ""}
+            setManualPnr={(v) => handleFieldChange("pnr", v)}
+            // Extended
+            manualCheckinBags={itemForm.checkinBags || ""}
+            setManualCheckinBags={(v) => handleFieldChange("checkinBags", v)}
+            manualCheckinBagWeight={itemForm.checkinBagWeight || ""}
+            setManualCheckinBagWeight={(v) => handleFieldChange("checkinBagWeight", v)}
+            manualCabinBags={itemForm.cabinBags || ""}
+            setManualCabinBags={(v) => handleFieldChange("cabinBags", v)}
+            manualCabinBagWeight={itemForm.cabinBagWeight || ""}
+            setManualCabinBagWeight={(v) => handleFieldChange("cabinBagWeight", v)}
+            manualNumberOfStops={itemForm.numberOfStops || 0}
+            setManualNumberOfStops={(v) => {
+              handleFieldChange("numberOfStops", v)
+              // Adjust stop locations array size
+              const current = itemForm.stopLocations || []
+              if (v > current.length) {
+                handleFieldChange("stopLocations", [...current, ...Array(v - current.length).fill("")])
+              } else if (v < current.length) {
+                handleFieldChange("stopLocations", current.slice(0, v))
+              }
+            }}
+            manualStopLocations={itemForm.stopLocations || []}
+            handleAddStopLocation={() => handleArrayAdd("stopLocations", "")}
+            handleRemoveStopLocation={(idx) => handleArrayRemove("stopLocations", idx)}
+            handleStopLocationChange={(idx, v) => handleArrayChange("stopLocations", idx, v)}
+            manualBookingId={itemForm.bookingId || ""}
+            setManualBookingId={(v) => handleFieldChange("bookingId", v)}
+            manualSeatNumber={itemForm.seatNumber || ""}
+            setManualSeatNumber={(v) => handleFieldChange("seatNumber", v)}
+            manualInFlightMeals={itemForm.inFlightMeals || ""}
+            setManualInFlightMeals={(v) => handleFieldChange("inFlightMeals", v)}
+            manualAmenities={itemForm.amenities || []}
+            setManualAmenities={(v) => handleFieldChange("amenities", v)}
+            manualRefundable={itemForm.refundable || ""}
+            setManualRefundable={(v) => handleFieldChange("refundable", v)}
+            manualDescription={itemForm.description || ""}
+            setManualDescription={(v) => handleFieldChange("description", v)}
+            manualImageUrl={itemForm.imageUrl || ""}
+            setManualImageUrl={(v) => handleFieldChange("imageUrl", v)}
+            calculateFlightDuration={calculateFlightDuration}
+            errors={{}}
+          />
+        )
 
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      searchCities(searchTerm);
-    }, 300);
+      case "Transfer":
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-2">
+              {transferSubCategories.map((sub) => (
+                <Button
+                  key={sub.id}
+                  type="button"
+                  variant={itemForm.transferCategory === sub.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleFieldChange("transferCategory", sub.id)}
+                  className="gap-2"
+                >
+                  <span>{sub.icon}</span>
+                  {sub.label}
+                </Button>
+              ))}
+            </div>
+            <TransferForms
+              selectedSubCategory={itemForm.transferCategory || ""}
+              manualTitle={itemForm.title || ""}
+              manualFromCity={itemForm.fromCity || ""}
+              setManualFromCity={(v) => handleFieldChange("fromCity", v)}
+              manualToCity={itemForm.toCity || ""}
+              setManualToCity={(v) => handleFieldChange("toCity", v)}
+              manualVehicleType={itemForm.vehicleType || ""}
+              setManualVehicleType={(v) => handleFieldChange("vehicleType", v)}
+              manualPrice={itemForm.price || ""}
+              setManualPrice={(v) => handleFieldChange("price", v)}
+              manualCurrency={itemForm.currency || "USD"}
+              setManualCurrency={(v) => handleFieldChange("currency", v)}
+              manualDescription={itemForm.description || ""}
+              setManualDescription={(v) => handleFieldChange("description", v)}
 
-    return () => clearTimeout(timer);
-  }, [searchTerm, searchCities]);
+              setManualTitle={(v) => handleFieldChange("title", v)}
+              // Extended
+              manualPickupDrop={itemForm.pickupDrop || "pickup"}
+              setManualPickupDrop={(v) => handleFieldChange("pickupDrop", v)}
+              manualAirportName={itemForm.airportName || ""}
+              setManualAirportName={(v) => handleFieldChange("airportName", v)}
+              manualTransferType={itemForm.transferType || "private"}
+              setManualTransferType={(v) => handleFieldChange("transferType", v)}
+              manualVehicleCapacity={itemForm.capacity || ""}
+              setManualVehicleCapacity={(v) => handleFieldChange("capacity", v)}
+              manualPricePerPax={itemForm.price || ""} // Mapping price to pricePerPax for now if needed, or separate
+              manualPickupTime={itemForm.pickupTime || ""}
+              setManualPickupTime={(v) => handleFieldChange("pickupTime", v)}
+              manualDropTime={itemForm.dropTime || ""}
+              setManualDropTime={(v) => handleFieldChange("dropTime", v)}
+              manualNoOfHours={itemForm.noOfHours || ""}
+              setManualNoOfHours={(v) => handleFieldChange("noOfHours", v)}
+              manualNoOfDays={itemForm.noOfDays || ""}
+              setManualNoOfDays={(v) => handleFieldChange("noOfDays", v)}
+              manualCarType={itemForm.vehicleType || ""}
+              setManualCarType={(v) => handleFieldChange("vehicleType", v)}
+              manualFuelType={itemForm.fuelType || ""}
+              setManualFuelType={(v) => handleFieldChange("fuelType", v)}
+              manualCarModel={itemForm.carModel || ""}
+              setManualCarModel={(v) => handleFieldChange("carModel", v)}
+              manualTransmission={(itemForm.transmission as "automatic" | "manual" | "") || ""}
+              setManualTransmission={(v) => handleFieldChange("transmission", v)}
+              manualTravelDuration={itemForm.duration || ""}
+              setManualTravelDuration={(v) => handleFieldChange("duration", v)}
+              manualDepartureTime={itemForm.startTime || ""}
+              setManualDepartureTime={(v) => handleFieldChange("startTime", v)}
+              manualArrivalTime={itemForm.endTime || ""}
+              setManualArrivalTime={(v) => handleFieldChange("endTime", v)}
+              manualClass={itemForm.transferClass || ""}
+              setManualClass={(v) => handleFieldChange("transferClass", v)}
+              manualBusNumber={itemForm.busNumber || ""}
+              setManualBusNumber={(v) => handleFieldChange("busNumber", v)}
+              manualTrainNumber={itemForm.trainNumber || ""}
+              setManualTrainNumber={(v) => handleFieldChange("trainNumber", v)}
+              manualPnr={itemForm.pnr || ""}
+              setManualPnr={(v) => handleFieldChange("pnr", v)}
+              manualRefundable={itemForm.refundable || ""}
+              setManualRefundable={(v) => handleFieldChange("refundable", v)}
+              manualLink={itemForm.transferLink || ""}
+              setManualLink={(v) => handleFieldChange("transferLink", v)}
+              manualAmenities={itemForm.amenities || []}
+              setManualAmenities={(v) => handleFieldChange("amenities", v)}
+              manualStopsList={itemForm.stopsList || []}
+              handleAddStop={() => handleArrayAdd("stopsList", "")}
+              handleRemoveStop={(idx) => handleArrayRemove("stopsList", idx)}
+              handleStopChange={(idx, v) => handleArrayChange("stopsList", idx, v)}
+              manualAdditionalVehicles={(itemForm.additionalVehicles as any) || []}
+              handleAddVehicle={() => handleArrayAdd("additionalVehicles", { vehicleType: "", capacity: 0, price: 0 })}
+              handleRemoveVehicle={(idx) => handleArrayRemove("additionalVehicles", idx)}
+              handleVehicleChange={(idx, key, val) => handleObjectArrayChange("additionalVehicles", idx, key, val)}
+            />
+          </div>
+        )
 
-  const handleInputChange = (field: string, value: string) => {
-    if (field === "city") {
-      setFormData(prev => ({ ...prev, city: value }));
-      setSearchTerm(value);
-    } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
+      case "Hotel":
+        return (
+          <HotelForms
+            manualTitle={itemForm.title || ""}
+            setManualTitle={(v) => handleFieldChange("title", v)}
+            manualRoomCategory={itemForm.roomCategory || ""}
+            setManualRoomCategory={(v) => handleFieldChange("roomCategory", v)}
+            manualLocation={itemForm.location || ""}
+            setManualLocation={(v) => handleFieldChange("location", v)}
+            manualHotelRating={itemForm.hotelRating || ""}
+            setManualHotelRating={(v) => handleFieldChange("hotelRating", v)}
+            manualPrice={itemForm.price || ""}
+            setManualPrice={(v) => handleFieldChange("price", v)}
+            manualCurrency={itemForm.currency || "USD"}
+            setManualCurrency={(v) => handleFieldChange("currency", v)}
+            manualAdults={itemForm.adults || ""}
+            setManualAdults={(v) => handleFieldChange("adults", v)}
+            manualChildren={itemForm.children || ""}
+            setManualChildren={(v) => handleFieldChange("children", v)}
+            manualHotelName={itemForm.hotelName || ""}
+            setManualHotelName={(v) => handleFieldChange("hotelName", v)}
+            manualNights={itemForm.nights || ""}
+            setManualNights={(v) => handleFieldChange("nights", v)}
+            manualCheckIn={itemForm.checkIn || ""}
+            setManualCheckIn={(v) => handleFieldChange("checkIn", v)}
+            manualCheckOut={itemForm.checkOut || ""}
+            setManualCheckOut={(v) => handleFieldChange("checkOut", v)}
+            manualMealPlan={itemForm.mealPlan || ""}
+            setManualMealPlan={(v) => handleFieldChange("mealPlan", v)}
+            manualPropertyType={itemForm.propertyType || ""}
+            setManualPropertyType={(v) => handleFieldChange("propertyType", v)}
+            manualAmenities={itemForm.amenities || []}
+            handleAddManualAmenity={() => handleArrayAdd("amenities", "")}
+            handleRemoveManualAmenity={(idx) => handleArrayRemove("amenities", idx)}
+            handleManualAmenitiesChange={(idx, v) => handleArrayChange("amenities", idx, v)}
+            manualHighlights={(itemForm.highlights as any) || []}
+            handleAddManualHighlight={() => handleArrayAdd("highlights", "")}
+            handleRemoveManualHighlight={(idx) => handleArrayRemove("highlights", idx)}
+            handleManualHighlightsChange={(idx, v) => handleArrayChange("highlights", idx, v)}
+            manualImageUrl={itemForm.imageUrl || ""}
+            setManualImageUrl={(v) => handleFieldChange("imageUrl", v)}
+            manualRefundable={itemForm.refundable || ""}
+            setManualRefundable={(v) => handleFieldChange("refundable", v)}
+            manualAddress={itemForm.address || ""}
+            setManualAddress={(v) => handleFieldChange("address", v)}
+            manualHotelLink={itemForm.hotelLink || ""}
+            setManualHotelLink={(v) => handleFieldChange("hotelLink", v)}
+            manualDescription={itemForm.description || ""}
+            setManualDescription={(v) => handleFieldChange("description", v)}
+            manualConfirmationNumber={itemForm.confirmationNumber || ""}
+            setManualConfirmationNumber={(v) => handleFieldChange("confirmationNumber", v)}
+            errors={{}}
+          />
+        )
+
+      case "Activity":
+        return (
+          <ActivityForms
+            manualTitle={itemForm.title || ""}
+            setManualTitle={(v) => handleFieldChange("title", v)}
+            manualDescription={itemForm.description || ""}
+            setManualDescription={(v) => handleFieldChange("description", v)}
+            manualDuration={itemForm.duration || ""}
+            setManualDuration={(v) => handleFieldChange("duration", v)}
+            manualTime={itemForm.startTime || itemForm.time || ""}
+            setManualTime={(v) => handleFieldChange("startTime", v)}
+            manualDifficulty={itemForm.difficulty || ""}
+            setManualDifficulty={(v) => handleFieldChange("difficulty", v)}
+            manualCapacity={itemForm.capacity || ""}
+            setManualCapacity={(v) => handleFieldChange("capacity", v)}
+            manualLocation={itemForm.location || ""}
+            setManualLocation={(v) => handleFieldChange("location", v)}
+            manualPrice={itemForm.price || ""}
+            setManualPrice={(v) => handleFieldChange("price", v)}
+            manualCurrency={itemForm.currency || "USD"}
+            setManualCurrency={(v) => handleFieldChange("currency", v)}
+            errors={{}}
+          />
+        )
+
+      case "Meals":
+        return (
+          <MealForms
+            manualMeals={itemForm.meals || []}
+            setManualMeals={(v) => handleFieldChange("meals", v)}
+            manualCustomMealDescription={itemForm.customMealDescription || ""}
+            setManualCustomMealDescription={(v) => handleFieldChange("customMealDescription", v)}
+            manualPrice={itemForm.price || ""}
+            setManualPrice={(v) => handleFieldChange("price", v)}
+            manualCurrency={itemForm.currency || "USD"}
+            setManualCurrency={(v) => handleFieldChange("currency", v)}
+            errors={{}}
+          />
+        )
+
+      case "Ancillaries":
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-2">
+              {ancillariesSubCategories.map((sub) => (
+                <Button
+                  key={sub.id}
+                  type="button"
+                  variant={itemForm.subCategory === sub.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleFieldChange("subCategory", sub.id)}
+                  className="gap-2"
+                >
+                  <span>{sub.icon}</span>
+                  {sub.label}
+                </Button>
+              ))}
+            </div>
+            <AncillariesForms
+              selectedSubCategory={itemForm.subCategory || ""}
+              manualTitle={itemForm.title || ""}
+              setManualTitle={(v) => handleFieldChange("title", v)}
+              manualPrice={itemForm.price || ""}
+              setManualPrice={(v) => handleFieldChange("price", v)}
+              manualCurrency={itemForm.currency || "USD"}
+              setManualCurrency={(v) => handleFieldChange("currency", v)}
+              manualCountry={itemForm.visaCountry || ""}
+              setManualCountry={(v) => handleFieldChange("visaCountry", v)}
+              manualVisaType={itemForm.visaType || ""}
+              setManualVisaType={(v) => handleFieldChange("visaType", v)}
+              manualVisaDuration={itemForm.visaDuration || ""}
+              setManualVisaDuration={(v) => handleFieldChange("visaDuration", v)}
+              manualServiceFee={(itemForm as any).serviceFee || ""}
+              setManualServiceFee={(v) => handleFieldChange("serviceFee" as any, v)}
+              manualTotalFee={(itemForm as any).totalFee || ""}
+              manualLengthOfStay={(itemForm as any).lengthOfStay || ""}
+              setManualLengthOfStay={(v) => handleFieldChange("lengthOfStay" as any, v)}
+              manualEntryMethod={itemForm.entryMethod || ""}
+              setManualEntryMethod={(v) => handleFieldChange("entryMethod", v)}
+              manualDepartureDate={(itemForm as any).departureDate || ""}
+              setManualDepartureDate={(v) => handleFieldChange("departureDate" as any, v)}
+              manualReturnDate={(itemForm as any).returnDate || ""}
+              setManualReturnDate={(v) => handleFieldChange("returnDate" as any, v)}
+
+              manualForexCurrency={itemForm.forexCurrency || ""}
+              setManualForexCurrency={(v) => handleFieldChange("forexCurrency", v)}
+              manualBaseCurrency={(itemForm as any).baseCurrency || ""}
+              setManualBaseCurrency={(v) => handleFieldChange("baseCurrency" as any, v)}
+              manualAmount={itemForm.amount || ""}
+              setManualAmount={(v) => handleFieldChange("amount", v)}
+
+              manualNoOfTravellers={itemForm.noOfTravellers || ""}
+              setManualNoOfTravellers={(v) => handleFieldChange("noOfTravellers", v)}
+              manualInsuranceType={itemForm.insuranceType || ""}
+              setManualInsuranceType={(v) => handleFieldChange("insuranceType", v)}
+              manualNotes={itemForm.insuranceNotes || ""}
+              setManualNotes={(v) => handleFieldChange("insuranceNotes", v)}
+              manualSumInsured={itemForm.sumInsured || ""}
+              setManualSumInsured={(v) => handleFieldChange("sumInsured", v)}
+              manualDestinations={itemForm.destinations || []}
+              handleAddDestination={() => handleArrayAdd("destinations", "")}
+              handleRemoveDestination={(idx) => handleArrayRemove("destinations", idx)}
+              handleDestinationChange={(idx, v) => handleArrayChange("destinations", idx, v)}
+              manualStartDate={itemForm.startDate || ""}
+              setManualStartDate={(v) => handleFieldChange("startDate", v)}
+              manualEndDate={itemForm.endDate || ""}
+              setManualEndDate={(v) => handleFieldChange("endDate", v)}
+            />
+          </div>
+        )
+
+      case "Cruise":
+      case "Others":
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-wrap gap-2">
+              {othersSubCategories.map((sub) => (
+                <Button
+                  key={sub.id}
+                  type="button"
+                  variant={itemForm.subCategory === sub.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleFieldChange("subCategory", sub.id)}
+                  className="gap-2"
+                >
+                  <span>{sub.icon}</span>
+                  {sub.label}
+                </Button>
+              ))}
+            </div>
+            <OthersForms
+              selectedSubCategory={itemForm.subCategory || ""}
+              manualTitle={itemForm.title || ""}
+              setManualTitle={(v) => handleFieldChange("title", v)}
+              manualDescription={itemForm.description || ""}
+              setManualDescription={(v) => handleFieldChange("description", v)}
+              manualPrice={itemForm.price || ""}
+              setManualPrice={(v) => handleFieldChange("price", v)}
+              manualCurrency={itemForm.currency || "USD"}
+              setManualCurrency={(v) => handleFieldChange("currency", v)}
+              manualImageUrl={itemForm.imageUrl || ""}
+              setManualImageUrl={(v) => handleFieldChange("imageUrl", v)}
+              manualGiftAmount={itemForm.giftAmount || ""}
+              setManualGiftAmount={(v) => handleFieldChange("giftAmount", v)}
+              manualServiceCharge={itemForm.serviceCharge || ""}
+              setManualServiceCharge={(v) => handleFieldChange("serviceCharge", v)}
+              manualProducts={(itemForm.products as any) || []}
+              handleAddProduct={() => handleArrayAdd("products", { name: "", price: 0, description: "" })}
+              handleRemoveProduct={(idx) => handleArrayRemove("products", idx)}
+              handleProductChange={(idx, key, val) => handleObjectArrayChange("products", idx, key, val)}
+            />
+          </div>
+        )
+
+      case "Notes":
+      case "Additional Information":
+        return (
+          <NoteForms
+            manualDescription={itemForm.description || ""}
+            setManualDescription={(v) => handleFieldChange("description", v)}
+            errors={{}}
+          />
+        )
+
+      default:
+        return <div>Select a category</div>
     }
   }
 
-  // Additional Information handlers (bulleted list)
-  const handleAdditionalInfoChange = (index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      additionalInfo: prev.additionalInfo.map((item: string, i: number) => i === index ? value : item)
-    }))
-  }
+  // --- Save Logic ---
 
-  const handleAddAdditionalInfo = () => {
-    setFormData(prev => ({ ...prev, additionalInfo: [...prev.additionalInfo, ""] }))
-  }
-
-  const handleRemoveAdditionalInfo = (index: number) => {
-    setFormData(prev => ({ ...prev, additionalInfo: prev.additionalInfo.filter((_, i) => i !== index) }))
-  }
-
-  const handleCitySelect = (cityData: CityData) => {
-    setFormData(prev => ({
-      ...prev,
-      city: cityData.name,
-      country: cityData.countryName
-    }));
-    setSearchTerm("");
-    setCitySuggestions([]);
-  }
-
-  const handleTransferOptionToggle = (optionId: string) => {
-    setSelectedTransferOptions(prev => 
-      prev.includes(optionId) 
-        ? prev.filter(id => id !== optionId)
-        : [...prev, optionId]
-    )
-  }
-
-  const handleAdvancedPricingToggle = () => {
-    setAdvancedPricing(prev => ({
-      ...prev,
-      enabled: !prev.enabled
-    }))
-  }
-
-  const handlePaxPriceChange = (paxCount: number, price: string) => {
-    setAdvancedPricing(prev => ({
-      ...prev,
-      paxPricing: prev.paxPricing.map(item => 
-        item.paxCount === paxCount ? { ...item, price } : item
-      )
-    }))
-  }
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    if (files.length === 0) return
-
-    // Check file limits
-    if (uploadedFiles.length + files.length > 5) {
-      toast.error('Maximum 5 files allowed')
-      return
-    }
-
-    // Check file sizes
-    const oversizedFiles = files.filter(file => file.size > 7 * 1024 * 1024)
-    if (oversizedFiles.length > 0) {
-      toast.error('Files must be under 7MB')
-      return
-    }
-
-    setUploading(true)
+  const handleCreate = async () => {
     try {
-      const uploadPromises = files.map(async (file) => {
-        const formData = new FormData()
-        formData.append('file', file)
-        
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData
-        })
-        
-        if (!response.ok) throw new Error('Upload failed')
-        const data = await response.json()
-        return data.url
-      })
+      setIsSaving(true)
 
-      const urls = await Promise.all(uploadPromises)
-      setUploadedFiles(prev => [...prev, ...urls])
-      toast.success(`${files.length} file(s) uploaded successfully`)
-    } catch (error) {
-      toast.error('Failed to upload files')
-    } finally {
-      setUploading(false)
-    }
-  }
+      // Normalize Category to match Schema Enum
+      let normalizedCategory = "others"
+      let finalSubCategory = itemForm.subCategory
 
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleCreateLibrary = async () => {
-    const trimmedName = newLibraryName.trim()
-    if (!trimmedName) {
-      toast.error('Library name is required')
-      return
-    }
-
-    setCreatingLibrary(true)
-    try {
-      const created = await createLibrary({ name: trimmedName })
-      if (created?._id) {
-        setSelectedLibraryId(created._id)
-      }
-      setNewLibraryName('')
-      toast.success('Library created successfully')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create library'
-      toast.error(message)
-    } finally {
-      setCreatingLibrary(false)
-    }
-  }
-
-  const handleSave = async () => {
-    if (!formData.title.trim()) {
-      toast.error('Title is required')
-      return
-    }
-
-    if (!selectedLibraryId) {
-      toast.error('Please select a library')
-      return
-    }
-
-    setSaving(true)
-    try {
-      let itemData: any = {
-        title: formData.title,
-        category: selectedCategory,
-        libraryCollection: selectedLibraryId,
-        subCategory: selectedSubCategory,
-        city: formData.city,
-        country: formData.country,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        labels: formData.labels,
-        notes: formData.notes,
-        transferOptions: selectedCategory === "Transfer" ? selectedTransferOptions : [],
-        basePrice: selectedCategory === "Activity" && advancedPricing.enabled ? undefined : (formData.basePrice ? parseFloat(formData.basePrice) : undefined),
-        currency: formData.currency,
-        availableFrom: formData.availableFrom ? new Date(formData.availableFrom) : undefined,
-        availableUntil: formData.availableUntil ? new Date(formData.availableUntil) : undefined,
-        variants: formData.variants,
-        multimedia: uploadedFiles,
-        advancedPricing: selectedCategory === "Activity" ? {
-          enabled: advancedPricing.enabled,
-          paxPricing: advancedPricing.enabled ? advancedPricing.paxPricing
-            .filter(item => item.price && item.price.trim() !== "")
-            .map(item => ({ paxCount: item.paxCount, price: parseFloat(item.price) }))
-            : []
-        } : undefined
+      switch (selectedCategory) {
+        case "Flights": normalizedCategory = "flight"; break;
+        case "Transfer": normalizedCategory = "transfer"; break;
+        case "Hotel": normalizedCategory = "hotel"; break;
+        case "Activity": normalizedCategory = "activity"; break;
+        case "Meals": normalizedCategory = "meal"; break;
+        case "Ancillaries": normalizedCategory = "ancillaries"; break;
+        case "Notes": normalizedCategory = "note"; break;
+        case "Additional Information":
+          normalizedCategory = "note";
+          finalSubCategory = "Additional Information";
+          break;
+        case "Cruise":
+          normalizedCategory = "others";
+          finalSubCategory = "Cruise";
+          break;
+        case "Others": normalizedCategory = "others"; break;
+        default: normalizedCategory = "others";
       }
 
-      // If AdditionalInfo category, only save minimal fields and store additionalInfo under extraFields
-      if (selectedCategory === "AdditionalInfo") {
-        itemData = {
-          title: formData.title,
-          category: selectedCategory,
-          libraryCollection: selectedLibraryId,
-          extraFields: { ...(editingItem?.extraFields || {}), additionalInfo: formData.additionalInfo }
+
+      if (!targetLibraryId) {
+        toast.error("No library selected. Please create a library first.")
+        setIsSaving(false)
+        return
+      }
+
+      // Base payload consistent with LibraryItem schema
+      const newItem: any = {
+        title: itemForm.title || `${selectedCategory} Item`,
+        libraryCollection: targetLibraryId,
+        category: normalizedCategory,
+        subCategory: finalSubCategory,
+        city: itemForm.location || itemForm.fromCity || (itemForm as any).city, // Heuristic mapping
+        country: itemForm.country || itemForm.toCity, // Heuristic mapping
+        basePrice: Number(itemForm.price) || 0,
+        currency: itemForm.currency || "USD",
+        multimedia: itemForm.imageUrl ? [itemForm.imageUrl] : [],
+        // Crucial: Store the ENTIRE detailed form state in extraFields for persistence
+        extraFields: {
+          ...itemForm,
+          category: normalizedCategory, // Ensure extraFields also has correct category
+          subCategory: finalSubCategory
         }
       }
 
-      if (isEditing && editingItem?._id) {
-        await updateItem(editingItem._id, itemData)
+      if (editingItem) {
+        await updateItem(editingItem.id || editingItem._id, newItem)
+        toast.success("Item updated successfully")
       } else {
-        await createItem(itemData)
+        await createItem(newItem)
+        toast.success("Item created successfully")
       }
+
       onItemCreated()
-      
-      // Reset form
-      setFormData({
-        title: "",
-        additionalInfo: [],
-        city: "Bangkok",
-        country: "Thailand",
-        startDate: "",
-        endDate: "",
-        labels: "",
-        notes: "",
-        basePrice: "",
-        currency: "USD",
-        availableFrom: "",
-        availableUntil: "",
-        variants: ""
-      })
-      setAdvancedPricing({
-        enabled: false,
-        paxPricing: Array.from({ length: 21 }, (_, i) => ({ paxCount: i, price: "" }))
-      })
-      setUploadedFiles([])
-      setSelectedCategory("Flight")
-      setSelectedSubCategory("Flight")
-      setSelectedTransferOptions(["any"])
+      onClose()
     } catch (error) {
-      console.error('Error creating item:', error)
-      toast.error('Failed to save library item')
+      console.error("Error creating item:", error)
+      toast.error("Failed to save item")
     } finally {
-      setSaving(false)
+      setIsSaving(false)
     }
   }
 
+  // --- UI Categories ---
+  const CATEGORIES = [
+    { id: "Flights", icon: Plane },
+    { id: "Transfer", icon: Bus },
+    { id: "Hotel", icon: Hotel },
+    { id: "Activity", icon: Activity },
+    { id: "Meals", icon: Utensils },
+    { id: "Cruise", icon: Ship },
+    { id: "Ancillaries", icon: Box },
+    { id: "Others", icon: ShoppingBag },
+    { id: "Notes", icon: FileText },
+    { id: "Additional Information", icon: Info },
+  ]
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto bg-white">
-        <DialogHeader>
-          <DialogTitle className="sr-only">Select Category</DialogTitle>
-        </DialogHeader>
-        
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-full p-0 gap-0">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h2 className="text-lg font-semibold text-gray-900">{isEditing ? 'Edit Library Item' : 'Select Category'}</h2>
-          </div>
-          <Button
-            variant="ghost"
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="p-6 space-y-6">
-          {/* Library Selection */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Library</Label>
-                <p className="text-xs text-gray-500">Choose where this item should live</p>
+        <DialogHeader className="p-4 border-b bg-white sticky top-0 z-10 flex flex-row items-center justify-between space-y-0 gap-4">
+          <div className="flex flex-col gap-1 items-start">
+            <DialogTitle className="text-xl font-semibold">
+              {editingItem ? `Edit ${selectedCategory}` : "Add New Item"}
+            </DialogTitle>
+            {!editingItem && libraries.length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <span>Saving to:</span>
+                <select
+                  value={targetLibraryId}
+                  onChange={(e) => setTargetLibraryId(e.target.value)}
+                  className="border-none bg-transparent font-medium text-gray-900 focus:ring-0 cursor-pointer p-0 focus:outline-none"
+                >
+                  {libraries.map((lib) => (
+                    <option key={lib._id} value={lib._id}>
+                      {lib.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
-            <Select
-              value={selectedLibraryId}
-              onValueChange={setSelectedLibraryId}
-              disabled={libraries.length === 0}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue
-                  placeholder={libraries.length === 0 ? 'No libraries yet' : 'Select a library'}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {libraries.length === 0 ? (
-                  <SelectItem value="__none" disabled>No libraries available</SelectItem>
-                ) : (
-                  libraries.map((library) => (
-                    <SelectItem key={library._id} value={library._id}>
-                      {library.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center space-x-2">
-              <Input
-                value={newLibraryName}
-                onChange={(e) => setNewLibraryName(e.target.value)}
-                placeholder="Create a new library"
-              />
-              <Button
-                type="button"
-                onClick={handleCreateLibrary}
-                disabled={creatingLibrary || !newLibraryName.trim()}
-                className="min-w-[120px]"
-              >
-                {creatingLibrary ? 'Creating...' : 'Add Library'}
-              </Button>
-            </div>
+            )}
           </div>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        </DialogHeader>
 
-          {/* Main Categories */}
-          <div>
-            <div className="grid grid-cols-4 gap-2 mb-4">
-              {categories.map((category) => {
-                const Icon = category.icon
-                const isActive = selectedCategory === category.id
+        <div className="flex flex-col md:flex-row h-full min-h-[500px]">
+          {/* Sidebar Categories */}
+          <div className="w-full md:w-64 border-r bg-gray-50 p-2 overflow-y-auto">
+            <div className="space-y-1">
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon
                 return (
-                  <Button
-                    key={category.id}
+                  <button
+                    key={cat.id}
                     onClick={() => {
-                      setSelectedCategory(category.id)
-                      setSelectedSubCategory(subCategories[category.id as keyof typeof subCategories]?.[0]?.id || category.id)
-                      setSelectedTransferOptions(category.id === "Transfer" ? ["any"] : [])
+                      setSelectedCategory(cat.id)
+                      // Reset form basics if needed, or keep partial data
+                      handleFieldChange("category", cat.id.toLowerCase())
+
+                      // Auto-select default subcategories for forms that require it
+                      if (cat.id === "Transfer") {
+                        handleFieldChange("transferCategory", "airport-transfer")
+                      } else if (cat.id === "Ancillaries") {
+                        handleFieldChange("subCategory", "visa")
+                      }
                     }}
-                    className={`flex flex-col items-center space-y-2 px-3 py-4 rounded-lg text-sm font-medium transition-all h-20 ${
-                      isActive
-                        ? "bg-black text-white shadow-lg scale-105"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-102"
-                    }`}
+                    className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${selectedCategory === cat.id
+                      ? "bg-black text-white"
+                      : "text-gray-700 hover:bg-gray-200"
+                      }`}
                   >
-                    <Icon className={`h-5 w-5 ${category.id === "Activity" ? "text-yellow-500" : ""}`} />
-                    <span className="text-xs leading-tight text-center">{category.label}</span>
-                  </Button>
+                    <Icon className="mr-3 h-4 w-4" />
+                    {cat.id}
+                  </button>
                 )
               })}
             </div>
           </div>
 
-          {/* Sub Categories */}
-          {selectedCategory && selectedCategory !== "AdditionalInfo" && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Sub-Category</h3>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {subCategories[selectedCategory as keyof typeof subCategories]?.map((subCategory) => {
-                  const Icon = subCategory.icon
-                  const isActive = selectedSubCategory === subCategory.id
-                  return (
-                    <Button
-                      key={subCategory.id}
-                      onClick={() => setSelectedSubCategory(subCategory.id)}
-                      className={`flex flex-col items-center space-y-2 px-3 py-4 rounded-lg text-sm font-medium transition-all h-20 ${
-                        isActive
-                          ? "bg-black text-white shadow-lg scale-105"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-102"
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-xs leading-tight text-center">{subCategory.label}</span>
-                    </Button>
-                  )
-                })}
-              </div>
+          {/* Main Form Content */}
+          <div className="flex-1 p-6 overflow-y-auto bg-white">
+            <div className="max-w-3xl mx-auto space-y-6">
+              {renderFormContent()}
             </div>
-          )}
-
-          {/* Transfer Options */}
-          {selectedCategory === "Transfer" && selectedCategory !== "AdditionalInfo" && (
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Transfer Options</h3>
-              <div className="grid grid-cols-3 gap-3">
-                {transferOptions.map((option) => (
-                  <div 
-                    key={option.id}
-                    className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <Checkbox
-                      id={option.id}
-                      checked={selectedTransferOptions.includes(option.id)}
-                      onCheckedChange={() => handleTransferOptionToggle(option.id)}
-                      className="data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500"
-                    />
-                    <Label 
-                      htmlFor={option.id} 
-                      className="text-sm text-gray-700 cursor-pointer"
-                    >
-                      {option.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Form Fields */}
-          <div className="space-y-4">
-            {/* Title */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Title</Label>
-              <Input
-                placeholder="Add any extra details."
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
-                className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-              />
-            </div>
-
-            {/* Additional Information category: show only Additional Information input */}
-            {selectedCategory === "AdditionalInfo" ? (
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Additional Information</Label>
-                <div className="space-y-2 mt-2">
-                  {Array.isArray(formData.additionalInfo) && formData.additionalInfo.length > 0 ? (
-                    formData.additionalInfo.map((item: string, idx: number) => (
-                      <div key={idx} className="flex items-center space-x-2">
-                        <span className="text-gray-600">•</span>
-                        <Input
-                          value={item}
-                          onChange={(e) => handleAdditionalInfoChange(idx, e.target.value)}
-                          className="flex-1 mt-0 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                        />
-                        <Button
-                          variant="ghost"
-                          onClick={() => handleRemoveAdditionalInfo(idx)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">No items yet. Add one below.</p>
-                  )}
-
-                  <div>
-                    <Button onClick={handleAddAdditionalInfo} className="mt-1">
-                      Add Bullet Point
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">Only title and additional information are saved for this category.</p>
-              </div>
-            ) : (
-              // Existing full form for other categories
-              <>
-                {/* City and Country */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">City</Label>
-                    <div className="relative">
-                      <Input
-                        value={formData.city}
-                        onChange={(e) => handleInputChange("city", e.target.value)}
-                        className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                        autoComplete="off"
-                        placeholder="Start typing a city name..."
-                      />
-                      {citySuggestions.length > 0 && (
-                        <div className="absolute z-10 bg-white border border-gray-300 rounded-lg mt-1 w-full max-h-60 overflow-y-auto shadow-lg">
-                          {citySuggestions.map((city) => (
-                            <div
-                              key={city.key}
-                              className="px-3 py-2 cursor-pointer hover:bg-yellow-100 flex flex-col"
-                              onClick={() => handleCitySelect(city)}
-                            >
-                              <span className="font-medium">{city.name}</span>
-                              <span className="text-sm text-gray-500">
-                                {city.countryName}
-                                {city.stateCode ? `, ${city.stateCode}` : ''}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Country</Label>
-                    <Input
-                      value={formData.country}
-                      onChange={(e) => handleInputChange("country", e.target.value)}
-                      className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                    />
-                  </div>
-                </div>
-
-                {/* Dates */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Start Date</Label>
-                    <div className="relative mt-1">
-                      <Input
-                        type="date"
-                        value={formData.startDate}
-                        onChange={(e) => handleInputChange("startDate", e.target.value)}
-                        className="border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">End Date</Label>
-                    <div className="relative mt-1">
-                      <Input
-                        type="date"
-                        value={formData.endDate}
-                        onChange={(e) => handleInputChange("endDate", e.target.value)}
-                        className="border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Labels */}
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Labels</Label>
-                  <Input
-                    placeholder="Type"
-                    value={formData.labels}
-                    onChange={(e) => handleInputChange("labels", e.target.value)}
-                    className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                  />
-                </div>
-
-                {/* Notes */}
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Notes</Label>
-                  <Textarea
-                      placeholder="Add any extra details."
-                      value={formData.notes}
-                      onChange={(e) => handleInputChange("notes", e.target.value)}
-                      rows={3}
-                      className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 resize-none"
-                    />
-                </div>
-
-                {/* Price */}
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Price</Label>
-                  
-                  {/* Advanced Pricing Toggle for Activity */}
-                  {selectedCategory === "Activity" && (
-                    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700">Advanced Pricing</Label>
-                          <p className="text-xs text-gray-500">Set different prices for different group sizes (0-20 pax)</p>
-                        </div>
-                        <Switch
-                          checked={advancedPricing.enabled}
-                          onCheckedChange={handleAdvancedPricingToggle}
-                        />
-                      </div>
-                      
-                      {advancedPricing.enabled && (
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-                            {advancedPricing.paxPricing.map((item) => (
-                              <div key={item.paxCount} className="flex items-center space-x-2">
-                                <Label className="text-xs text-gray-600 w-12">{item.paxCount} pax:</Label>
-                                <div className="relative flex-1">
-                                  <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
-                                  <Input
-                                    placeholder="0.00"
-                                    value={item.price}
-                                    onChange={(e) => handlePaxPriceChange(item.paxCount, e.target.value)}
-                                    className="pl-6 text-xs h-8 border border-gray-300 rounded focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400"
-                                  />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Regular Price Fields */}
-                  {(!advancedPricing.enabled || selectedCategory !== "Activity") && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-xs text-gray-600">Base Price</Label>
-                        <div className="relative mt-1">
-                          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <Input
-                            placeholder="0.00"
-                            value={formData.basePrice}
-                            onChange={(e) => handleInputChange("basePrice", e.target.value)}
-                            className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-xs text-gray-600">Currency</Label>
-                        <Input
-                          placeholder="USD"
-                          value={formData.currency}
-                          onChange={(e) => handleInputChange("currency", e.target.value)}
-                          className="mt-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Currency field for advanced pricing */}
-                  {advancedPricing.enabled && selectedCategory === "Activity" && (
-                    <div className="mt-3">
-                      <Label className="text-xs text-gray-600">Currency</Label>
-                      <Input
-                        placeholder="USD"
-                        value={formData.currency}
-                        onChange={(e) => handleInputChange("currency", e.target.value)}
-                        className="mt-1 w-32 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Availability */}
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Availability</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs text-gray-600">Available From</Label>
-                      <div className="relative mt-1">
-                        <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          type="date"
-                          placeholder="Select date"
-                          value={formData.availableFrom}
-                          onChange={(e) => handleInputChange("availableFrom", e.target.value)}
-                          className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-gray-600">Available Until</Label>
-                      <div className="relative mt-1">
-                        <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          type="date"
-                          placeholder="Select date"
-                          value={formData.availableUntil}
-                          onChange={(e) => handleInputChange("availableUntil", e.target.value)}
-                          className="pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Variants */}
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-3 block">Variants</Label>
-                  <Textarea
-                    placeholder="Enter variant details..."
-                    value={formData.variants}
-                    onChange={(e) => handleInputChange("variants", e.target.value)}
-                    rows={3}
-                    className="border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 resize-none"
-                  />
-                </div>
-
-                {/* Multimedia */}
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Multimedia (Max 5 files, 7MB each)</Label>
-                  <div className="mt-1">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*,video/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="file-upload"
-                      disabled={uploading || uploadedFiles.length >= 5}
-                    />
-                    <label
-                      htmlFor="file-upload"
-                      className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer block ${
-                        uploading || uploadedFiles.length >= 5
-                          ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
-                          : 'border-gray-300 hover:border-yellow-400'
-                      }`}
-                    >
-                      <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">
-                        {uploading ? 'Uploading...' : uploadedFiles.length >= 5 ? 'Maximum files reached' : 'Click to upload files'}
-                      </p>
-                    </label>
-                    {uploadedFiles.length > 0 && (
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        {uploadedFiles.map((file, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={file}
-                              alt={`Upload ${index + 1}`}
-                              className="w-full h-16 object-cover rounded border"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeFile(index)}
-                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                            >
-                              Ãƒâ€”
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-between items-center pt-6 border-t border-gray-200">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="px-6 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-8 py-2 bg-black hover:bg-gray-800 text-white rounded-lg font-medium transition-colors"
-            >
-              {saving ? (isEditing ? 'Updating...' : 'Adding to Library...') : (isEditing ? 'Update Library' : 'Add to Library')}
-            </Button>
-          </div>
+        {/* Footer */}
+        <div className="p-4 border-t bg-gray-50 flex justify-end gap-3 sticky bottom-0 z-10">
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreate} disabled={isSaving} className="bg-black text-white hover:bg-gray-800">
+            {isSaving ? "Saving..." : editingItem ? "Update Item" : "Create Item"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
-
-

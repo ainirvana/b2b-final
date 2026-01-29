@@ -119,7 +119,19 @@ export function ComponentSourceModal({
           if (sc.includes("ancill") || sc.includes("ancillary")) matchesCategory = true
         }
       } else {
-        matchesCategory = itemCategory === compType
+        // Mapped categories logic
+        const itemSubCategory = (item.subCategory || "").toString().toLowerCase()
+
+        if (compType === "visa") {
+          matchesCategory = itemCategory === "ancillaries" && itemSubCategory === "visa"
+        } else if (compType === "insurance") {
+          matchesCategory = itemCategory === "ancillaries" && itemSubCategory === "travel-insurance"
+        } else if (compType === "cruise") {
+          matchesCategory = (itemCategory === "others" && itemSubCategory === "cruise") || itemCategory === "cruise"
+        } else {
+          // Default exact match
+          matchesCategory = itemCategory === compType
+        }
       }
 
       const matchesSearch =
