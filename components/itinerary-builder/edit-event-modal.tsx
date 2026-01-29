@@ -303,27 +303,15 @@ export function EditEventModal({ isOpen, onClose, event, onSave }: EditEventModa
             setManualFromCity={(v) => handleFieldChange("fromCity", v)}
             manualToCity={editedEvent.toCity || ""}
             setManualToCity={(v) => handleFieldChange("toCity", v)}
-            manualStartTime={editedEvent.startTime || ""}
-            setManualStartTime={(v) => handleFieldChange("startTime", v)}
-            manualEndTime={editedEvent.endTime || ""}
-            setManualEndTime={(v) => handleFieldChange("endTime", v)}
             manualVehicleType={editedEvent.vehicleType || ""}
             setManualVehicleType={(v) => handleFieldChange("vehicleType", v)}
             manualPrice={editedEvent.price || ""}
             setManualPrice={(v) => handleFieldChange("price", v)}
             manualCurrency={editedEvent.currency || "INR"}
             setManualCurrency={(v) => handleFieldChange("currency", v)}
-            manualCompany={editedEvent.company || ""}
-            setManualCompany={(v) => handleFieldChange("company", v)}
-            manualDriverName={editedEvent.driverName || ""}
-            setManualDriverName={(v) => handleFieldChange("driverName", v)}
-            manualDriverContact={editedEvent.driverContact || ""}
-            setManualDriverContact={(v) => handleFieldChange("driverContact", v)}
             manualDescription={editedEvent.description || ""}
             setManualDescription={(v) => handleFieldChange("description", v)}
-            isSharedTransfer={editedEvent.isSharedTransfer}
-            selectedSubCategory={(editedEvent as any).transferCategory || ""} // Fix: Pass required subCategory
-            setIsSharedTransfer={(v) => handleFieldChange("isSharedTransfer", v)}
+            selectedSubCategory={(editedEvent as any).transferCategory || ""}
             manualTransferCategory={(editedEvent as any).transferCategory || ""}
             setManualTransferCategory={(v) => handleFieldChange("transferCategory" as keyof IItineraryEvent, v)}
             transferSubCategories={transferSubCategories}
@@ -331,6 +319,53 @@ export function EditEventModal({ isOpen, onClose, event, onSave }: EditEventModa
             setManualTitle={(v) => handleFieldChange("title", v)}
             manualImageUrl={editedEvent.imageUrl || ""}
             setManualImageUrl={(v) => handleFieldChange("imageUrl", v)}
+            // Extended Fields
+            manualPickupDrop={editedEvent.pickupDrop || "pickup"}
+            setManualPickupDrop={(v) => handleFieldChange("pickupDrop" as keyof IItineraryEvent, v)}
+            manualAirportName={editedEvent.airportName || ""}
+            setManualAirportName={(v) => handleFieldChange("airportName" as keyof IItineraryEvent, v)}
+            manualTransferType={editedEvent.transferType || "private"}
+            setManualTransferType={(v) => handleFieldChange("transferType" as keyof IItineraryEvent, v)}
+            manualVehicleCapacity={editedEvent.capacity !== undefined ? editedEvent.capacity : ""}
+            setManualVehicleCapacity={(v) => handleFieldChange("capacity", v)}
+            manualPricePerPax={editedEvent.price || ""}
+            manualPickupTime={editedEvent.pickupTime || ""}
+            setManualPickupTime={(v) => handleFieldChange("pickupTime" as keyof IItineraryEvent, v)}
+            manualDropTime={editedEvent.dropTime || ""}
+            setManualDropTime={(v) => handleFieldChange("dropTime" as keyof IItineraryEvent, v)}
+            manualNoOfHours={editedEvent.noOfHours !== undefined ? editedEvent.noOfHours : ""}
+            setManualNoOfHours={(v) => handleFieldChange("noOfHours" as keyof IItineraryEvent, v)}
+            manualNoOfDays={editedEvent.noOfDays !== undefined ? editedEvent.noOfDays : ""}
+            setManualNoOfDays={(v) => handleFieldChange("noOfDays" as keyof IItineraryEvent, v)}
+            manualCarType={editedEvent.vehicleType || ""}
+            setManualCarType={(v) => handleFieldChange("vehicleType", v)}
+            manualFuelType={editedEvent.fuelType || ""}
+            setManualFuelType={(v) => handleFieldChange("fuelType" as keyof IItineraryEvent, v)}
+            manualCarModel={editedEvent.carModel || ""}
+            setManualCarModel={(v) => handleFieldChange("carModel" as keyof IItineraryEvent, v)}
+            manualTransmission={editedEvent.transmission || ""}
+            setManualTransmission={(v) => handleFieldChange("transmission" as keyof IItineraryEvent, v)}
+            manualTravelDuration={editedEvent.duration || ""}
+            setManualTravelDuration={(v) => handleFieldChange("duration", v)}
+            manualDepartureTime={editedEvent.startTime || ""}
+            setManualDepartureTime={(v) => handleFieldChange("startTime", v)}
+            manualArrivalTime={editedEvent.endTime || ""}
+            setManualArrivalTime={(v) => handleFieldChange("endTime", v)}
+            manualClass={editedEvent.transferClass || ""}
+            setManualClass={(v) => handleFieldChange("transferClass" as keyof IItineraryEvent, v)}
+            manualBusNumber={editedEvent.busNumber || ""}
+            setManualBusNumber={(v) => handleFieldChange("busNumber" as keyof IItineraryEvent, v)}
+            manualTrainNumber={editedEvent.trainNumber || ""}
+            setManualTrainNumber={(v) => handleFieldChange("trainNumber" as keyof IItineraryEvent, v)}
+            manualPnr={editedEvent.pnr || ""}
+            setManualPnr={(v) => handleFieldChange("pnr" as keyof IItineraryEvent, v)}
+            manualRefundable={editedEvent.refundable || ""}
+            setManualRefundable={(v) => handleFieldChange("refundable", v)}
+            manualLink={editedEvent.transferLink || ""}
+            setManualLink={(v) => handleFieldChange("transferLink" as keyof IItineraryEvent, v)}
+            manualAmenities={editedEvent.amenities || []}
+            setManualAmenities={(v) => handleFieldChange("amenities", v)}
+            // Arrays
             manualStopsList={(editedEvent as any).stopsList || []}
             handleAddStop={() => {
               const current = (editedEvent as any).stopsList || []
@@ -368,8 +403,6 @@ export function EditEventModal({ isOpen, onClose, event, onSave }: EditEventModa
         return (
           <AncillariesForms
             selectedSubCategory={(editedEvent as any).subCategory || ""} // Fix: Pass required subCategory
-            manualSubCategory={(editedEvent as any).subCategory || ""}
-            setManualSubCategory={(v) => handleFieldChange("subCategory" as keyof IItineraryEvent, v)}
             ancillariesSubCategories={ancillariesSubCategories}
             manualTitle={editedEvent.title || ""}
             setManualTitle={(v) => handleFieldChange("title", v)}
@@ -444,8 +477,6 @@ export function EditEventModal({ isOpen, onClose, event, onSave }: EditEventModa
         return (
           <OthersForms
             selectedSubCategory={(editedEvent as any).subCategory || ""} // Fix: Pass required subCategory
-            manualSubCategory={(editedEvent as any).subCategory || ""}
-            setManualSubCategory={(v) => handleFieldChange("subCategory" as keyof IItineraryEvent, v)}
             manualTitle={editedEvent.title || ""}
             setManualTitle={(v) => handleFieldChange("title", v)}
             manualDescription={editedEvent.description || ""}

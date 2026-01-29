@@ -88,7 +88,7 @@ export interface ICartItem {
   productId: string
   name: string
   description: string
-  category: "activity" | "hotel" | "flight" | "transfer" | "meal" | "other"
+  category: "activity" | "hotel" | "flight" | "transfer" | "meal" | "other" | "image" | "ancillaries"
   price: number
   date: string // Required: Service date in YYYY-MM-DD format
   currency?: string // Optional: Currency for the price (default: USD)
@@ -124,6 +124,86 @@ export interface ICartItem {
 
   // Meal specific
   mealType?: string
+
+  // Ancillaries specific
+  // Visa
+  country?: string
+  visaType?: string
+  visaDuration?: string
+  entryMethod?: string
+  // Forex
+  forexCurrency?: string
+  amount?: number
+  // Insurance
+  destinations?: string[]
+  startDate?: string
+  endDate?: string
+  noOfTravellers?: number
+  insuranceType?: string
+  sumInsured?: number
+  insuranceNotes?: string
+  // Subcategory for others/ancillaries
+  subCategory?: string
+
+
+  // Image specific
+  imageUrl?: string
+  imageCaption?: string
+
+  // Extended fields for full parity
+  stopsList?: string[]
+  additionalVehicles?: { vehicleType: string; capacity: number; price: number }[]
+  pickupTime?: string
+  dropTime?: string
+  noOfHours?: number
+  noOfDays?: number
+  fuelType?: string
+  carModel?: string
+  transmission?: string
+  busNumber?: string
+  trainNumber?: string
+  transferClass?: string
+  transferLink?: string
+  pnr?: string
+
+  // Hotel extended
+  adults?: number
+  children?: number
+  mealPlan?: string
+  propertyType?: string
+  address?: string
+  hotelLink?: string
+  confirmationNumber?: string
+  amenities?: string[]
+  highlights?: string[]
+  hotelRating?: number
+  refundable?: string
+
+  // Flight extended
+  bookingId?: string
+  seatNumber?: string
+  inFlightMeals?: string
+  checkinBags?: number
+  checkinBagWeight?: string
+  cabinBags?: number
+  cabinBagWeight?: string
+  numberOfStops?: number
+  stopLocations?: string[]
+
+  // Others extended
+  serviceCharge?: number
+  giftAmount?: number
+  products?: { name: string; price: number; description: string; currency?: string }[]
+
+  // Ancillaries extended
+  visaCountry?: string
+  entryMethod?: string
+  departureDate?: string
+  returnDate?: string
+  baseCurrency?: string
+  insuranceProvider?: string
+  policyNumber?: string
+  coverageDetails?: string
 }
 
 // NEW: HTML Block interface for HTML editor
@@ -550,7 +630,7 @@ const ItinerarySchema = new mongoose.Schema(
         description: String,
         category: {
           type: String,
-          enum: ["activity", "hotel", "flight", "transfer", "meal", "other"],
+          enum: ["activity", "hotel", "flight", "transfer", "meal", "other", "image", "ancillaries"],
           required: true,
         },
         price: { type: Number, required: true },
@@ -586,6 +666,94 @@ const ItinerarySchema = new mongoose.Schema(
 
         // Meal specific
         mealType: String,
+
+        // Ancillaries specific
+        country: String,
+        visaType: String,
+        visaDuration: String,
+        entryMethod: String,
+        forexCurrency: String,
+        amount: Number,
+        destinations: [String],
+        startDate: String,
+        endDate: String,
+        noOfTravellers: Number,
+        insuranceType: String,
+        sumInsured: Number,
+        insuranceNotes: String,
+        subCategory: String,
+
+        // Image specific
+        imageUrl: String,
+        imageCaption: String,
+
+        // Extended Transfer Fields (Matching IItineraryEvent)
+        pickupTime: String,
+        dropTime: String,
+        noOfHours: Number,
+        noOfDays: Number,
+        fuelType: String,
+        carModel: String,
+        transmission: String,
+        pickupDrop: { type: String, enum: ["pickup", "drop"] },
+        busNumber: String,
+        trainNumber: String,
+        transferClass: String,
+        transferLink: String,
+        pnr: String, // Also used for Flight
+        stepsList: [String], // Note: Schema usually uses stopsList
+        stopsList: [String],
+        additionalVehicles: [{
+          vehicleType: String,
+          capacity: Number,
+          price: Number
+        }],
+
+        // Extended Hotel Fields
+        adults: Number,
+        children: Number,
+        mealPlan: String,
+        propertyType: String,
+        address: String,
+        hotelLink: String,
+        confirmationNumber: String,
+        amenities: [String],
+        highlights: [String],
+        hotelRating: Number,
+        refundable: String, // Also used for Flight
+
+        // Extended Flight Fields
+        bookingId: String,
+        seatNumber: String,
+        inFlightMeals: String,
+        checkinBags: Number,
+        checkinBagWeight: String,
+        cabinBags: Number,
+        cabinBagWeight: String,
+        numberOfStops: Number,
+        stopLocations: [String],
+
+        // Extended Others Fields
+        serviceCharge: Number,
+        giftAmount: Number,
+        products: [{
+          name: String,
+          price: Number,
+          description: String,
+          currency: String
+        }],
+
+        // Extended Ancillaries Fields
+        visaCountry: String, // mapped to country usually but specific field here just in case
+        visaDuration: String,
+        serviceCharge: Number, // Shared with Others
+        entryMethod: String,
+        departureDate: String,
+        returnDate: String,
+        baseCurrency: String,
+        insuranceProvider: String,
+        policyNumber: String,
+        coverageDetails: String,
       },
     ],
     // HTML Editor fields
