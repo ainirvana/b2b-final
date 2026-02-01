@@ -65,8 +65,8 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
                   : 'border-gray-200 hover:border-gray-300'
                   }`}
               >
-                <div className="font-medium">Template 1</div>
-                <div className="text-xs text-gray-500">Professional</div>
+                <div className="font-medium">Minimalist</div>
+                <div className="text-xs text-gray-500">Clean & Simple</div>
               </button>
               <button
                 type="button"
@@ -76,30 +76,8 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
                   : 'border-gray-200 hover:border-gray-300'
                   }`}
               >
-                <div className="font-medium">Template 2</div>
-                <div className="text-xs text-gray-500">Timeline</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTemplate(3)}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${template === 3
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                  : 'border-gray-200 hover:border-gray-300'
-                  }`}
-              >
-                <div className="font-medium">Template 3</div>
-                <div className="text-xs text-gray-500">Luxury Brochure</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTemplate(4)}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${template === 4
-                  ? 'border-amber-500 bg-amber-50 text-amber-700'
-                  : 'border-gray-200 hover:border-gray-300'
-                  }`}
-              >
-                <div className="font-medium">Template 4</div>
-                <div className="text-xs text-gray-500">Premium</div>
+                <div className="font-medium">Classic</div>
+                <div className="text-xs text-gray-500">Traditional Style</div>
               </button>
             </div>
           </div>

@@ -22,12 +22,19 @@ export interface IItinerary {
   images: string[]
   gallery?: IGalleryItem[] // NEW: Gallery section for multimedia files
   branding?: {
-    headerLogo?: string
-    headerText?: string
-    footerLogo?: string
-    footerText?: string
-    primaryColor?: string
-    secondaryColor?: string
+    logo?: string
+    companyName?: string
+    contactEmail?: string
+    contactPhone?: string
+    address?: string
+    socialLinks?: {
+      instagram?: string
+      whatsapp?: string
+      facebook?: string
+      twitter?: string
+      youtube?: string
+      website?: string
+    }
   }
   // NEW: Fixed Group Tour specific fields
   fixedDates?: {
@@ -613,12 +620,19 @@ const ItinerarySchema = new mongoose.Schema(
       },
     ],
     branding: {
-      headerLogo: String,
-      headerText: String,
-      footerLogo: String,
-      footerText: String,
-      primaryColor: String,
-      secondaryColor: String,
+      logo: String,
+      companyName: String,
+      contactEmail: String,
+      contactPhone: String,
+      address: String,
+      socialLinks: {
+        instagram: String,
+        whatsapp: String,
+        facebook: String,
+        twitter: String,
+        youtube: String,
+        website: String
+      }
     },
     // Fixed Group Tour fields
     fixedDates: {

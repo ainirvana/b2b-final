@@ -51,7 +51,7 @@ import { DateCalendarCard } from "./date-calendar-card"
 import { EditEventModal } from "./edit-event-modal"
 // Library sidebar, integration panel and usage stats removed from builder
 import { ComponentSourceModal } from "./component-source-modal"
-import { BrandingSettings } from "./branding-settings"
+
 import { GalleryUpload } from "./gallery-upload"
 import { PreviewConfigModal, PreviewConfig } from "../preview-config-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
@@ -2103,7 +2103,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
           </DialogContent>
         </Dialog>
 
-        <BrandingSettings branding={branding} onUpdate={branding => setBranding(branding)} />
+
 
         {/* Gallery Upload Section */}
         <div className="mb-1">

@@ -48,22 +48,38 @@ export function PriceSettingsDialog({ open, onOpenChange }: PriceSettingsDialogP
     const [isManual, setIsManual] = useState(false)
     const [lastUpdated, setLastUpdated] = useState<string | null>(null)
 
-    // Load settings from localStorage on mount
+    // Load settings from API on mount
     useEffect(() => {
-        const savedSettings = localStorage.getItem("priceSettings")
-        if (savedSettings) {
-            const parsed = JSON.parse(savedSettings)
-            setBaseCurrency(parsed.baseCurrency || "INR")
-            setRates(parsed.rates || {})
-            setIsManual(parsed.isManual || false)
-            setLastUpdated(parsed.lastUpdated || null)
-        } else {
-            // Initial fetch if no settings
-            fetchRates("INR")
-        }
+        fetchSettings()
     }, [])
 
-    const fetchRates = async (base: string) => {
+    const fetchSettings = async () => {
+        try {
+            setLoading(true)
+            const res = await fetch("/api/settings")
+            if (res.ok) {
+                const data = await res.json()
+                if (data.currency) {
+                    setBaseCurrency(data.currency.baseCurrency || "INR")
+                    setRates(data.currency.rates || {})
+                    setIsManual(data.currency.isManual || false)
+                    setLastUpdated(data.currency.lastUpdated || null)
+                } else {
+                    // First load defaults if empty
+                    fetchLiveRates("INR")
+                }
+            } else {
+                fetchLiveRates("INR")
+            }
+        } catch (error) {
+            console.error("Failed to fetch settings", error)
+            fetchLiveRates("INR")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const fetchLiveRates = async (base: string) => {
         if (isManual) return // Don't overwrite manual rates automatically
 
         setLoading(true)
@@ -97,7 +113,7 @@ export function PriceSettingsDialog({ open, onOpenChange }: PriceSettingsDialogP
     const handleBaseCurrencyChange = (value: string) => {
         setBaseCurrency(value)
         if (!isManual) {
-            fetchRates(value)
+            fetchLiveRates(value)
         } else {
             // If manual, we just reset the base rate to 1, user has to update others
             setRates(prev => ({ ...prev, [value]: 1 }))
@@ -112,24 +128,50 @@ export function PriceSettingsDialog({ open, onOpenChange }: PriceSettingsDialogP
         }
     }
 
-    const handleSave = () => {
-        const settings = {
-            baseCurrency,
-            rates,
-            isManual,
-            lastUpdated: new Date().toISOString()
+    const handleSave = async () => {
+        try {
+            setLoading(true)
+            // Fetch current settings to preserve branding
+            const currentRes = await fetch("/api/settings")
+            const currentData = await currentRes.json()
+
+            const settings = {
+                currency: {
+                    baseCurrency,
+                    rates,
+                    isManual,
+                    lastUpdated: new Date().toISOString()
+                },
+                branding: currentData.branding // Preserve branding
+            }
+
+            const res = await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(settings)
+            })
+
+            if (!res.ok) throw new Error("Failed to save")
+
+            toast({
+                title: "Settings saved",
+                description: "Currency settings have been updated successfully.",
+            })
+            onOpenChange(false)
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to save settings.",
+                variant: "destructive",
+            })
+        } finally {
+            setLoading(false)
         }
-        localStorage.setItem("priceSettings", JSON.stringify(settings))
-        toast({
-            title: "Settings saved",
-            description: "Currency settings have been updated successfully.",
-        })
-        onOpenChange(false)
     }
 
     const handleRefresh = () => {
         setIsManual(false)
-        fetchRates(baseCurrency)
+        fetchLiveRates(baseCurrency)
     }
 
     return (

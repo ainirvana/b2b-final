@@ -96,6 +96,7 @@ export function ActivityForms(props: ActivityFormsProps) {
                         />
                     </div>
                 )}
+
             </div>
 
             {setManualLocation && (
