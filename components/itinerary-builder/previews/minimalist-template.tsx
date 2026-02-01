@@ -33,6 +33,7 @@ interface MinimalistTemplateProps {
     itinerary: any
     showPrices: boolean
     showItemizedPrices?: boolean
+    isDetailed?: boolean
     currency: string
     exchangeRates: Record<string, number>
 }
@@ -337,7 +338,7 @@ const AncillaryDetails = ({ event }: { event: any }) => {
 // 3. MAIN COMPONENT
 // ----------------------------------------------------------------------
 
-export function MinimalistTemplate({ itinerary, showPrices, showItemizedPrices = true, currency, exchangeRates }: MinimalistTemplateProps) {
+export function MinimalistTemplate({ itinerary, showPrices, showItemizedPrices = true, isDetailed = true, currency, exchangeRates }: MinimalistTemplateProps) {
     const previewConfig = itinerary.previewConfig || {}
     const days = itinerary.days || []
 
@@ -519,49 +520,52 @@ export function MinimalistTemplate({ itinerary, showPrices, showItemizedPrices =
                                                             )}
                                                         </div>
 
-                                                        {/* Description (Filtered) */}
-                                                        {event.description &&
-                                                            event.description.trim() !== "" &&
-                                                            !event.description.toLowerCase().includes("no description provided") && (
-                                                                <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line bg-slate-50/50 p-2 rounded">
-                                                                    {event.description}
-                                                                </p>
-                                                            )}
+                                                        {isDetailed && (
+                                                            <>
+                                                                {/* Description (Filtered) */}
+                                                                {event.description &&
+                                                                    event.description.trim() !== "" &&
+                                                                    !event.description.toLowerCase().includes("no description provided") && (
+                                                                        <p className="text-slate-600 text-xs leading-relaxed whitespace-pre-line bg-slate-50/50 p-2 rounded">
+                                                                            {event.description}
+                                                                        </p>
+                                                                    )}
 
-                                                        {/* --- DETAILED COMPONENT RENDERERS --- */}
-                                                        {event.category === 'flight' && <FlightDetails event={event} />}
-                                                        {event.category === 'hotel' && <HotelDetails event={event} />}
-                                                        {event.category === 'activity' && <ActivityDetails event={event} />}
-                                                        {event.category === 'transfer' && <TransferDetails event={event} />}
-                                                        {event.category === 'meal' && <MealDetails event={event} />}
-                                                        {event.category === 'ancillaries' && <AncillaryDetails event={event} />}
+                                                                {/* --- DETAILED COMPONENT RENDERERS --- */}
+                                                                {event.category === 'flight' && <FlightDetails event={event} />}
+                                                                {event.category === 'hotel' && <HotelDetails event={event} />}
+                                                                {event.category === 'activity' && <ActivityDetails event={event} />}
+                                                                {event.category === 'transfer' && <TransferDetails event={event} />}
+                                                                {event.category === 'meal' && <MealDetails event={event} />}
+                                                                {event.category === 'ancillaries' && <AncillaryDetails event={event} />}
 
-                                                        {/* Generic Notes/Additional Info */}
-                                                        {event.additionalInfo && <div className="text-xs text-slate-500 bg-yellow-50 p-2 rounded border border-yellow-100 mt-2">{event.additionalInfo}</div>}
-                                                        {event.hotelNotes && <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded mt-2">Note: {event.hotelNotes}</div>}
-                                                        {event.flightNotes && <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded mt-2">Note: {event.flightNotes}</div>}
+                                                                {/* Generic Notes/Additional Info */}
+                                                                {event.additionalInfo && <div className="text-xs text-slate-500 bg-yellow-50 p-2 rounded border border-yellow-100 mt-2">{event.additionalInfo}</div>}
+                                                                {event.hotelNotes && <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded mt-2">Note: {event.hotelNotes}</div>}
+                                                                {event.flightNotes && <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded mt-2">Note: {event.flightNotes}</div>}
 
-                                                        {/* Additional Info Sections (Generic) */}
-                                                        {event.additionalInfoSections && event.additionalInfoSections.length > 0 && (
-                                                            <div className="space-y-1 mt-2">
-                                                                {event.additionalInfoSections.map((sec: any, idx: number) => (
-                                                                    <div key={idx} className="text-xs bg-slate-50 p-2 rounded">
-                                                                        <span className="font-semibold">{sec.heading}:</span> {sec.content}
+                                                                {/* Additional Info Sections (Generic) */}
+                                                                {event.additionalInfoSections && event.additionalInfoSections.length > 0 && (
+                                                                    <div className="space-y-1 mt-2">
+                                                                        {event.additionalInfoSections.map((sec: any, idx: number) => (
+                                                                            <div key={idx} className="text-xs bg-slate-50 p-2 rounded">
+                                                                                <span className="font-semibold">{sec.heading}:</span> {sec.content}
+                                                                            </div>
+                                                                        ))}
                                                                     </div>
-                                                                ))}
-                                                            </div>
+                                                                )}
+                                                            </>
                                                         )}
-
                                                     </div>
                                                 </div>
 
                                                 {/* Images */}
-                                                {event.imageUrl && (
+                                                {isDetailed && event.imageUrl && (
                                                     <div className="mt-4 rounded-md overflow-hidden h-40 w-full bg-slate-100 relative">
                                                         <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
                                                     </div>
                                                 )}
-                                                {!event.imageUrl && event.images && event.images.length > 0 && (
+                                                {isDetailed && !event.imageUrl && event.images && event.images.length > 0 && (
                                                     <div className="mt-4 rounded-md overflow-hidden h-40 w-full bg-slate-100 relative">
                                                         <img src={event.images[0]} alt={event.title} className="w-full h-full object-cover" />
                                                     </div>

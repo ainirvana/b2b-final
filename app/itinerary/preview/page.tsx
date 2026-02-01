@@ -847,6 +847,7 @@ export default function ItineraryPreviewPage() {
             itinerary={itinerary}
             showPrices={showPrices}
             showItemizedPrices={showItemizedPrices}
+            isDetailed={isDetailedView}
             currency={pricingCurrency}
             exchangeRates={exchangeRates}
           />
