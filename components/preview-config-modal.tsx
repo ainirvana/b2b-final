@@ -20,6 +20,7 @@ export interface PreviewConfig {
   withDates: boolean
   startDate?: string
   template: number
+  customerName?: string
 }
 
 export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfigModalProps) {
@@ -28,6 +29,7 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
   const [withDates, setWithDates] = useState(false)
   const [startDate, setStartDate] = useState("")
   const [template, setTemplate] = useState(1)
+  const [customerName, setCustomerName] = useState("")
 
   const handleConfirm = () => {
     onConfirm({
@@ -36,6 +38,7 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
       withDates,
       startDate: withDates ? startDate : undefined,
       template,
+      customerName,
     })
     onClose()
   }
@@ -79,6 +82,24 @@ export function PreviewConfigModal({ isOpen, onClose, onConfirm }: PreviewConfig
                 <div className="font-medium">Classic</div>
                 <div className="text-xs text-gray-500">Traditional Style</div>
               </button>
+            </div>
+          </div>
+
+          {/* Customer Details */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-indigo-500" />
+              <Label className="text-base font-medium">Customer Details</Label>
+            </div>
+            <div>
+              <Label htmlFor="customerName" className="text-sm text-gray-600">Customer Name</Label>
+              <Input
+                id="customerName"
+                placeholder="Enter customer name..."
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="mt-1"
+              />
             </div>
           </div>
 

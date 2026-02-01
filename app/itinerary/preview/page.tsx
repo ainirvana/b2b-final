@@ -37,6 +37,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+import { MinimalistTemplate } from "@/components/itinerary-builder/previews/minimalist-template"
+
 
 
 interface PreviewItinerary {
@@ -83,9 +85,11 @@ interface PreviewItinerary {
     withDates: boolean
     startDate?: string
     template: number
+    customerName?: string
   }
   itineraryId?: string | null
   itineraryType?: string
+  currency?: string
   _id?: string
 }
 
@@ -98,8 +102,30 @@ export default function ItineraryPreviewPage() {
   const [isDetailedView, setIsDetailedView] = useState(true)
 
   const [showPrices, setShowPrices] = useState(true)
+  const [showItemizedPrices, setShowItemizedPrices] = useState(true)
 
   const [selectedTemplate, setSelectedTemplate] = useState<number>(2)
+  const [pricingCurrency, setPricingCurrency] = useState("USD")
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    // Fetch exchange rates
+    const fetchRates = async () => {
+      try {
+        const ratesData = await getExchangeRates()
+        setExchangeRates(ratesData.rates)
+      } catch (error) {
+        console.error("Failed to fetch exchange rates:", error)
+      }
+    }
+    fetchRates()
+  }, [])
+
+  useEffect(() => {
+    if (itinerary?.currency) {
+      setPricingCurrency(itinerary.currency)
+    }
+  }, [itinerary])
 
 
 
@@ -714,88 +740,96 @@ export default function ItineraryPreviewPage() {
       {/* Header */}
 
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-6 py-4 no-print sticky top-0 z-40">
-
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-
           <div className="flex items-center space-x-4">
-
             <Button variant="ghost" onClick={handleEdit} className="hover:bg-gray-100/80">
-
               <ArrowLeft className="h-4 w-4 mr-2" />
-
               Back to Editor
-
             </Button>
-
-            <div>
-
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-
-                {itinerary.title}
-
-              </h1>
-
-              <p className="text-sm text-gray-500">
-
-                {itinerary.country || 'Multiple Destinations'} â€¢ Generated: {itinerary.generatedAt}
-
-              </p>
-
+            {/* Title block removed as per user request to save space */}
+          </div>
+          <div className="flex items-center space-x-3 bg-gray-50 rounded-lg p-1.5 border border-gray-200">
+            <div className="flex items-center space-x-2 px-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                Detailed
+              </label>
+              <Switch checked={isDetailedView} onCheckedChange={setIsDetailedView} className="scale-75 origin-left" />
             </div>
-
+            <div className="w-px h-4 bg-gray-300"></div>
+            <div className="flex items-center space-x-2 px-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                Pricing
+              </label>
+              <Switch checked={showPrices} onCheckedChange={setShowPrices} className="scale-75 origin-left" />
+            </div>
+            {showPrices && (
+              <>
+                <div className="w-px h-4 bg-gray-300"></div>
+                <div className="flex items-center space-x-2 px-2">
+                  <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5 whitespace-nowrap">
+                    Itemized
+                  </label>
+                  <Switch checked={showItemizedPrices} onCheckedChange={setShowItemizedPrices} className="scale-75 origin-left" />
+                </div>
+                <div className="w-px h-4 bg-gray-300"></div>
+                <Select
+                  value={pricingCurrency}
+                  onValueChange={setPricingCurrency}
+                >
+                  <SelectTrigger className="w-[85px] h-8 bg-transparent border-0 focus:ring-0 px-2 text-xs font-semibold text-gray-700">
+                    <SelectValue placeholder="INR" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="AED">AED</SelectItem>
+                  </SelectContent>
+                </Select>
+              </>
+            )}
           </div>
 
-          <div className="flex items-center space-x-3">
-
-            <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2">
-
-              <label className="text-sm font-medium text-gray-700">Detailed</label>
-
-              <Switch checked={isDetailedView} onCheckedChange={setIsDetailedView} />
-
-            </div>
-
-            <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2">
-              <label className="text-sm font-medium text-gray-700">Template</label>
-              <Select
-                value={selectedTemplate.toString()}
-                onValueChange={(val) => setSelectedTemplate(parseInt(val))}
-              >
-                <SelectTrigger className="w-[100px] h-8 bg-white">
-                  <SelectValue placeholder="Template" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Minimalist</SelectItem>
-                  <SelectItem value="2">Classic</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button variant="outline" onClick={handleEdit} className="hover:bg-gray-50">
-
-              <Edit className="h-4 w-4 mr-2" />
-
-              Edit
-
-            </Button>
-
-            <Button variant="outline" onClick={handleShare} disabled={isSharing} className="hover:bg-gray-50">
-
-              {isSharing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Share2 className="h-4 w-4 mr-2" />}
-
-              Share
-
-            </Button>
-
-            <Button onClick={handleExportPDF} disabled={isExporting} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-
-              {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-
-              Export PDF
-
-            </Button>
-
+          <div className="flex items-center space-x-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
+            <label className="text-sm font-medium text-gray-700">Template</label>
+            <Select
+              value={selectedTemplate.toString()}
+              onValueChange={(val) => setSelectedTemplate(parseInt(val))}
+            >
+              <SelectTrigger className="w-[110px] h-8 bg-white text-xs">
+                <SelectValue placeholder="Template" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Minimalist</SelectItem>
+                <SelectItem value="2">Classic</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          <Button variant="outline" onClick={handleEdit} className="hover:bg-gray-50">
+
+            <Edit className="h-4 w-4 mr-2" />
+
+            Edit
+
+          </Button>
+
+          <Button variant="outline" onClick={handleShare} disabled={isSharing} className="hover:bg-gray-50">
+
+            {isSharing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Share2 className="h-4 w-4 mr-2" />}
+
+            Share
+
+          </Button>
+
+          <Button onClick={handleExportPDF} disabled={isExporting} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+
+            {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+
+            Export PDF
+
+          </Button>
 
         </div>
 
@@ -803,28 +837,34 @@ export default function ItineraryPreviewPage() {
 
 
 
+
       {/* Content */}
 
       <div id="preview-content" className="max-w-5xl mx-auto p-4 space-y-6">
 
-        {(() => {
-          // Clean "Coming Soon" state
-          return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
-              <div className="bg-blue-50 p-4 rounded-full mb-6">
-                <Layout className="h-12 w-12 text-blue-500" />
-              </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                {selectedTemplate === 1 ? "Minimalist" : "Classic"} Template
-              </h2>
-              <p className="text-xl text-gray-500 max-w-md">
-                This template is currently under construction.
-                <br />
-                <span className="font-semibold text-blue-600">Coming Soon</span>
-              </p>
+        {selectedTemplate === 1 ? (
+          <MinimalistTemplate
+            itinerary={itinerary}
+            showPrices={showPrices}
+            showItemizedPrices={showItemizedPrices}
+            currency={pricingCurrency}
+            exchangeRates={exchangeRates}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-blue-50 p-4 rounded-full mb-6">
+              <Layout className="h-12 w-12 text-blue-500" />
             </div>
-          )
-        })()}
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">
+              Classic Template
+            </h2>
+            <p className="text-xl text-gray-500 max-w-md">
+              This template is currently under construction.
+              <br />
+              <span className="font-semibold text-blue-600">Coming Soon</span>
+            </p>
+          </div>
+        )}
 
       </div>
 

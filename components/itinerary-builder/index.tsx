@@ -198,20 +198,20 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [productId, setProductId] = useState(`ITN-${Date.now().toString(36).toUpperCase()}`)
   const [productReferenceCode, setProductReferenceCode] = useState("")
   const [branding, setBranding] = useState<{
-    headerLogo?: string
-    headerText?: string
-    footerLogo?: string
-    footerText?: string
-    primaryColor?: string
-    secondaryColor?: string
-  }>({
-    headerLogo: "",
-    headerText: "",
-    footerLogo: "",
-    footerText: "",
-    primaryColor: "#3B82F6",
-    secondaryColor: "#10B981",
-  })
+    logo?: string
+    companyName?: string
+    contactEmail?: string
+    contactPhone?: string
+    address?: string
+    socialLinks?: {
+      instagram?: string
+      whatsapp?: string
+      facebook?: string
+      twitter?: string
+      youtube?: string
+      website?: string
+    }
+  }>({})
   const [countries, setCountries] = useState<string[]>([])
   const [countryError, setCountryError] = useState<string>("")
   const [gallery, setGallery] = useState<IGalleryItem[]>([])
@@ -285,14 +285,22 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             setDays(itineraryData.days || [{ ...EMPTY_DAY, events: [] }])
             setCountries(itineraryData.countries || [])
             setGallery(itineraryData.gallery || [])
-            setBranding(itineraryData.branding || {
-              headerLogo: "",
-              headerText: "",
-              footerLogo: "",
-              footerText: "",
-              primaryColor: "#3B82F6",
-              secondaryColor: "#10B981",
-            })
+            if (itineraryData.branding && Object.keys(itineraryData.branding).length > 0) {
+              setBranding(itineraryData.branding)
+            } else {
+              // Fetch global settings if no branding on itinerary
+              try {
+                const settingsRes = await fetch("/api/settings")
+                if (settingsRes.ok) {
+                  const settingsData = await settingsRes.json()
+                  if (settingsData.branding) {
+                    setBranding(settingsData.branding)
+                  }
+                }
+              } catch (err) {
+                console.error("Failed to fetch global branding defaults:", err)
+              }
+            }
             setCurrentItineraryId(
               itineraryData._id ? itineraryData._id.toString() : itineraryId ?? null,
             )
@@ -329,6 +337,19 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         setProductId(newProductId)
         const refCode = searchParams.get('productReferenceCode') || ''
         setProductReferenceCode(refCode)
+
+        // Fetch global branding defaults for new itinerary
+        try {
+          const settingsRes = await fetch("/api/settings")
+          if (settingsRes.ok) {
+            const settingsData = await settingsRes.json()
+            if (settingsData.branding) {
+              setBranding(settingsData.branding)
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch global branding defaults:", err)
+        }
 
         // Remove the query parameters
         router.replace('/itinerary/builder')
@@ -1296,6 +1317,23 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         localStorage.setItem("last-preview-itinerary-type", itineraryTypeParam)
       }
 
+      // Ensure branding is populated
+      let effectiveBranding = branding
+      if (!effectiveBranding || (!effectiveBranding.companyName && !effectiveBranding.contactEmail)) {
+        try {
+          console.log("Fetching global branding defaults for preview...")
+          const settingsRes = await fetch("/api/settings")
+          if (settingsRes.ok) {
+            const settingsData = await settingsRes.json()
+            if (settingsData.branding) {
+              effectiveBranding = settingsData.branding
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch global branding defaults for preview:", err)
+        }
+      }
+
       const previewData = {
         title,
         description,
@@ -1303,7 +1341,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         country: countries[0] || extractDestination(),
         days,
         nights: totalNights,
-        branding,
+        branding: effectiveBranding,
         totalPrice,
         generatedAt: formatDate(new Date()),
         serviceSlots,
