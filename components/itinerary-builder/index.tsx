@@ -63,13 +63,18 @@ import { useItineraries } from "@/hooks/use-itineraries"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { calculateComponentPrice, calculateTotalPrice, PricingConfig } from "@/lib/pricing-calculator"
+import { QuotationPricingControls } from "@/components/quotation-pricing-controls"
+import { QuotationPricingOptions } from "@/models/Quotation"
 
 // Country options removed
 
 interface ItineraryBuilderProps {
   itineraryId?: string
+  quotationId?: string
+  mode?: "itinerary" | "quotation"
   onBack: () => void
   onSave?: () => Promise<void>
+  extraActions?: React.ReactNode
 }
 
 const EMPTY_DAY: IItineraryDay = {
@@ -171,7 +176,7 @@ const COMPONENT_TEMPLATES = [
   },
 ]
 
-export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuilderProps) {
+export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary", onBack, onSave, extraActions }: ItineraryBuilderProps) {
   // library items disabled in this builder
   const { createItinerary, updateItinerary } = useItineraries()
   const { toast } = useToast()
@@ -231,6 +236,18 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
   const [pricingStartDate, setPricingStartDate] = useState<string>("")
   // pricingEndDate is now derived from pricingStartDate + days.length
   const [pricingEndDate, setPricingEndDate] = useState<string>("")
+
+  // Quotation specific state
+  const [quotationPricingOptions, setQuotationPricingOptions] = useState<QuotationPricingOptions>({
+    markupType: "percentage",
+    markupValue: 0,
+    showIndividualPrices: true,
+    showSubtotals: true,
+    showTotal: true,
+    currency: "USD",
+    finalTotalPrice: 0,
+    originalTotalPrice: 0
+  })
 
   // Update pricingEndDate whenever pricingStartDate or days change
   useEffect(() => {
@@ -359,6 +376,29 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
     loadItineraryData()
   }, [itineraryId, isNewMode, router, productId])
+
+  // Load quotation data if in quotation mode
+  useEffect(() => {
+    const loadQuotationData = async () => {
+      if (mode === 'quotation' && quotationId) {
+        try {
+          const response = await fetch(`/api/quotations/${quotationId}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.pricingOptions) {
+              setQuotationPricingOptions(data.pricingOptions)
+              if (data.pricingOptions.currency) {
+                setPricingCurrency(data.pricingOptions.currency)
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error loading quotation data:", error)
+        }
+      }
+    }
+    loadQuotationData()
+  }, [mode, quotationId])
 
   const [isSaving, setIsSaving] = useState(false)
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
@@ -1519,7 +1559,14 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
 
         // Call the onSave callback if provided
         if (onSave) {
-          await onSave()
+          // Pass back the quotation pricing options if in quotation mode
+          // We cast to any because the interface was defined as () => Promise<void>
+          // We will update the interface next or just rely on runtime for now (better to update interface)
+          await (onSave as any)({
+            itineraryId: savedId,
+            quotationOptions: mode === 'quotation' ? quotationPricingOptions : undefined,
+            days: days
+          })
         }
       }
     } catch (error) {
@@ -1974,6 +2021,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
             </div>
             {/* Right Buttons */}
             <div className="flex space-x-2 flex-wrap">
+              {extraActions}
               <Button variant="outline" size="icon" onClick={handleCreateCopy} disabled={isSaving} title="Copy" aria-label="Copy">
                 <Copy className="h-4 w-4" />
               </Button>
@@ -2098,7 +2146,13 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                 <label className="text-sm font-medium">Currency</label>
                 <select
                   value={pricingCurrency}
-                  onChange={(e) => setPricingCurrency(e.target.value)}
+                  onChange={(e) => {
+                    const newCurrency = e.target.value
+                    setPricingCurrency(newCurrency)
+                    if (mode === 'quotation') {
+                      setQuotationPricingOptions(prev => ({ ...prev, currency: newCurrency }))
+                    }
+                  }}
                   className="w-full rounded-md border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="INR">Indian Rupee (₹)</option>
@@ -2314,10 +2368,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                           pricingAdults={pricingAdults}
                           pricingChildren={pricingChildren}
                           pricingCurrency={pricingCurrency}
-                          pricingAdults={pricingAdults}
-                          pricingChildren={pricingChildren}
                           pricingRooms={pricingRooms}
-                          pricingCurrency={pricingCurrency}
                           pricingMode={pricingMode}
                           onDragStart={() => handleDragStart("event", event, dayIndex, eventIndex)}
                           onEdit={() => handleEditEvent(dayIndex, eventIndex)}
@@ -2380,10 +2431,7 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                             pricingAdults={pricingAdults}
                             pricingChildren={pricingChildren}
                             pricingCurrency={pricingCurrency}
-                            pricingAdults={pricingAdults}
-                            pricingChildren={pricingChildren}
                             pricingRooms={pricingRooms}
-                            pricingCurrency={pricingCurrency}
                             pricingMode={pricingMode}
                             onDragStart={() => handleDragStart("event", event)}
                             onEdit={() => {
@@ -2569,6 +2617,32 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
                 })}
               </div>
             </div>
+
+            {/* Quotation Pricing Controls - Only in Quotation Mode */}
+            {mode === 'quotation' && (
+              <div className="border-t p-4 flex-shrink-0 bg-gray-50/50">
+                <h3 className={`font-semibold text-lg mb-3 ${isSidebarMinimized ? 'hidden' : ''}`}>Pricing & Markup</h3>
+                <div className={isSidebarMinimized ? 'hidden' : ''}>
+                  <QuotationPricingControls
+                    initialOptions={quotationPricingOptions}
+                    onOptionsChange={(newOptions: QuotationPricingOptions) => {
+                      setQuotationPricingOptions(newOptions)
+                      // Sync currency if it changed
+                      if (newOptions.currency && newOptions.currency !== pricingCurrency) {
+                        setPricingCurrency(newOptions.currency)
+                      }
+                    }}
+                    currency={pricingCurrency}
+                  />
+                </div>
+                {isSidebarMinimized && (
+                  <div className="flex justify-center" title="Expand to see pricing controls">
+                    <DollarSign className="h-5 w-5 text-gray-400" />
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
       </div>
@@ -2584,12 +2658,14 @@ export function ItineraryBuilder({ itineraryId, onBack, onSave }: ItineraryBuild
         onSelectLibrary={handleSelectLibraryComponent}
       />
 
-      <EditEventModal
-        event={editingEvent?.event || null}
-        isOpen={!!editingEvent}
-        onClose={() => setEditingEvent(null)}
-        onSave={handleSaveEvent}
-      />
+      {editingEvent?.event && (
+        <EditEventModal
+          event={editingEvent.event}
+          isOpen={!!editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onSave={handleSaveEvent}
+        />
+      )}
 
       <PreviewConfigModal
         isOpen={showPreviewConfig}

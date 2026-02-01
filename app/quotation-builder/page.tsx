@@ -5,27 +5,27 @@ import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { TopHeader } from "@/components/top-header"
 import { Button } from "@/components/ui/button"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -37,14 +37,14 @@ import { ItinerarySetupModal, ItinerarySetupResult } from "@/components/itinerar
 import { ComingSoon } from "@/components/coming-soon"
 import { useQuotations, QuotationData } from "@/hooks/use-quotations"
 import { useToast } from "@/hooks/use-toast"
-import { 
-  Eye, 
-  MoreHorizontal, 
-  Plus, 
-  Send, 
-  Trash, 
-  Search, 
-  Filter, 
+import {
+  Eye,
+  MoreHorizontal,
+  Plus,
+  Send,
+  Trash,
+  Search,
+  Filter,
   Download,
   Calendar,
   Printer
@@ -63,16 +63,16 @@ type Step = "list" | "lead-form" | "options" | "create-blank-itinerary" | "comin
 export default function QuotationBuilderPage() {
   const [currentStep, setCurrentStep] = useState<Step>("list")
   const [leadData, setLeadData] = useState<LeadFormData | null>(null)
-  const [quotations, setQuotations] = useState<QuotationData[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedQuotation, setSelectedQuotation] = useState<QuotationData | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [showItinerarySetupModal, setShowItinerarySetupModal] = useState(false)
   const [itinerarySetupConfig, setItinerarySetupConfig] = useState<ItinerarySetupResult | null>(null)
-  
+
   const router = useRouter()
-  const { fetchQuotations, deleteQuotation, isLoading } = useQuotations()
+  const { quotations, fetchQuotations, deleteQuotation, isLoading } = useQuotations()
   const { toast } = useToast()
+  const [collapsed, setCollapsed] = useState(false)
 
   const handleCreateNew = () => {
     setCurrentStep("lead-form")
@@ -114,20 +114,6 @@ export default function QuotationBuilderPage() {
     setCurrentStep("options")
   }
 
-  // Fetch quotations
-  useEffect(() => {
-    const loadQuotations = async () => {
-      try {
-        const data = await fetchQuotations()
-        // No need to check data - setQuotations is already called inside the hook
-      } catch (error) {
-        console.error("Error loading quotations:", error)
-      }
-    }
-    
-    loadQuotations()
-  }, [fetchQuotations])
-  
   // Filter quotations based on search query
   const filteredQuotations = quotations.filter((quotation) => {
     if (!searchQuery) return true;
@@ -138,12 +124,12 @@ export default function QuotationBuilderPage() {
       quotation.destination.toLowerCase().includes(query)
     )
   })
-  
+
   // Format date
   const formatDate = (dateString: string | Date) => {
     return new Date(dateString).toLocaleDateString()
   }
-  
+
   // Format currency
   const formatCurrency = (amount: number, currency: string = "₹") => {
     return `${currency} ${amount.toLocaleString(undefined, {
@@ -151,7 +137,7 @@ export default function QuotationBuilderPage() {
       maximumFractionDigits: 2
     })}`
   }
-  
+
   // Status badge
   const StatusBadge = ({ status }: { status: string }) => {
     const variants: Record<string, string> = {
@@ -161,21 +147,21 @@ export default function QuotationBuilderPage() {
       rejected: "bg-red-100 text-red-800",
       expired: "bg-amber-100 text-amber-800",
     }
-    
+
     return (
       <Badge className={`${variants[status] || variants.draft}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     )
   }
-  
+
   // Handle quotation deletion
   const handleDelete = async () => {
     if (!selectedQuotation) return
-    
+
     try {
       await deleteQuotation(selectedQuotation._id!)
-      setQuotations(quotations.filter((q) => q._id !== selectedQuotation._id))
+      // Hook already updates quotations state, no need to do it here
       toast({
         title: "Quotation Deleted",
         description: "The quotation has been deleted successfully.",
@@ -215,7 +201,7 @@ export default function QuotationBuilderPage() {
                 </Button>
               </div>
             </div>
-            
+
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle>Manage Quotations</CardTitle>
@@ -240,7 +226,7 @@ export default function QuotationBuilderPage() {
                     <span>Export</span>
                   </Button>
                 </div>
-                
+
                 {isLoading ? (
                   <div className="flex justify-center py-8">
                     <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
@@ -273,7 +259,7 @@ export default function QuotationBuilderPage() {
                             <TableCell>{quotation.destination}</TableCell>
                             <TableCell>
                               {formatCurrency(
-                                quotation.pricingOptions?.finalTotalPrice || quotation.totalPrice, 
+                                quotation.pricingOptions?.finalTotalPrice || quotation.totalPrice,
                                 quotation.currency
                               )}
                             </TableCell>
@@ -324,7 +310,7 @@ export default function QuotationBuilderPage() {
                 )}
               </CardContent>
             </Card>
-            
+
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
               <DialogContent>
                 <DialogHeader>
@@ -365,7 +351,7 @@ export default function QuotationBuilderPage() {
           )
         }
         return (
-          <QuotationItineraryBuilder 
+          <QuotationItineraryBuilder
             leadData={leadData}
             setupConfig={itinerarySetupConfig}
             onBack={handleBuilderBack}
@@ -380,7 +366,7 @@ export default function QuotationBuilderPage() {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-neutral-50 to-brand-primary-50/30">
-      <Sidebar />
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopHeader />
         <main className="flex-1 overflow-auto animate-fade-in p-6">

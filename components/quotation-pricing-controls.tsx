@@ -9,18 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Calculator, Percent, DollarSign, Eye, EyeOff } from "lucide-react"
-
-export interface PricingOptions {
-  showIndividualPrices: boolean
-  showSubtotals: boolean
-  showTotal: boolean
-  markupType: "percentage" | "fixed"
-  markupValue: number
-}
+import { QuotationPricingOptions } from "@/models/Quotation"
 
 interface QuotationPricingControlsProps {
-  initialOptions?: Partial<PricingOptions>
-  onOptionsChange: (options: PricingOptions) => void
+  initialOptions?: Partial<QuotationPricingOptions>
+  onOptionsChange: (options: QuotationPricingOptions) => void
   currency?: string
 }
 
@@ -30,16 +23,19 @@ export function QuotationPricingControls({
   currency = "₹",
 }: QuotationPricingControlsProps) {
   // Default options merged with any provided initial options
-  const [options, setOptions] = useState<PricingOptions>({
+  const [options, setOptions] = useState<QuotationPricingOptions>({
     showIndividualPrices: initialOptions?.showIndividualPrices ?? true,
     showSubtotals: initialOptions?.showSubtotals ?? true,
     showTotal: initialOptions?.showTotal ?? true,
     markupType: initialOptions?.markupType ?? "percentage",
     markupValue: initialOptions?.markupValue ?? 0,
+    currency: initialOptions?.currency ?? currency,
+    originalTotalPrice: initialOptions?.originalTotalPrice ?? 0,
+    finalTotalPrice: initialOptions?.finalTotalPrice ?? 0,
   })
 
   // Handle option changes
-  const handleOptionChange = <K extends keyof PricingOptions>(key: K, value: PricingOptions[K]) => {
+  const handleOptionChange = <K extends keyof QuotationPricingOptions>(key: K, value: QuotationPricingOptions[K]) => {
     const newOptions = { ...options, [key]: value }
     setOptions(newOptions)
     // Don't immediately call onOptionsChange for text/number inputs to avoid refresh during typing

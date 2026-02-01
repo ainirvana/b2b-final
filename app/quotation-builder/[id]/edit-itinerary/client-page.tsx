@@ -100,12 +100,12 @@ export function QuotationItineraryEditPage({ quotationId }: QuotationItineraryEd
   }, [quotationId, router, toast])
 
   const handleSyncFromItinerary = useCallback(
-    async (force = false) => {
-      if (!quotation) return
+    async (force = false): Promise<boolean> => {
+      if (!quotation) return false
 
       const now = Date.now()
       if (!force && now - lastSyncRequest.current < 5000) {
-        return
+        return true
       }
       lastSyncRequest.current = now
 
@@ -134,6 +134,7 @@ export function QuotationItineraryEditPage({ quotationId }: QuotationItineraryEd
             description: "Changes from the itinerary have been applied.",
           })
         }
+        return true
       } catch (error) {
         console.error("Failed to sync quotation with itinerary:", error)
         toast({
@@ -141,6 +142,7 @@ export function QuotationItineraryEditPage({ quotationId }: QuotationItineraryEd
           description: "We could not update the quotation with the latest itinerary changes.",
           variant: "destructive",
         })
+        return false
       } finally {
         setIsSyncing(false)
       }
@@ -149,8 +151,10 @@ export function QuotationItineraryEditPage({ quotationId }: QuotationItineraryEd
   )
 
   const handleReturnToQuotation = useCallback(async () => {
-    await handleSyncFromItinerary(true)
-    router.push(`/quotation-builder/${quotationId}`)
+    const success = await handleSyncFromItinerary(true)
+    if (success) {
+      router.push(`/quotation-builder/${quotationId}`)
+    }
   }, [handleSyncFromItinerary, quotationId, router])
 
   const handleCancel = useCallback(() => {
@@ -176,7 +180,7 @@ export function QuotationItineraryEditPage({ quotationId }: QuotationItineraryEd
     const builderProps = {
       itineraryId: quotation.itineraryId,
       onBack: handleReturnToQuotation,
-      onSave: () => handleSyncFromItinerary(false),
+      onSave: async () => { await handleSyncFromItinerary(false) },
     }
 
     switch (itineraryType) {
@@ -211,7 +215,6 @@ export function QuotationItineraryEditPage({ quotationId }: QuotationItineraryEd
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-neutral-50 to-brand-primary-50/30">
-      <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopHeader />
         <main className="flex-1 overflow-hidden">

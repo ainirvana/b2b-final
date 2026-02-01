@@ -1,6 +1,9 @@
 "use client"
 
 import { IItineraryDay } from "@/models/Itinerary"
+import { QuotationPricingOptions } from "@/models/Quotation"
+import { EventCard } from "./event-card"
+import { DayMeals } from "./day-meals"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Coffee, UtensilsCrossed, Wine, Plane, Clock, Sun, Calendar } from "lucide-react"
@@ -17,6 +20,8 @@ interface PrintableItineraryProps {
   itineraryData: {
     days: IItineraryDay[]
   }
+  mode?: "itinerary" | "quotation"
+  pricingOptions?: QuotationPricingOptions
 }
 
 export function PrintableItinerary({
@@ -27,7 +32,10 @@ export function PrintableItinerary({
   country,
   highlights,
   version,
-  itineraryData
+
+  itineraryData,
+  mode = "itinerary",
+  pricingOptions
 }: PrintableItineraryProps) {
   return (
     <div className="container mx-auto p-6 bg-white">
@@ -50,7 +58,7 @@ export function PrintableItinerary({
               </div>
             </div>
           </div>
-          
+
           {/* Highlights */}
           {highlights.length > 0 && (
             <div className="mt-4">
@@ -119,13 +127,44 @@ export function PrintableItinerary({
                     />
                   ))}
                 </div>
-                <div className="mt-4">
-                  <DayMeals meals={day.meals} />
-                </div>
+                {day.meals && (
+                  <div className="mt-4">
+                    <DayMeals meals={day.meals} />
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* Pricing Summary (Quotation Mode) */}
+        {mode === 'quotation' && pricingOptions && (
+          <div className="space-y-6">
+            <Card className="border-2 border-dashed border-gray-200">
+              <CardHeader className="p-4 bg-gray-50 border-b border-gray-100">
+                <CardTitle className="text-xl">Pricing Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {/* We can show breakdown or just total */}
+                  {pricingOptions.showIndividualPrices && (
+                    <p className="text-sm text-gray-500 italic">Individual component prices are listed above.</p>
+                  )}
+
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                    <span className="text-2xl font-bold">Total Price</span>
+                    <span className="text-3xl font-bold text-[#2D7CEA]">
+                      {pricingOptions.currency} {pricingOptions.finalTotalPrice?.toLocaleString() || pricingOptions.originalTotalPrice?.toLocaleString() || "0"}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400 text-right">
+                    Make all checks payable to Your Company Name
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Version Footer */}
         <div className="mt-8 pt-4 border-t text-center text-gray-500 text-sm">

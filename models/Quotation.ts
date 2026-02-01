@@ -1,18 +1,22 @@
 import mongoose from "mongoose"
 import { IItinerary } from "./Itinerary"
 
+// Define QuotationPricingOptions interface
+export interface QuotationPricingOptions {
+  showIndividualPrices: boolean
+  showSubtotals: boolean
+  showTotal: boolean
+  markupType: "percentage" | "fixed"
+  markupValue: number
+  originalTotalPrice: number
+  finalTotalPrice: number
+  currency?: string
+}
+
 export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
   _id?: string
   itineraryId: string // Reference to the original itinerary
-  pricingOptions: {
-    showIndividualPrices: boolean
-    showSubtotals: boolean
-    showTotal: boolean
-    markupType: "percentage" | "fixed"
-    markupValue: number
-    originalTotalPrice: number // Original price before markup
-    finalTotalPrice: number // Final price after markup
-  }
+  pricingOptions: QuotationPricingOptions
   subtotal?: number // Base price before markup
   markup?: number // Calculated markup amount
   total?: number // Final total after markup

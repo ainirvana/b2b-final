@@ -1,6 +1,8 @@
 "use client"
 
 import { createRoot } from "react-dom/client"
+import { PrintableItinerary } from "./printable-itinerary"
+import { QuotationPricingOptions } from "@/models/Quotation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -46,7 +48,10 @@ interface ItineraryHeaderProps {
   hasBeenSaved: boolean
   isDetailedView: boolean
   onViewChange: (value: boolean) => void
+
   itineraryData?: any // This should match your itinerary data structure
+  mode?: "itinerary" | "quotation"
+  pricingOptions?: QuotationPricingOptions
 }
 
 const HIGHLIGHT_OPTIONS = [
@@ -81,7 +86,10 @@ export function ItineraryHeader({
   hasBeenSaved,
   isDetailedView,
   onViewChange,
-  itineraryData
+
+  itineraryData,
+  mode = "itinerary",
+  pricingOptions
 }: ItineraryHeaderProps) {
   const [showSaveDialog, setShowSaveDialog] = useState(false)
 
@@ -112,9 +120,9 @@ export function ItineraryHeader({
               <Share2 className="h-4 w-4 mr-2" />
               Share
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={async () => {
                 try {
                   // Create a container for the full itinerary
@@ -128,7 +136,7 @@ export function ItineraryHeader({
 
                   // Create a new root and render content
                   const root = createRoot(container);
-                  
+
                   // Render all content
                   const content = (
                     <div className="pdf-container" style={{ fontFamily: 'sans-serif' }}>
@@ -139,7 +147,7 @@ export function ItineraryHeader({
                           <MapPin style={{ width: '16px', height: '16px', color: '#666' }} />
                           <span>{country}</span>
                         </div>
-                        <div style={{ 
+                        <div style={{
                           display: 'inline-block',
                           padding: '4px 12px',
                           backgroundColor: '#E8F3FF',
@@ -180,8 +188,8 @@ export function ItineraryHeader({
                       {/* Itinerary Days */}
                       {itineraryData?.days?.map((day, dayIndex) => (
                         <div key={dayIndex} style={{ marginBottom: '2rem', pageBreakInside: 'avoid' }}>
-                          <h2 style={{ 
-                            fontSize: '18px', 
+                          <h2 style={{
+                            fontSize: '18px',
                             marginBottom: '1rem',
                             backgroundColor: '#E8F3FF',
                             padding: '8px 16px',
@@ -189,10 +197,10 @@ export function ItineraryHeader({
                           }}>
                             Day {dayIndex + 1}
                           </h2>
-                          
+
                           {/* Day Events */}
                           {day.events?.map((event, eventIndex) => (
-                            <div key={eventIndex} style={{ 
+                            <div key={eventIndex} style={{
                               marginBottom: '1rem',
                               padding: '16px',
                               border: '1px solid #eee',
@@ -211,7 +219,7 @@ export function ItineraryHeader({
 
                           {/* Day Meals */}
                           {day.meals && (
-                            <div style={{ 
+                            <div style={{
                               marginTop: '1rem',
                               padding: '12px',
                               backgroundColor: '#f8f9fa',
@@ -237,7 +245,7 @@ export function ItineraryHeader({
                       ))}
                     </div>
                   );
-                  
+
                   root.render(content);
 
                   // Wait for content to be rendered
@@ -337,7 +345,7 @@ export function ItineraryHeader({
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <MapPin className="h-5 w-5 text-gray-500" />
-          <Input 
+          <Input
             value={country}
             onChange={(e) => onCountryChange(e.target.value)}
             placeholder="Enter destination..."
@@ -353,11 +361,10 @@ export function ItineraryHeader({
             <Badge
               key={highlight}
               variant="outline"
-              className={`cursor-pointer ${
-                highlights.includes(highlight)
-                  ? 'bg-[#2D7CEA] text-white'
-                  : 'bg-white text-gray-600'
-              }`}
+              className={`cursor-pointer ${highlights.includes(highlight)
+                ? 'bg-[#2D7CEA] text-white'
+                : 'bg-white text-gray-600'
+                }`}
               onClick={() => toggleHighlight(highlight)}
               role="button"
               tabIndex={0}
@@ -443,6 +450,8 @@ export function ItineraryHeader({
                     version={version}
                     itineraryData={itineraryData}
                     additionalSections={itineraryData.additionalSections}
+                    mode={mode}
+                    pricingOptions={pricingOptions}
                   />
                 );
 

@@ -16,13 +16,17 @@ import { QuotationClientEditor, ClientInfo } from "@/components/quotation-client
 import { QuotationSettings, QuotationSettingsData } from "@/components/quotation-settings"
 import { useQuotations, QuotationData } from "@/hooks/use-quotations"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, Save, Send, Printer, Download, Eye, EyeOff, Calculator, Percent, DollarSign, Lock, Pencil } from "lucide-react"
+import { ArrowLeft, Save, Send, Printer, Download, Eye, EyeOff, Calculator, Percent, DollarSign, Lock, Pencil, History } from "lucide-react"
 import { recalculateQuotationTotals } from "@/lib/pricing-utils"
 import { convertCurrency, convertQuotationPrices, formatCurrencyWithSymbol } from "@/lib/currency-utils"
 import { CurrencyConversion } from "@/components/currency-conversion"
 import { VersionControl } from "@/components/version-control"
+import { QuotationPricingOptions } from "@/models/Quotation"
 import html2canvas from "html2canvas"
 import jsPDF from "jspdf"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+
+import { ItineraryBuilder } from "@/components/itinerary-builder"
 
 // Define interfaces for type safety
 interface DayEvent {
@@ -49,12 +53,13 @@ interface Day {
 export function QuotationDetail({ id }: { id: string }) {
   const [quotation, setQuotation] = useState<QuotationData | null>(null)
   const [activeTab, setActiveTab] = useState("preview")
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false)
   const [showPrices, setShowPrices] = useState(true)
   const [displayCurrency, setDisplayCurrency] = useState<string>("")
   const [versionLocked, setVersionLocked] = useState<boolean>(false)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const previewRef = useRef<HTMLDivElement | null>(null)
-  
+
   const router = useRouter()
   const { fetchQuotation, updateQuotation, isLoading } = useQuotations()
   const { toast } = useToast()
@@ -81,7 +86,7 @@ export function QuotationDetail({ id }: { id: string }) {
         });
       });
     }
-    
+
     // Create a quotation object with the calculated subtotal
     const quotationWithSubtotal = {
       ...quotationData,
@@ -91,7 +96,7 @@ export function QuotationDetail({ id }: { id: string }) {
         originalTotalPrice: originalTotal
       }
     };
-    
+
     // Use the shared utility to calculate all totals
     return recalculateQuotationTotals(quotationWithSubtotal);
   };
@@ -106,10 +111,10 @@ export function QuotationDetail({ id }: { id: string }) {
         const updatedData = recalculateTotals(data);
         setQuotation(updatedData)
         setShowPrices(updatedData.pricingOptions.showIndividualPrices)
-        
+
         // Set initial display currency to the quotation's base currency
         setDisplayCurrency(updatedData.currency || "USD")
-        
+
         // Check if the latest version is locked
         if (updatedData.versionHistory && updatedData.versionHistory.length > 0) {
           const latestVersion = updatedData.versionHistory[updatedData.versionHistory.length - 1]
@@ -427,7 +432,6 @@ export function QuotationDetail({ id }: { id: string }) {
       <div className="flex min-h-screen flex-col">
         <TopHeader />
         <div className="flex flex-1">
-          <Sidebar />
           <main className="flex-1 p-6">
             <div className="mx-auto max-w-5xl">
               <div className="flex items-center justify-between mb-6">
@@ -445,729 +449,162 @@ export function QuotationDetail({ id }: { id: string }) {
     )
   }
 
+  // Render using ItineraryBuilder in quotation mode
   return (
-    <div className="flex min-h-screen flex-col">
-      <TopHeader />
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 p-6">
-          <div className="mx-auto max-w-5xl">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" onClick={handleGoBack}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <h1 className="text-2xl font-bold">{quotation.title}</h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={togglePriceVisibility}>
-                  {showPrices ? (
-                    <>
-                      <EyeOff className="mr-2 h-4 w-4" />
-                      Hide Prices
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="mr-2 h-4 w-4" />
-                      Show Prices
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleEditItinerary}
-                  disabled={versionLocked || !quotation}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit Components
-                </Button>
-                <Button 
-                  onClick={async () => {
-                    if (!quotation) return;
-                    try {
-                      const previousVersion = quotation.currentVersion || 1
-                      const wasLocked = versionLocked
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-neutral-50 to-brand-primary-50/30">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <TopHeader />
+        <main className="flex-1 overflow-hidden">
+          {quotation && (
+            <>
+              <ItineraryBuilder
+                itineraryId={quotation.itineraryId}
+                quotationId={quotation._id}
+                mode="quotation"
+                onBack={() => router.push('/dashboard')}
+                onSave={async (data?: { itineraryId: string, quotationOptions: QuotationPricingOptions, days: any[] }) => {
+                  console.log('[QUOTATION SAVE] onSave triggered with data:', data);
 
-                      // First update the quotation
-                      const updatedQuotation = await updateQuotation(quotation._id!, {
-                        days: quotation.days,
-                        pricingOptions: quotation.pricingOptions,
+                  if (data && data.quotationOptions && data.days) {
+                    try {
+                      console.log('[QUOTATION SAVE] Step 1: Received data from ItineraryBuilder');
+                      console.log('[QUOTATION SAVE] - Days count:', data.days.length);
+                      console.log('[QUOTATION SAVE] - Pricing options:', data.quotationOptions);
+
+                      // We need to construct a payload that includes:
+                      // 1. Existing quotation metadata (client, title, etc.)
+                      // 2. Updated pricing options
+                      // 3. Updated days (snapshot)
+                      // 4. Recalculated totals based on the new options and days
+
+                      // First, recalculate totals
+                      console.log('[QUOTATION SAVE] Step 2: Building temp quotation for recalculation');
+                      const tempQuotation = {
+                        ...quotation,
+                        days: data.days,
+                        pricingOptions: data.quotationOptions
+                      };
+
+                      console.log('[QUOTATION SAVE] Step 3: Recalculating totals');
+                      const recalculated = recalculateTotals(tempQuotation);
+                      console.log('[QUOTATION SAVE] - Recalculated:', recalculated);
+
+                      console.log('[QUOTATION SAVE] Step 4: Constructing API payload');
+                      const payload = {
+                        days: data.days,
+                        pricingOptions: recalculated.pricingOptions,
+                        subtotal: recalculated.subtotal,
+                        markup: recalculated.markup,
+                        total: recalculated.total,
+                        // Preserve existing fields
                         client: quotation.client,
                         currencySettings: quotation.currencySettings,
-                        subtotal: quotation.subtotal,
-                        markup: quotation.markup,
-                        total: quotation.total,
                         notes: quotation.notes,
                         title: quotation.title,
-                        description: quotation.description
-                      });
+                        description: quotation.description,
+                        validUntil: quotation.validUntil,
+                        totalPrice: recalculated.price || recalculated.total
+                      };
 
-                      const syncedQuotation = syncQuotationState(updatedQuotation);
-                      if (syncedQuotation) {
-                        const newVersionCreated = wasLocked && syncedQuotation.currentVersion !== previousVersion
-                        toast({
-                          title: "Success",
-                          description: newVersionCreated
-                            ? `New draft version v${syncedQuotation.currentVersion} created. Continue editing before locking.`
-                            : "Quotation saved successfully"
-                        });
-                      }
+                      console.log('[QUOTATION SAVE] Step 5: Sending to API');
+                      console.log('[QUOTATION SAVE] - Quotation ID:', quotation._id);
+                      console.log('[QUOTATION SAVE] - Payload:', JSON.stringify(payload, null, 2));
+
+                      const updatedQuotation = await saveQuotationVersion(quotation._id!, payload);
+
+                      console.log('[QUOTATION SAVE] Step 6: Save successful, syncing state');
+                      syncQuotationState(updatedQuotation);
+
+                      toast({
+                        title: "Success",
+                        description: "Quotation saved successfully"
+                      });
                     } catch (error) {
-                      console.error("Error saving quotation:", error);
+                      console.error('[QUOTATION SAVE] Error during save:', error);
                       toast({
                         title: "Error",
-                        description: "Failed to save quotation",
+                        description: error instanceof Error ? error.message : "Failed to save quotation",
                         variant: "destructive"
                       });
                     }
-                  }}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  Save
-                </Button>
-                <Button variant="secondary">
-                  <Send className="mr-2 h-4 w-4" />
-                  Send to Client
-                </Button>
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="preview">Preview</TabsTrigger>
-                <TabsTrigger value="configure">Configure</TabsTrigger>
-                <TabsTrigger value="currency">Currency</TabsTrigger>
-                <TabsTrigger value="versions">Versions</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-              </TabsList>
-
-              {/* Preview Tab */}
-              <TabsContent value="preview" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Quotation Preview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div ref={previewRef} className="space-y-4">
-                      <div>
-                        <h2 className="text-xl font-semibold">{quotation.title}</h2>
-                        <p className="text-muted-foreground">{quotation.description}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="font-medium">Client Details</h3>
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          <div>
-                            <span className="text-sm text-muted-foreground">Name:</span>
-                            <p>{quotation.client.name}</p>
-                          </div>
-                          {quotation.client.email && (
-                            <div>
-                              <span className="text-sm text-muted-foreground">Email:</span>
-                              <p>{quotation.client.email}</p>
-                            </div>
-                          )}
-                          {quotation.client.phone && (
-                            <div>
-                              <span className="text-sm text-muted-foreground">Phone:</span>
-                              <p>{quotation.client.phone}</p>
-                            </div>
-                          )}
-                          {quotation.client.referenceNo && (
-                            <div>
-                              <span className="text-sm text-muted-foreground">Reference:</span>
-                              <p>{quotation.client.referenceNo}</p>
-                            </div>
-                          )}
-                        </div>
-                        {quotation.client.notes && (
-                          <div className="mt-2">
-                            <span className="text-sm text-muted-foreground">Notes:</span>
-                            <p>{quotation.client.notes}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <Separator />
-
-                      {/* Itinerary Days and Events */}
-                      {quotation.days && quotation.days.length > 0 && (
-                        <div className="space-y-6">
-                          {quotation.days.map((day: Day, index: number) => (
-                            <div key={index} className="space-y-4">
-                              <div>
-                                <h3 className="text-lg font-medium">Day {day.day}: {day.title}</h3>
-                                {day.description && <p className="text-muted-foreground">{day.description}</p>}
-                              </div>
-                              
-                              <div className="space-y-3">
-                                {day.events.map((event: DayEvent) => (
-                                  <Card key={event.id}>
-                                    <CardContent className="p-4">
-                                      <div className="flex justify-between">
-                                        <div>
-                                          <h4 className="font-medium">{event.title}</h4>
-                                          <p className="text-sm text-muted-foreground">{event.description}</p>
-                                          
-                                          {event.location && (
-                                            <p className="text-sm mt-1">
-                                              <span className="font-medium">Location:</span> {event.location}
-                                            </p>
-                                          )}
-                                          
-                                          {event.time && (
-                                            <p className="text-sm">
-                                              <span className="font-medium">Time:</span> {event.time}
-                                            </p>
-                                          )}
-                                          
-                                          {event.nights && (
-                                            <p className="text-sm">
-                                              <span className="font-medium">Nights:</span> {event.nights}
-                                            </p>
-                                          )}
-                                        </div>
-                                        
-                                        {showPrices && event.price !== undefined && (
-                                          <div className="text-right">
-                                            <div className="flex items-center">
-                                              <span className="mr-1">
-                                                {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates
-                                                  ? displayCurrency
-                                                  : quotation.currency}
-                                              </span>
-                                              <Input
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                value={displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates
-                                                  ? convertCurrency(
-                                                      parseFloat(event.price.toString()),
-                                                      quotation.currency,
-                                                      displayCurrency,
-                                                      quotation.currencySettings.exchangeRates
-                                                    )
-                                                  : event.price}
-                                                onChange={(e) => {
-                                                  // Create a copy of the quotation to modify
-                                                  const updatedQuotation = {...quotation};
-                                                  // Find the event to update
-                                                  const dayIndex = updatedQuotation.days.findIndex((d: any) => d.day === day.day);
-                                                  const eventIndex = updatedQuotation.days[dayIndex].events.findIndex((e: any) => e.id === event.id);
-                                                  
-                                                  if (dayIndex >= 0 && eventIndex >= 0) {
-                                                    // Update the price - convert back to base currency if needed
-                                                    let newPrice = parseFloat(e.target.value);
-                                                    
-                                                    // If displaying in a different currency, convert back to base currency
-                                                    if (displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates) {
-                                                      newPrice = convertCurrency(
-                                                        newPrice,
-                                                        displayCurrency,
-                                                        quotation.currency,
-                                                        quotation.currencySettings.exchangeRates
-                                                      );
-                                                    }
-                                                    
-                                                    updatedQuotation.days[dayIndex].events[eventIndex].price = newPrice;
-                                                    
-                                                    // Recalculate totals
-                                                    const recalculatedQuotation = recalculateTotals(updatedQuotation);
-                                                    
-                                                    // Update local state immediately for responsive UI
-                                                    setQuotation(recalculatedQuotation);
-                                                  }
-                                                }}
-                                                onBlur={async () => {
-                                                  // Save changes when input loses focus
-                                                  try {
-                                                    // Send both days and updated pricing options
-                                                    const serverQuotation = await updateQuotation(quotation._id!, {
-                                                      days: quotation.days,
-                                                      pricingOptions: quotation.pricingOptions,
-                                                      totalPrice: quotation.pricingOptions.finalTotalPrice
-                                                    });
-                                                    syncQuotationState(serverQuotation);
-                                                  } catch (error) {
-                                                    console.error("Error updating price:", error);
-                                                    toast({
-                                                      title: "Error",
-                                                      description: "Failed to update price",
-                                                      variant: "destructive"
-                                                    });
-                                                  }
-                                                }}
-                                                className="w-24 text-right"
-                                              />
-                                            </div>
-                                            {event.category === "hotel" && event.nights && (
-                                              <p className="text-xs text-muted-foreground">
-                                                {event.nights} night{event.nights !== 1 ? 's' : ''}
-                                              </p>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <Separator />
-
-                      {/* Pricing Summary */}
-                      {(showPrices || quotation.pricingOptions.showTotal) && (
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center">
-                            <h3 className="font-medium">Pricing Summary</h3>
-                            
-                            {/* Quick Markup Controls */}
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                <Label htmlFor="preview-markup-type" className="text-sm whitespace-nowrap">Markup Type:</Label>
-                                <select
-                                  id="preview-markup-type"
-                                  value={quotation.pricingOptions.markupType}
-                                  onChange={async (e) => {
-                                    const newType = e.target.value as "percentage" | "fixed";
-                                    try {
-                                      // Create updated quotation with new markup type
-                                      const updatedQuotation = {
-                                        ...quotation,
-                                        pricingOptions: {
-                                          ...quotation.pricingOptions,
-                                          markupType: newType
-                                        }
-                                      };
-                                      
-                                      // Recalculate totals with the new markup type
-                                      const recalculatedQuotation = recalculateTotals(updatedQuotation);
-                                      
-                                      // Update local state for responsiveness
-                                      setQuotation(recalculatedQuotation);
-                                      
-                                      // Also update on server
-                                      const serverQuotation = await updateQuotation(quotation._id!, {
-                                        pricingOptions: recalculatedQuotation.pricingOptions,
-                                        subtotal: recalculatedQuotation.subtotal,
-                                        markup: recalculatedQuotation.markup,
-                                        total: recalculatedQuotation.total
-                                      });
-                                      syncQuotationState(serverQuotation);
-                                    } catch (error) {
-                                      console.error("Error updating markup type:", error);
-                                      toast({
-                                        title: "Error",
-                                        description: "Failed to update markup type",
-                                        variant: "destructive"
-                                      });
-                                    }
-                                  }}
-                                  className="rounded-md border-input py-1 px-2 text-sm"
-                                >
-                                  <option value="percentage">Percentage</option>
-                                  <option value="fixed">Fixed Amount</option>
-                                </select>
-                              </div>
-                              
-                              <div className="flex items-center gap-1">
-                                <Label htmlFor="preview-markup-value" className="text-sm whitespace-nowrap">
-                                  {quotation.pricingOptions.markupType === "percentage" ? "Value (%):" : "Amount:"}
-                                </Label>
-                                <div className="flex items-center">
-                                  {quotation.pricingOptions.markupType === "fixed" && (
-                                    <span className="text-sm mr-1">{quotation.currency}</span>
-                                  )}
-                                  <Input
-                                    id="preview-markup-value"
-                                    type="number"
-                                    min="0"
-                                    step={quotation.pricingOptions.markupType === "percentage" ? "1" : "0.01"}
-                                    value={quotation.pricingOptions.markupValue}
-                                    onChange={(e) => {
-                                      // Create updated quotation with new markup value
-                                      const updatedQuotation = {
-                                        ...quotation,
-                                        pricingOptions: {
-                                          ...quotation.pricingOptions,
-                                          markupValue: parseFloat(e.target.value) || 0
-                                        }
-                                      };
-                                      
-                                      // Recalculate totals with the new markup
-                                      const recalculatedQuotation = recalculateTotals(updatedQuotation);
-                                      
-                                      // Update local state for responsiveness
-                                      setQuotation(recalculatedQuotation);
-                                    }}
-                                    onBlur={async () => {
-                                      // Save changes when input loses focus
-                                      try {
-                                        const serverQuotation = await updateQuotation(quotation._id!, {
-                                          pricingOptions: quotation.pricingOptions,
-                                          subtotal: quotation.subtotal,
-                                          markup: quotation.markup,
-                                          total: quotation.total
-                                        });
-                                        syncQuotationState(serverQuotation);
-                                      } catch (error) {
-                                        console.error("Error updating markup value:", error);
-                                        toast({
-                                          title: "Error",
-                                          description: "Failed to update markup value",
-                                          variant: "destructive"
-                                        });
-                                      }
-                                    }}
-                                    className="w-20"
-                                  />
-                                  {quotation.pricingOptions.markupType === "percentage" && (
-                                    <span className="text-sm ml-1">%</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2 bg-muted/20 p-3 rounded-md">
-                            {showPrices && quotation.pricingOptions.showSubtotals && (
-                              <div className="flex justify-between">
-                                <span>Subtotal:</span>
-                                <span>
-                                  {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates ? 
-                                    formatCurrencyWithSymbol(
-                                      convertCurrency(
-                                        quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0,
-                                        quotation.currency,
-                                        displayCurrency,
-                                        quotation.currencySettings.exchangeRates
-                                      ),
-                                      displayCurrency
-                                    ) :
-                                    `${quotation.currency} ${(quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0).toFixed(2)}`
-                                  }
-                                </span>
-                              </div>
-                            )}
-                            
-                            {showPrices && quotation.pricingOptions.markupValue > 0 && (
-                              <div className="flex justify-between">
-                                <span>
-                                  {quotation.pricingOptions.markupType === "percentage" 
-                                    ? `Service Fee (${quotation.pricingOptions.markupValue}%):`
-                                    : "Service Fee:"}
-                                </span>
-                                <span>
-                                  {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates ? 
-                                    formatCurrencyWithSymbol(
-                                      convertCurrency(
-                                        quotation.markup || 
-                                          (quotation.pricingOptions.markupType === "percentage"
-                                            ? ((quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0) * (quotation.pricingOptions.markupValue / 100))
-                                            : quotation.pricingOptions.markupValue),
-                                        quotation.currency,
-                                        displayCurrency,
-                                        quotation.currencySettings.exchangeRates
-                                      ),
-                                      displayCurrency
-                                    ) :
-                                    `${quotation.currency} ${(quotation.markup || 
-                                      (quotation.pricingOptions.markupType === "percentage"
-                                        ? ((quotation.subtotal || quotation.pricingOptions.originalTotalPrice || 0) * (quotation.pricingOptions.markupValue / 100))
-                                        : quotation.pricingOptions.markupValue)
-                                    ).toFixed(2)}`
-                                  }
-                                </span>
-                              </div>
-                            )}
-                            
-                            {quotation.pricingOptions.showTotal && (
-                              <div className="flex justify-between font-bold pt-2">
-                                <span>Total:</span>
-                                <span>
-                                  {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates ? 
-                                    formatCurrencyWithSymbol(
-                                      convertCurrency(
-                                        quotation.total || quotation.pricingOptions.finalTotalPrice || 0,
-                                        quotation.currency,
-                                        displayCurrency,
-                                        quotation.currencySettings.exchangeRates
-                                      ),
-                                      displayCurrency
-                                    ) :
-                                    `${quotation.currency} ${(quotation.total || quotation.pricingOptions.finalTotalPrice || 0).toFixed(2)}`
-                                  }
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <div className="flex justify-between items-center mt-4">
-                  <div className="flex items-center">
-                    {displayCurrency !== quotation.currency && quotation.currencySettings?.exchangeRates && (
-                      <div className="text-sm text-muted-foreground">
-                        Displaying prices in {displayCurrency} (1 {quotation.currency} = {quotation.currencySettings.exchangeRates[displayCurrency]} {displayCurrency})
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" disabled={!versionLocked}>
-                      <Printer className="mr-2 h-4 w-4" />
-                      Print
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={handleDownloadPdf}
-                      disabled={!versionLocked || isGeneratingPdf}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      {isGeneratingPdf ? "Generating..." : "Download PDF"}
-                    </Button>
-                    <Button>
-                      <Send className="mr-2 h-4 w-4" />
-                      Send to Client
-                    </Button>
-                    {!versionLocked && (
-                      <div className="text-sm text-amber-600 ml-2 flex items-center">
-                        <Lock className="h-4 w-4 mr-1" /> Version must be locked before printing or downloading
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Configure Tab */}
-              <TabsContent value="configure" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Client Information</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <QuotationClientEditor 
-                        initialData={{
-                          name: quotation.client.name,
-                          email: quotation.client.email,
-                          phone: quotation.client.phone,
-                          referenceNo: quotation.client.referenceNo,
-                          notes: quotation.notes,
-                          validUntil: quotation.validUntil ? new Date(quotation.validUntil).toISOString().split('T')[0] : undefined
-                        }}
-                        onUpdate={async (data: ClientInfo) => {
-                          try {
-                            const updatedQuotation = await updateQuotation(quotation._id!, {
-                              client: {
-                                name: data.name,
-                                email: data.email,
-                                phone: data.phone,
-                                referenceNo: data.referenceNo
-                              },
-                              notes: data.notes,
-                              validUntil: data.validUntil ? new Date(data.validUntil) : undefined
-                            });
-                            
-                            const syncedQuotation = syncQuotationState(updatedQuotation);
-                            if (syncedQuotation) {
-                              toast({
-                                title: "Success",
-                                description: "Client information updated successfully"
-                              });
-                            }
-                          } catch (error) {
-                            console.error("Error updating client information:", error);
-                            toast({
-                              title: "Error",
-                              description: "Failed to update client information",
-                              variant: "destructive"
-                            });
-                          }
-                        }}
-                      />
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Pricing Options</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <QuotationPricingControls 
-                        initialOptions={quotation.pricingOptions}
-                        onOptionsChange={async (options: any) => {
-                          try {
-                            const updatedQuotation = await updateQuotation(quotation._id!, {
-                              pricingOptions: {
-                                ...quotation.pricingOptions,
-                                ...options
-                              }
-                            });
-                            
-                            const syncedQuotation = syncQuotationState(updatedQuotation);
-                            if (syncedQuotation) {
-                              setShowPrices(syncedQuotation.pricingOptions.showIndividualPrices);
-                              toast({
-                                title: "Success",
-                                description: "Pricing options updated successfully"
-                              });
-                            }
-                          } catch (error) {
-                            console.error("Error updating pricing options:", error);
-                            toast({
-                              title: "Error",
-                              description: "Failed to update pricing options",
-                              variant: "destructive"
-                            });
-                          }
-                        }}
-                        currency={quotation.currency}
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              {/* Currency Tab */}
-              <TabsContent value="currency" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Currency Conversion Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CurrencyConversion
-                      currencySettings={{
-                        baseCurrency: quotation.currency || "USD",
-                        displayCurrency: displayCurrency || quotation.currency || "USD",
-                        exchangeRates: quotation.currencySettings?.exchangeRates || {
-                          USD: 1,
-                          EUR: 0.92,
-                          INR: 83.13,
-                        }
-                      }}
-                      onUpdateSettings={handleCurrencyChange}
-                      onUpdateDisplayCurrency={handleDisplayCurrencyChange}
-                    />
-                  </CardContent>
-                </Card>
-                <div className="flex justify-end">
-                  <Button onClick={() => setActiveTab("preview")}>
-                    Back to Preview
+                  } else {
+                    // Fallback if no specific quotation data is passed (just itinerary save)
+                    console.log('[QUOTATION SAVE] No quotation data in callback, data received:', data);
+                  }
+                }}
+                extraActions={
+                  <Button variant="outline" size="icon" onClick={() => setIsVersionHistoryOpen(true)} title="Version History">
+                    <History className="h-4 w-4" />
                   </Button>
-                </div>
-              </TabsContent>
-
-              {/* Versions Tab */}
-              <TabsContent value="versions" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Version Control</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                }
+              />
+              <Dialog open={isVersionHistoryOpen} onOpenChange={setIsVersionHistoryOpen}>
+                <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                  {quotation && (
                     <VersionControl
                       versionHistory={quotation.versionHistory || []}
                       currentVersion={quotation.currentVersion || 1}
                       isLocked={versionLocked}
                       isDraft={quotation.isDraft || false}
-                      onCreateVersion={(description: string) => handleCreateVersion({ notes: description })}
+                      onCreateVersion={(desc) => handleCreateVersion({ notes: desc })}
                       onLockVersion={() => {
                         if (quotation.versionHistory && quotation.versionHistory.length > 0) {
-                          const latestVersion = quotation.versionHistory[quotation.versionHistory.length - 1];
-                          return handleLockVersion(latestVersion.versionNumber.toString());
+                          const latest = quotation.versionHistory[quotation.versionHistory.length - 1];
+                          return handleLockVersion(latest.versionNumber.toString());
                         }
                         return Promise.resolve();
                       }}
                       onSaveVersion={async () => {
+                        toast({ title: "Info", description: "Please use the main Save button in the builder to save changes." });
+                        return Promise.resolve();
+                      }}
+                      onViewVersion={async (versionNumber) => {
                         try {
-                          const updatedQuotation = await saveQuotationVersion(quotation._id!);
-                          syncQuotationState(updatedQuotation);
+                          setIsVersionHistoryOpen(false);
+
+                          // Call API to restore the version
+                          const response = await fetch(`/api/quotations/${id}/versions/${versionNumber}`, {
+                            method: 'PUT'
+                          });
+
+                          if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || 'Failed to restore version');
+                          }
+
+                          const restoredQuotation = await response.json();
+
+                          // Update local state with restored data
+                          const updatedData = recalculateTotals(restoredQuotation);
+                          setQuotation(updatedData);
+                          setShowPrices(updatedData.pricingOptions.showIndividualPrices);
+                          setDisplayCurrency(updatedData.currency || "USD");
+
+                          // Update version lock status
+                          setVersionLocked(restoredQuotation.isLocked || false);
+
                           toast({
                             title: "Success",
-                            description: "Changes saved successfully",
+                            description: `Restored to version ${versionNumber}. Quotation is now in draft mode.`
                           });
-                        } catch (error) {
-                          console.error("Error saving changes:", error);
-                          toast({
-                            title: "Error",
-                            description: "Failed to save changes",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                      onViewVersion={() => {}}
-                    />
-                  </CardContent>
-                </Card>
-                <div className="flex justify-end">
-                  <Button onClick={() => setActiveTab("preview")}>
-                    Back to Preview
-                  </Button>
-                </div>
-              </TabsContent>
 
-              {/* Settings Tab */}
-              <TabsContent value="settings" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Quotation Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <QuotationSettings 
-                      initialData={{
-                        title: quotation.title,
-                        description: quotation.description,
-                        destination: quotation.destination,
-                        duration: quotation.duration,
-                        currency: quotation.currency
-                      }}
-                      onUpdate={async (data: QuotationSettingsData) => {
-                        try {
-                          const updatedQuotation = await updateQuotation(quotation._id!, {
-                            title: data.title,
-                            description: data.description,
-                            destination: data.destination,
-                            duration: data.duration,
-                            currency: data.currency
-                          });
-                          
-                          const syncedQuotation = syncQuotationState(updatedQuotation);
-                          if (syncedQuotation) {
-                            toast({
-                              title: "Success",
-                              description: "Quotation settings updated successfully"
-                            });
-                          }
+                          // Reload the page to show restored data in ItineraryBuilder
+                          window.location.reload();
                         } catch (error) {
-                          console.error("Error updating quotation settings:", error);
+                          console.error('Error restoring version:', error);
                           toast({
                             title: "Error",
-                            description: "Failed to update quotation settings",
+                            description: error instanceof Error ? error.message : "Failed to restore version",
                             variant: "destructive"
                           });
                         }
                       }}
                     />
-                  </CardContent>
-                </Card>
-
-                <div className="flex justify-end">
-                  <Button>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Settings
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+                  )}
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
         </main>
       </div>
     </div>
