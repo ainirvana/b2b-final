@@ -50,6 +50,7 @@ export function LibraryView() {
   const [showManageLibraryModal, setShowManageLibraryModal] = useState(false)
   const [manageAction, setManageAction] = useState<'edit' | 'delete' | null>(null)
   const [selectedManageLibraryId, setSelectedManageLibraryId] = useState<string | null>(null)
+  const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null)
 
   const { items: dbItems, libraries, loading, librariesLoading, deleteItem, createLibrary, updateLibrary, deleteLibrary, fetchLibraries } = useLibrary()
 
@@ -539,8 +540,8 @@ export function LibraryView() {
                               <Edit className="h-3 w-3" />
                             </Button>
                             <Button
-                              onClick={() => deleteItem(item.id)}
-                              className="bg-white/80 hover:bg-white text-red-600 p-1 rounded"
+                              onClick={() => setDeleteConfirmationId(item.id)}
+                              className="bg-white/80 hover:bg-white text-red-600 p-1 rounded hover:bg-red-50"
                               size="sm"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -740,6 +741,41 @@ export function LibraryView() {
               className="bg-yellow-500 hover:bg-yellow-600 text-white"
             >
               {editingLibrary ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Item Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmationId} onOpenChange={(open) => !open && setDeleteConfirmationId(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-amber-600 mb-2">
+              <Trash2 className="h-5 w-5" />
+              <DialogTitle className="text-xl">Caution: Delete Item?</DialogTitle>
+            </div>
+            <DialogDescription className="pt-2">
+              This action cannot be undone. Are you sure you want to permanently delete this item from your library?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmationId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (deleteConfirmationId) {
+                  await deleteItem(deleteConfirmationId)
+                  setDeleteConfirmationId(null)
+                  toast.success('Item deleted successfully')
+                }
+              }}
+            >
+              Delete Permanently
             </Button>
           </DialogFooter>
         </DialogContent>

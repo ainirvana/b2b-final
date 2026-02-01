@@ -281,161 +281,152 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
             const TypeIcon = typeConfig.icon
             const isViewing = itinerary._id ? viewLoadingId === itinerary._id : false
 
+            // Find first image
+            const firstImage = itinerary.gallery && itinerary.gallery.find(item => item.type === "image")
+
             return (
               <Card
                 key={itinerary._id}
-                className="hover:shadow-md transition-shadow"
+                className="hover:shadow-md transition-shadow h-full flex flex-col overflow-hidden group"
               >
-                {/* Preview Photo */}
-                {itinerary.gallery && itinerary.gallery.length > 0 && (
-                  <div className="relative mb-3">
-                    {(() => {
-                      const firstImage = itinerary.gallery.find(item => item.type === "image")
-                      return firstImage ? (
-                        <img
-                          src={firstImage.url}
-                          alt={firstImage.altText || itinerary.title}
-                          className="w-full h-32 object-cover rounded-t-lg"
-                        />
-                      ) : null
-                    })()}
-                  </div>
-                )}
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        {itinerary.title}
-                        <Badge className={`text-xs ${typeConfig.color}`}>
-                          <TypeIcon className="h-3 w-3 mr-1" />
-                          {typeConfig.label}
-                        </Badge>
-                      </CardTitle>
-                      <CardDescription className="flex items-center text-sm text-gray-500 mt-1">
-                        <MapPin className="mr-1 h-4 w-4" />
-                        {itinerary.destination}
-                      </CardDescription>
+                {/* Preview Photo or Placeholder */}
+                <div className="h-48 w-full bg-gray-100 relative overflow-hidden shrink-0">
+                  {firstImage ? (
+                    <img
+                      src={firstImage.url}
+                      alt={firstImage.altText || itinerary.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className={`w-full h-full flex items-center justify-center ${typeConfig.color} bg-opacity-20`}>
+                      <TypeIcon className="h-16 w-16 opacity-20" />
                     </div>
+                  )}
+                  {/* Overlay Badge */}
+                  <div className="absolute top-2 right-2">
+                    <Badge className={`${typeConfig.color} shadow-sm border`}>
+                      <TypeIcon className="h-3 w-3 mr-1" />
+                      {typeConfig.label}
+                    </Badge>
+                  </div>
+                </div>
+
+                <CardHeader className="pb-2">
+                  <div className="space-y-1">
+                    <CardTitle className="text-xl line-clamp-1" title={itinerary.title}>
+                      {itinerary.title}
+                    </CardTitle>
+                    <CardDescription className="flex items-center text-sm text-gray-500">
+                      <MapPin className="mr-1 h-3 w-3 shrink-0" />
+                      <span className="line-clamp-1">{itinerary.destination || "Multiple Destinations"}</span>
+                    </CardDescription>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+
+                <CardContent className="flex-1 flex flex-col pt-0">
+                  <div className="space-y-4 flex-1">
                     {/* Duration and Price */}
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center text-gray-500">
-                        <Clock className="mr-1 h-4 w-4" />
+                    <div className="flex items-center justify-between text-sm pt-2">
+                      <div className="flex items-center text-gray-500 bg-gray-50 px-2 py-1 rounded-md">
+                        <Clock className="mr-1.5 h-3.5 w-3.5" />
                         {itinerary.duration}
                       </div>
                       {itinerary.totalPrice > 0 && (
-                        <div className="flex items-center text-gray-700 font-medium">
-                          <DollarSign className="mr-1 h-4 w-4" />
-                          {itinerary.totalPrice}
+                        <div className="flex items-center text-brand-700 font-semibold bg-brand-50 px-2 py-1 rounded-md">
+                          <DollarSign className="mr-1 h-3.5 w-3.5" />
+                          {itinerary.totalPrice.toLocaleString()}
                         </div>
                       )}
                     </div>
 
-                    {/* Product Reference Code if available */}
-                    {itinerary.productReferenceCode && (
-                      <div className="text-xs text-gray-500">
-                        <span className="font-semibold">Ref Code:</span> {itinerary.productReferenceCode}
-                      </div>
-                    )}
+                    {/* Description */}
+                    <p className="text-sm text-gray-600 line-clamp-2 min-h-[2.5rem]">
+                      {itinerary.description || "No description available."}
+                    </p>
 
-                    {/* Type-specific information */}
-                    {itinerary.type === "fixed-group-tour" && itinerary.fixedDates && (
-                      <div className="flex items-center justify-between text-xs text-gray-500">
+                    {/* Metadata Section (Type specific or generic) */}
+                    <div className="space-y-2 text-xs text-gray-500">
+                      {itinerary.productReferenceCode && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-700">Ref:</span>
+                          <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{itinerary.productReferenceCode}</span>
+                        </div>
+                      )}
+
+                      {/* Last Edited Info */}
+                      <div className="flex items-center justify-between pt-2 border-t border-dashed mt-auto text-xs text-gray-400">
+                        <span>Last edited</span>
                         <span>
-                          Start: {new Date(itinerary.fixedDates.startDate).toLocaleDateString()}
+                          {new Date(itinerary.updatedAt).toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: 'numeric',
+                            hour12: true
+                          })}
                         </span>
-                        {itinerary.fixedDates.maxParticipants && (
-                          <div className="flex items-center">
-                            <Users className="h-3 w-3 mr-1" />
-                            {itinerary.fixedDates.currentBookings || 0}/{itinerary.fixedDates.maxParticipants}
-                          </div>
-                        )}
                       </div>
-                    )}
-
-                    {itinerary.type === "cart-combo" && itinerary.cartItems && (
-                      <div className="text-xs text-gray-500">
-                        {itinerary.cartItems.length} item{itinerary.cartItems.length !== 1 ? 's' : ''} in cart
-                      </div>
-                    )}
-
-                    {itinerary.type === "html-editor" && itinerary.htmlBlocks && (
-                      <div className="text-xs text-gray-500">
-                        {itinerary.htmlBlocks.length} content block{itinerary.htmlBlocks.length !== 1 ? 's' : ''}
-                      </div>
-                    )}
-
-                    <p className="text-sm text-gray-600 line-clamp-2">{itinerary.description}</p>
-
-                    {/* Creator and Updated info */}
-                    <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t">
-                      <span>
-                        Created by {itinerary.createdBy || 'Unknown'}
-                      </span>
-                      <span>
-                        {new Date(itinerary.updatedAt).toLocaleDateString('en-US', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: '2-digit'
-                        })}
-                      </span>
                     </div>
+                  </div>
 
-                    <div className="flex justify-end space-x-2 mt-4">
-                      {selectForQuotation ? (
+                  {/* Actions Footer */}
+                  <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                    {selectForQuotation ? (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="w-full bg-brand-600 hover:bg-brand-700"
+                        onClick={() => handleItinerarySelect(itinerary)}
+                      >
+                        <FileDigit className="h-4 w-4 mr-2" />
+                        Select Quote
+                      </Button>
+                    ) : (
+                      <>
                         <Button
-                          variant="default"
+                          variant="outline"
                           size="sm"
-                          className="w-full"
-                          onClick={() => handleItinerarySelect(itinerary)}
+                          className="flex-1 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200"
+                          onClick={() => onViewItinerary(itinerary._id!)}
+                          disabled={isViewing}
                         >
-                          <FileDigit className="h-4 w-4 mr-2" />
-                          Select for Quotation
+                          {isViewing ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "View"
+                          )}
                         </Button>
-                      ) : (
-                        <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200"
+                          onClick={() => onEditItinerary(itinerary._id!)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        <div className="flex gap-1 border-l pl-2 ml-1">
                           <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onViewItinerary(itinerary._id!)}
-                            disabled={isViewing}
-                          >
-                            {isViewing ? (
-                              <>
-                                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                                Opening...
-                              </>
-                            ) : (
-                              "View"
-                            )}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => onEditItinerary(itinerary._id!)}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-500 hover:text-brand-600 hover:bg-brand-50"
                             onClick={() => createQuickShare(itinerary)}
-                            title="Create quick public share"
+                            title="Share"
                           >
                             <Share2 className="h-4 w-4" />
                           </Button>
                           <Button
-                            variant="outline"
-                            size="sm"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
                             onClick={() => handleDeleteClick(itinerary)}
-                            title="Delete itinerary"
-                            className="hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+                            title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </>
-                      )}
-                    </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { Sidebar } from "./sidebar"
+import { GlobalHeader } from "./global-header"
 import { cn } from "@/lib/utils"
 
 interface MainLayoutProps {
@@ -26,9 +27,13 @@ export function MainLayout({ children }: MainLayoutProps) {
         }
     }, [shouldStartCollapsed])
 
+    const isWeblinkPage = pathname.startsWith('/weblinks')
+    const showGlobalHeader = !isWeblinkPage
+
     return (
         <div className="flex min-h-screen bg-gray-50/50">
-            <div className="fixed inset-y-0 left-0 z-50 h-full">
+            {showGlobalHeader && <GlobalHeader />}
+            <div className={cn("fixed inset-y-0 left-0 z-50 h-full", showGlobalHeader && "top-16")}>
                 <Sidebar
                     activeView={pathname.split('/')[1] || 'dashboard'}
                     collapsed={collapsed}
@@ -38,7 +43,8 @@ export function MainLayout({ children }: MainLayoutProps) {
             <main
                 className={cn(
                     "flex-1 transition-all duration-300 min-h-screen",
-                    collapsed ? "ml-16" : "ml-64"
+                    collapsed ? "ml-16" : "ml-64",
+                    showGlobalHeader && "pt-16"
                 )}
             >
                 {children}

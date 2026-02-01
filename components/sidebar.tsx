@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
-import { PriceSettingsDialog } from "@/components/price-settings-dialog"
+
 
 interface SidebarProps {
   activeView?: string
@@ -31,7 +31,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeView, collapsed, setCollapsed }: SidebarProps) {
-  const [showPriceSettings, setShowPriceSettings] = useState(false)
+
   const router = useRouter()
   const pathname = usePathname()
 
@@ -41,10 +41,8 @@ export function Sidebar({ activeView, collapsed, setCollapsed }: SidebarProps) {
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "library", label: "Library", icon: BookOpen },
     { id: "weblinks", label: "Weblinks", icon: Share2 },
-    { id: "rfqs", label: "RFQs", icon: MessageSquare },
     { id: "finance", label: "Finance", icon: DollarSign },
     { id: "quotation-builder", label: "Quotation Builder", icon: FileText },
-    { id: "price-settings", label: "Price Settings", icon: DollarSign },
     { id: "settings", label: "Settings", icon: Settings },
   ]
 
@@ -52,28 +50,16 @@ export function Sidebar({ activeView, collapsed, setCollapsed }: SidebarProps) {
     <>
       <div
         className={cn(
-          "bg-white border-r border-neutral-200 flex flex-col transition-all duration-300 shadow-brand-sm h-full",
+          "bg-white border-r border-neutral-200 flex flex-col transition-all duration-300 shadow-brand-sm h-full relative group",
           collapsed ? "w-16" : "w-64",
         )}
       >
-        {/* Header */}
-        <div className="p-4 border-b border-yellow-200 flex items-center justify-between bg-gradient-to-r from-yellow-400 to-yellow-500 min-h-[64px]">
-          {!collapsed && (
-            <div className="flex items-center space-x-2">
-              <div className="w-full h-8 bg-white rounded-lg p-1 flex items-center justify-center">
-                <div className="font-bold text-yellow-600">TRAV PLATFORMS</div>
-              </div>
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-1 text-white hover:bg-white/20 ml-auto"
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
-        </div>
+        <Button
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-3 top-6 z-50 h-6 w-6 rounded-full border border-neutral-200 bg-white p-0 text-neutral-400 shadow-sm hover:bg-neutral-100 hover:text-neutral-600 flex items-center justify-center transition-opacity"
+        >
+          {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+        </Button>
 
         {/* Navigation */}
         <nav className="flex-1 p-4 overflow-y-auto">
@@ -90,10 +76,6 @@ export function Sidebar({ activeView, collapsed, setCollapsed }: SidebarProps) {
                       isActive ? "bg-yellow-100 text-yellow-800 font-medium" : "text-gray-600",
                     )}
                     onClick={() => {
-                      if (item.id === "price-settings") {
-                        setShowPriceSettings(true)
-                        return
-                      }
                       router.push(`/${item.id}`)
                     }}
                     title={collapsed ? item.label : undefined}
@@ -129,10 +111,7 @@ export function Sidebar({ activeView, collapsed, setCollapsed }: SidebarProps) {
         </div>
       </div>
 
-      <PriceSettingsDialog
-        open={showPriceSettings}
-        onOpenChange={setShowPriceSettings}
-      />
+
     </>
   )
 }
