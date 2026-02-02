@@ -13,25 +13,13 @@ interface QuotationOptionsProps {
 
 export function QuotationOptions({ onOptionSelect }: QuotationOptionsProps) {
   const router = useRouter()
-  
+
   const options = [
-    {
-      id: "new-cart",
-      title: "Creating New Cart",
-      description: "Start with an empty cart and add items manually",
-      icon: ShoppingCart,
-    },
     {
       id: "new-itinerary",
       title: "Create New Itinerary",
       description: "Build a new itinerary from scratch",
       icon: Package,
-    },
-    {
-      id: "import-itinerary",
-      title: "Import Saved Itinerary",
-      description: "Import and customize an existing saved itinerary",
-      icon: Upload,
     },
     {
       id: "convert-from-itinerary",
@@ -54,7 +42,7 @@ export function QuotationOptions({ onOptionSelect }: QuotationOptionsProps) {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Choose Your Starting Point</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
         {options.map((option) => {
           const Icon = option.icon
           return (

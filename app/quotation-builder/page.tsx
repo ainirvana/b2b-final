@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Sidebar } from "@/components/sidebar"
-import { TopHeader } from "@/components/top-header"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -72,10 +70,10 @@ export default function QuotationBuilderPage() {
   const router = useRouter()
   const { quotations, fetchQuotations, deleteQuotation, isLoading } = useQuotations()
   const { toast } = useToast()
-  const [collapsed, setCollapsed] = useState(false)
 
   const handleCreateNew = () => {
-    setCurrentStep("lead-form")
+    // Skip lead form and go directly to options
+    setCurrentStep("options")
   }
 
   const handleLeadSubmit = (data: LeadFormData) => {
@@ -365,20 +363,14 @@ export default function QuotationBuilderPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-neutral-50 to-brand-primary-50/30">
-      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <TopHeader />
-        <main className="flex-1 overflow-auto animate-fade-in p-6">
-          {renderContent()}
-        </main>
-        <ItinerarySetupModal
-          isOpen={showItinerarySetupModal}
-          onClose={handleSetupModalClose}
-          onCreate={handleItinerarySetupComplete}
-          onCopy={handleSetupCopy}
-        />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-brand-primary-50/30 p-6">
+      {renderContent()}
+      <ItinerarySetupModal
+        isOpen={showItinerarySetupModal}
+        onClose={handleSetupModalClose}
+        onCreate={handleItinerarySetupComplete}
+        onCopy={handleSetupCopy}
+      />
     </div>
   )
 }

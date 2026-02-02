@@ -375,11 +375,11 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
                       <Button
                         variant="default"
                         size="sm"
-                        className="w-full bg-brand-600 hover:bg-brand-700"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
                         onClick={() => handleItinerarySelect(itinerary)}
                       >
                         <FileDigit className="h-4 w-4 mr-2" />
-                        Select Quote
+                        Select for Quotation
                       </Button>
                     ) : (
                       <>
