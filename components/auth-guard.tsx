@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 interface AuthGuardProps {
     children: React.ReactNode;
 }
-
+//niket
 export function AuthGuard({ children }: AuthGuardProps) {
     const { currentUser, isLoading } = useAuth();
     const router = useRouter();
