@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import type { IItinerary } from "@/models/Itinerary"
 import { errorHandler } from "@/lib/error-handler"
 import { useToast } from "@/hooks/use-toast"
+import { getAuthHeaders } from "@/lib/client-auth"
 
 export function useItineraries() {
   const [itineraries, setItineraries] = useState<IItinerary[]>([])
@@ -12,8 +13,10 @@ export function useItineraries() {
 
   const fetchItineraries = async () => {
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch("/api/itineraries", {
         headers: {
+          ...authHeaders,
           "x-request-id": `fetch-${Date.now()}`,
         },
       })
@@ -38,10 +41,11 @@ export function useItineraries() {
     try {
       console.log("[v0] Creating itinerary with data:", itinerary)
 
+      const authHeaders = await getAuthHeaders();
       const response = await fetch("/api/itineraries", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          ...authHeaders,
           "x-request-id": `create-${Date.now()}`,
         },
         body: JSON.stringify(itinerary),
@@ -126,10 +130,11 @@ export function useItineraries() {
     try {
       console.log("[v0] Updating itinerary with data:", updates)
 
+      const authHeaders = await getAuthHeaders();
       const response = await fetch(`/api/itineraries/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
+          ...authHeaders,
           "x-request-id": `update-${Date.now()}`,
         },
         body: JSON.stringify(updates),
@@ -174,9 +179,11 @@ export function useItineraries() {
     setItineraries((prev) => prev.filter((item) => item._id !== id))
 
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch(`/api/itineraries/${id}`, {
         method: "DELETE",
         headers: {
+          ...authHeaders,
           "x-request-id": `delete-${Date.now()}`,
         },
       })

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { getAuthHeaders } from "@/lib/client-auth"
 
 export interface QuotationPricingOptions {
   showIndividualPrices: boolean
@@ -49,7 +50,8 @@ export function useQuotations() {
     setError(null)
 
     try {
-      const response = await fetch("/api/quotations")
+      const headers = await getAuthHeaders();
+      const response = await fetch("/api/quotations", { headers })
       if (!response.ok) {
         throw new Error("Failed to fetch quotations")
       }
@@ -76,7 +78,8 @@ export function useQuotations() {
     setError(null)
 
     try {
-      const response = await fetch(`/api/quotations/${id}`)
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/quotations/${id}`, { headers })
       if (!response.ok) {
         throw new Error("Failed to fetch quotation")
       }
