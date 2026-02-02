@@ -107,11 +107,12 @@ export function useQuotations() {
     setError(null)
 
     try {
+      // Get auth headers
+      const headers = await getAuthHeaders();
+
       const response = await fetch("/api/quotations/convert-from-itinerary", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           itineraryId,
           clientInfo,
@@ -162,7 +163,7 @@ export function useQuotations() {
       }
 
       const updatedQuotation = await response.json()
-      
+
       // Update local state
       setQuotations((prev) =>
         prev.map((q) => (q._id === id ? updatedQuotation : q))

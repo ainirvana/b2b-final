@@ -1,7 +1,9 @@
-import { Search, Bell, User, Settings } from "lucide-react"
+"use client"
+
+import { Search, Bell, User, Settings, LogOut } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,8 +12,37 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/lib/firebase/auth-context"
+import { useRouter } from "next/navigation"
 
 export function TopHeader() {
+  const { currentUser, signOut } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  // Get user initials for avatar fallback
+  const getInitials = (name?: string | null, email?: string | null) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (email) {
+      return email[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const displayName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User';
+  const userEmail = currentUser?.email || '';
+  const initials = getInitials(currentUser?.displayName, currentUser?.email);
+
   return (
     <header className="bg-white border-b border-neutral-200 px-6 py-4 shadow-brand-sm">
       <div className="flex items-center justify-between">
@@ -43,8 +74,9 @@ export function TopHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full btn-ghost">
                 <Avatar className="h-10 w-10 ring-2 ring-brand-primary-200">
+                  {currentUser?.photoURL && <AvatarImage src={currentUser.photoURL} alt={displayName} />}
                   <AvatarFallback className="bg-gradient-to-br from-brand-primary-400 to-brand-accent-400 text-white font-semibold">
-                    JD
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -52,8 +84,8 @@ export function TopHeader() {
             <DropdownMenuContent className="w-56 card-elevated" align="end" forceMount>
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  <p className="text-heading-sm">John Doe</p>
-                  <p className="text-body-xs text-neutral-500">john@travelagency.com</p>
+                  <p className="text-heading-sm">{displayName}</p>
+                  <p className="text-body-xs text-neutral-500">{userEmail}</p>
                 </div>
               </div>
               <DropdownMenuSeparator />
@@ -66,7 +98,11 @@ export function TopHeader() {
                 <span className="text-body-sm">Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer text-error-600">
+              <DropdownMenuItem
+                className="cursor-pointer text-error-600"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
                 <span className="text-body-sm">Logout</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

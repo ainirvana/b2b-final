@@ -2,6 +2,10 @@ import mongoose from "mongoose"
 
 export interface IItinerary {
   _id?: string
+  // User authentication fields
+  userId: string // Firebase UID of the user who created this
+  userEmail?: string // User's email for reference
+  createdByUser?: string // User's display name
   productId: string
   productReferenceCode?: string // Optional product reference code
   title: string
@@ -588,6 +592,10 @@ const ItineraryDaySchema = new mongoose.Schema({
 
 const ItinerarySchema = new mongoose.Schema(
   {
+    // User authentication fields
+    userId: { type: String, required: true, index: true },
+    userEmail: { type: String },
+    createdByUser: { type: String },
     productId: { type: String },
     productReferenceCode: { type: String },
     title: { type: String },

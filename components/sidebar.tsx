@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
+import { useAuth } from "@/lib/firebase/auth-context"
 
 
 
@@ -31,7 +32,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeView, collapsed, setCollapsed }: SidebarProps) {
-
+  const { currentUser } = useAuth();
   const router = useRouter()
   const pathname = usePathname()
 
@@ -45,6 +46,20 @@ export function Sidebar({ activeView, collapsed, setCollapsed }: SidebarProps) {
     { id: "quotation-builder", label: "Quotation Builder", icon: FileText },
     { id: "settings", label: "Settings", icon: Settings },
   ]
+
+  // Get user initials
+  const getInitials = (name?: string | null, email?: string | null) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    if (email) {
+      return email[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+  const displayName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User';
+  const initials = getInitials(currentUser?.displayName, currentUser?.email);
 
   return (
     <>
@@ -96,15 +111,15 @@ export function Sidebar({ activeView, collapsed, setCollapsed }: SidebarProps) {
               "w-full flex items-center hover:bg-gray-50 rounded-lg transition-colors",
               collapsed ? "px-2 py-3 justify-center" : "px-3 py-2 justify-start",
             )}
-            title={collapsed ? "User Profile" : undefined}
+            title={collapsed ? displayName : undefined}
           >
             <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xs shadow-sm">
-              JD
+              {initials}
             </div>
             {!collapsed && (
               <div className="ml-3 text-left overflow-hidden">
-                <div className="text-sm font-medium text-neutral-900 truncate">John Doe</div>
-                <div className="text-xs text-neutral-500 truncate">Travel Agent</div>
+                <div className="text-sm font-medium text-neutral-900 truncate">{displayName}</div>
+                <div className="text-xs text-neutral-500 truncate">{currentUser?.email || ''}</div>
               </div>
             )}
           </button>

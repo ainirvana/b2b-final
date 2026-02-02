@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import Itinerary from "@/models/Itinerary"
 import Quotation from "@/models/Quotation"
+import { verifyAuth } from "@/lib/server-auth"
 
 // POST /api/quotations/convert-from-itinerary
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 });
+    }
+
     // Connect to database
     await connectDB()
 
@@ -42,25 +49,34 @@ export async function POST(request: NextRequest) {
       finalTotalPrice = originalTotalPrice + pricingOptions.markupValue
     }
 
-    // Create quotation
+    // CRITICAL: Deep clone itinerary data to prevent mutation of original itinerary
+    // When quotation is edited, it should NOT affect the source itinerary
+    const itineraryData = JSON.parse(JSON.stringify(itinerary.toObject()));
+
+    // Create quotation with user fields
     const quotation = new Quotation({
+      // User authentication fields
+      userId: user.uid,
+      userEmail: user.email,
+      createdByUser: user.displayName || user.email,
+      // Itinerary data (DEEP CLONED - not by reference)
       itineraryId: itinerary._id,
-      productId: itinerary.productId,
-      title: itinerary.title,
-      description: itinerary.description,
-      destination: itinerary.destination,
-      countries: itinerary.countries,
-      duration: itinerary.duration,
+      productId: itineraryData.productId,
+      title: itineraryData.title,
+      description: itineraryData.description,
+      destination: itineraryData.destination,
+      countries: itineraryData.countries,
+      duration: itineraryData.duration,
       totalPrice: finalTotalPrice,
-      currency: itinerary.currency,
-      type: itinerary.type,
-      createdBy: itinerary.createdBy,
-      lastUpdatedBy: itinerary.lastUpdatedBy,
-      days: itinerary.days,
-      highlights: itinerary.highlights,
-      images: itinerary.images,
-      gallery: itinerary.gallery,
-      branding: itinerary.branding,
+      currency: itineraryData.currency,
+      type: itineraryData.type,
+      createdBy: itineraryData.createdBy,
+      lastUpdatedBy: itineraryData.lastUpdatedBy,
+      days: itineraryData.days, // Deep cloned array of days and events
+      highlights: itineraryData.highlights,
+      images: itineraryData.images,
+      gallery: itineraryData.gallery,
+      branding: itineraryData.branding,
       status: "draft",
       pricingOptions: {
         showIndividualPrices: pricingOptions?.showIndividualPrices ?? true,
@@ -85,9 +101,9 @@ export async function POST(request: NextRequest) {
     // Save the quotation
     await quotation.save()
 
-    return NextResponse.json({ 
-      message: "Quotation created successfully", 
-      quotationId: quotation._id 
+    return NextResponse.json({
+      message: "Quotation created successfully",
+      quotationId: quotation._id
     }, { status: 201 })
   } catch (error) {
     console.error("Error converting itinerary to quotation:", error)

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectToDatabase } from "@/lib/mongodb"
 import Itinerary from "@/models/Itinerary"
+import { verifyAuth } from "@/lib/server-auth"
 
 interface ApiErrorResponse {
   error: string
@@ -70,13 +71,20 @@ export async function GET(request: NextRequest) {
   const requestId = request.headers.get("x-request-id") || `req-${Date.now()}`
 
   try {
+    // Verify authentication
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 });
+    }
+
     await connectWithRetry()
     const url = new URL(request.url)
     const title = url.searchParams.get("title")
     const createdBy = url.searchParams.get("createdBy")
 
-    // Build a flexible query: optionally filter by title (case-insensitive) and/or createdBy
+    // Build a flexible query: FILTER BY USER and optionally title
     const query: any = {
+      userId: user.uid, // Only show this user's itineraries
       $or: [
         { isQuotationOnly: { $ne: true } },
         { isQuotationOnly: { $exists: false } },
@@ -140,6 +148,12 @@ export async function POST(request: NextRequest) {
   const requestId = request.headers.get("x-request-id") || `req-${Date.now()}`
 
   try {
+    // Verify authentication
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 });
+    }
+
     await connectWithRetry()
 
     let data: any
@@ -199,6 +213,10 @@ export async function POST(request: NextRequest) {
 
     const processedData = {
       ...data,
+      // Inject user fields
+      userId: user.uid,
+      userEmail: user.email,
+      createdByUser: user.displayName || user.email,
       totalPrice: Number(data.totalPrice) || 0,
       currency: data.currency || "USD",
 

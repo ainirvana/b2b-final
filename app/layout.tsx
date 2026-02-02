@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { MainLayout } from '@/components/main-layout'
+import { AuthProvider } from '@/lib/firebase/auth-context'
+import { AuthGuard } from '@/components/auth-guard'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -30,7 +32,11 @@ html {
         `}</style>
       </head>
       <body suppressHydrationWarning>
-        <MainLayout>{children}</MainLayout>
+        <AuthProvider>
+          <AuthGuard>
+            <MainLayout>{children}</MainLayout>
+          </AuthGuard>
+        </AuthProvider>
       </body>
     </html>
   )

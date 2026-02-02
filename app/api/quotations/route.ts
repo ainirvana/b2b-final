@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb"
 import Quotation from "@/models/Quotation"
+import { verifyAuth } from "@/lib/server-auth"
 
 // GET /api/quotations
 export async function GET(request: NextRequest) {
   try {
+    // Verify authentication
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 });
+    }
+
     // Connect to database
     await connectDB()
 
@@ -13,13 +20,13 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
     const limit = parseInt(searchParams.get("limit") || "100")
 
-    // Build query
-    let query: any = {}
+    // Build query - FILTER BY USER
+    let query: any = { userId: user.uid }
     if (status) {
       query.status = status
     }
 
-    // Fetch quotations
+    // Fetch quotations for this user only
     const quotations = await Quotation.find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
@@ -35,17 +42,31 @@ export async function GET(request: NextRequest) {
 // POST /api/quotations
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized - Please log in" }, { status: 401 });
+    }
+
     // Connect to database
     await connectDB()
 
     // Parse request body
     const quotationData = await request.json()
 
+    // Inject user fields automatically
+    const dataWithUser = {
+      ...quotationData,
+      userId: user.uid,
+      userEmail: user.email,
+      createdByUser: user.displayName || user.email,
+    };
+
     // Create new quotation
-    const quotation = new Quotation(quotationData)
+    const quotation = new Quotation(dataWithUser)
     await quotation.save()
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: "Quotation created successfully",
       quotationId: quotation._id
     }, { status: 201 })

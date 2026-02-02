@@ -13,8 +13,12 @@ export interface QuotationPricingOptions {
   currency?: string
 }
 
-export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
+export interface IQuotation extends Omit<IItinerary, "_id" | "status" | "userId" | "userEmail" | "createdByUser"> {
   _id?: string
+  // User authentication fields
+  userId: string // Firebase UID of the user who created this
+  userEmail?: string // User's email for reference
+  createdByUser?: string // User's display name
   itineraryId: string // Reference to the original itinerary
   pricingOptions: QuotationPricingOptions
   subtotal?: number // Base price before markup
@@ -66,6 +70,10 @@ export interface IQuotation extends Omit<IItinerary, "_id" | "status"> {
 
 const QuotationSchema = new mongoose.Schema(
   {
+    // User authentication fields
+    userId: { type: String, required: true, index: true },
+    userEmail: { type: String },
+    createdByUser: { type: String },
     itineraryId: { type: String, required: true },
     productId: { type: String },
     title: { type: String },
