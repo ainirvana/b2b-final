@@ -2521,27 +2521,9 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
               const { total, displayTotal, breakdown } = calculateTotalPrice(allEvents, pricingConfig)
               const currencySymbol = pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''
 
-              return pricingMode === 'total-only' ? (
+              return (
                 <div>
                   <div className="text-lg font-bold text-gray-800">Total Price</div>
-                  <div className="text-2xl font-extrabold text-green-700 mt-1">
-                    {displayTotal}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="text-lg font-bold text-gray-800 mb-2">Individual Pricing</div>
-                  <div className="flex flex-col items-center gap-1">
-                    {breakdown.map((item, index) => (
-                      <div key={index} className="flex justify-between w-64 text-sm">
-                        <span className="font-medium text-gray-700">{item.title || 'Event'}:</span>
-                        <span className="font-semibold text-green-700">
-                          {item.displayPrice}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-2 text-lg font-bold text-gray-800">Total Price</div>
                   <div className="text-2xl font-extrabold text-green-700 mt-1">
                     {displayTotal}
                   </div>
