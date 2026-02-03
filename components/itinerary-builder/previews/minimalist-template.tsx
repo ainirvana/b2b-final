@@ -382,18 +382,7 @@ export function MinimalistTemplate({ itinerary, showPrices, showItemizedPrices =
         <div className="w-full bg-white text-slate-800 font-sans selection:bg-slate-100">
             {/* ------------------- HEADER ------------------- */}
             <header className="flex justify-between items-start pb-8 pt-4 border-b border-slate-100 mb-8 break-inside-avoid">
-                <div className="flex items-center gap-4">
-                    {itinerary.branding?.logo ? (
-                        <img src={itinerary.branding.logo} alt="Company Logo" className="h-16 w-auto object-contain" />
-                    ) : null}
-                    <div className="h-14 flex items-center">
-                        <h2 className="text-xl font-serif font-bold tracking-tight text-slate-900">
-                            {itinerary.branding?.companyName || "Travel Agency"}
-                        </h2>
-                    </div>
-                </div>
-
-                <div className="text-right space-y-2 max-w-lg">
+                <div className="text-left space-y-2 max-w-lg">
                     <h1 className="text-3xl font-serif font-medium text-slate-900 leading-tight">
                         {itinerary.title}
                     </h1>
@@ -402,9 +391,20 @@ export function MinimalistTemplate({ itinerary, showPrices, showItemizedPrices =
                             {itinerary.description}
                         </p>
                     )}
-                    <div className="flex items-center justify-end gap-2 text-slate-400 text-xs uppercase tracking-wider font-medium pt-1">
+                    <div className="flex items-center justify-start gap-2 text-slate-400 text-xs uppercase tracking-wider font-medium pt-1">
                         <span>{itinerary.productId}</span>
                         {/* {itinerary.productReferenceCode && <span>• {itinerary.productReferenceCode}</span>} */}
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    {itinerary.branding?.logo ? (
+                        <img src={itinerary.branding.logo} alt="Company Logo" className="h-16 w-auto object-contain" />
+                    ) : null}
+                    <div className="h-14 flex items-center">
+                        <h2 className="text-xl font-serif font-bold tracking-tight text-slate-900">
+                            {itinerary.branding?.companyName || "Travel Agency"}
+                        </h2>
                     </div>
                 </div>
             </header>
