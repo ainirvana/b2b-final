@@ -136,6 +136,22 @@ export function EventCard({
       case 'others':
       case 'other':
         return <OthersEvent event={event} pricingEnabled={pricingEnabled} />
+      case 'list':
+      case 'additionalInformation':
+        return (
+          <div className="bg-white p-4 rounded-md border shadow-sm">
+            <h4 className="font-semibold mb-2 text-indigo-900">{event.title}</h4>
+            {event.listItems && event.listItems.length > 0 ? (
+              <ul className="list-disc pl-5 space-y-1">
+                {event.listItems.map((item, idx) => (
+                  <li key={idx} className="text-sm text-gray-700">{item}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-500 italic">No additional information provided</p>
+            )}
+          </div>
+        )
       default:
         return null
     }

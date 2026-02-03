@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { ListForms } from "./list-forms"
 import {
   Dialog,
   DialogContent,
@@ -506,6 +507,24 @@ export function EditEventModal({ isOpen, onClose, event, onSave }: EditEventModa
               updated[index] = { ...updated[index], [field]: value }
               handleFieldChange("products" as keyof IItineraryEvent, updated)
             }}
+          />
+        )
+
+      case "list":
+      case "additionalInformation":
+        return (
+          <ListForms
+            manualTitle={editedEvent.title || ""}
+            setManualTitle={(v) => handleFieldChange("title", v)}
+            manualListItems={editedEvent.listItems || []}
+            handleAddListItem={() => handleFieldChange("listItems", [...(editedEvent.listItems || []), ""])}
+            handleRemoveListItem={(idx) => handleFieldChange("listItems", (editedEvent.listItems || []).filter((_, i) => i !== idx))}
+            handleListItemChange={(idx, val) => {
+              const updated = [...(editedEvent.listItems || [])]
+              updated[idx] = val
+              handleFieldChange("listItems", updated)
+            }}
+            errors={validationErrors}
           />
         )
 

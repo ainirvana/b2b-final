@@ -517,19 +517,29 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
       // If it's Additional Information or Ancillaries component, open the source modal
       // so user can choose Manual or From Library. We'll create the appropriate slot
       // from the modal selection handlers.
-      if (draggedItem.item.category === "additionalInformation") {
-        console.log("[DEBUG] Opening component source modal for Additional Information")
-        setComponentSourceModal({ isOpen: true, component: draggedItem.item, dropTarget: null })
-        return
-      }
+      // Legacy block removed to allow proper handling in specific sections
+
 
 
 
       // Skip modal for drops in Additional Information section (dayIndex === -1)
       if (dayIndex === -1) {
-        console.log("[DEBUG] Dropped in Additional Information section but not Additional Information component")
-        setDraggedItem(null)
-        setDropTarget(null)
+        // STRICT: Only allow Additional Information component in this section
+        if (draggedItem.item.category !== "additionalInformation" &&
+          !draggedItem.item.category.toLowerCase().includes("additional")) {
+          console.log("[DEBUG] Only Additional Information is allowed in this section")
+          toast({
+            title: "Not Allowed",
+            description: "Only 'Additional Information' components can be added to this section.",
+            variant: "destructive"
+          })
+          setDraggedItem(null)
+          setDropTarget(null)
+          return
+        }
+
+        console.log("[DEBUG] Opening component source modal for Additional Information")
+        setComponentSourceModal({ isOpen: true, component: draggedItem.item, dropTarget: { dayIndex: -1, position: serviceSlots.length } })
         return
       }
 
@@ -554,7 +564,11 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
       return
     }
 
-    const newDays = [...days]
+    // Deep copy to prevent mutation
+    const newDays = days.map(day => ({
+      ...day,
+      events: [...day.events]
+    }))
 
     if (draggedItem.type === "library-item") {
       console.log("[DEBUG] Converting library item to event")
@@ -693,6 +707,19 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
   }
 
   const handleEditEvent = (dayIndex: number, eventIndex: number) => {
+    if (dayIndex === -1) {
+      // For service slots, eventIndex here refers to the SLOT index
+      const slot = serviceSlots[eventIndex]
+      if (slot && slot.events.length > 0) {
+        setEditingEvent({
+          event: slot.events[0],
+          dayIndex,
+          eventIndex, // This is actually slotIndex for dayIndex -1
+        })
+      }
+      return
+    }
+
     setEditingEvent({
       event: days[dayIndex].events[eventIndex],
       dayIndex,
@@ -801,6 +828,27 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
       }
       setOverviewEvents(newOverviewEvents)
       setEditingEvent(null)
+      return
+    }
+
+    // Handle service slots update (Additional Information)
+    if (editingEvent.dayIndex === -1) {
+      const newSlots = [...serviceSlots]
+      const slotIndex = editingEvent.eventIndex // This is slotIndex
+
+      if (newSlots[slotIndex]) {
+        // Update the event inside the slot
+        newSlots[slotIndex].events[0] = {
+          ...updatedEvent,
+          // Ensure category stays 'list' or correct type
+          category: updatedEvent.category || newSlots[slotIndex].events[0].category
+        }
+        // Also update slot title if needed
+        newSlots[slotIndex].title = updatedEvent.title
+
+        setServiceSlots(newSlots)
+        setEditingEvent(null)
+      }
       return
     }
 
@@ -994,8 +1042,8 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
 
     const component = componentSourceModal.component
 
-    if (component.category === "additionalInformation") {
-      console.log("[DEBUG] Creating service slot (manual) for Additional Information from modal")
+    if (component.category === "additionalInformation" || componentSourceModal.dropTarget?.dayIndex === -1) {
+      console.log("[DEBUG] Creating service slot (manual) for Additional Information")
       const title = (manualData && manualData.title) || `Additional Information ${serviceSlots.length + 1}`
       // Support both `bullets` and `listItems` fields
       const bullets: string[] = (manualData && Array.isArray(manualData.bullets)) ? manualData.bullets : (manualData && Array.isArray(manualData.listItems)) ? manualData.listItems : []
@@ -1014,7 +1062,7 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
       const newSlot = {
         id: `service-slot-${Date.now()}`,
         title,
-        events: bullets.length ? [listEvent] : [] as IItineraryEvent[],
+        events: [listEvent], // ALWAYS create the event so the slot is visible
       }
 
       setServiceSlots([...serviceSlots, newSlot])
@@ -1024,7 +1072,7 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
       return
     }
 
-
+    // Redundant block removed as it was merged with the above block
 
     // Fallback: create a manual event in days if a drop target exists
     if (!componentSourceModal.dropTarget) {
@@ -1035,7 +1083,11 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
     }
 
     const { dayIndex, position } = componentSourceModal.dropTarget
-    const newDays = [...days]
+    // Deep copy for immutable update
+    const newDays = days.map(day => ({
+      ...day,
+      events: [...day.events]
+    }))
 
     // Generate a unique group ID for multi-night hotels
     const hotelGroupId = component.category === "hotel" ? `hotel-${Date.now()}` : undefined
@@ -2480,13 +2532,17 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
                           isDetailedView={isDetailedView}
                           onDragStart={() => handleDragStart("event", event)}
                           onEdit={() => {
-                            const dayIndex = days.findIndex((day) =>
-                              day.events.some((e) => e.id === event.id),
-                            )
-                            const eventIndex = days[dayIndex]?.events.findIndex((e) => e.id === event.id) ?? -1
-                            if (eventIndex >= 0) {
-                              handleEditEvent(dayIndex, eventIndex)
-                            }
+                            // For service slots, we use dayIndex = -1
+                            // and eventIndex to map to the slot index (or flat event list if needed)
+                            // But usually serviceSlots structure is separate.
+                            // Let's assume handleEditEvent can handle dayIndex -1 for serviceSlots.
+                            console.log("[DEBUG] Editing service slot:", slotIndex, eventIndex)
+                            // We need to pass enough info.
+                            // If handleEditEvent only takes (dayIndex, eventIndex), we might need to overload it
+                            // OR render a specific Edit modal for this.
+                            // But let's try to trace handleEditEvent.
+                            // Actually, I'll update this to:
+                            handleEditEvent(-1, slotIndex)
                           }}
                           onDelete={() => {
                             const newSlots = [...serviceSlots]
