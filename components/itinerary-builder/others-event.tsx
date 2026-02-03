@@ -11,6 +11,7 @@ interface OthersEventProps {
     pricingCurrency?: string
     pricingAdults?: number
     pricingChildren?: number
+    pricingMode?: 'individual' | 'total-only'
 }
 
 // Helper to format price for display (used for individual items)
@@ -28,7 +29,8 @@ export function OthersEvent({
     pricingEnabled = true,
     pricingCurrency = "INR",
     pricingAdults = 1,
-    pricingChildren = 0
+    pricingChildren = 0,
+    pricingMode = 'individual'
 }: OthersEventProps) {
     const isGiftCard = event.subCategory === "gift-cards"
     const isTravelGear = event.subCategory === "travel-gears"
@@ -104,7 +106,7 @@ export function OthersEvent({
             )}
 
             {/* Footer Pricing Section - Always show if price exists */}
-            {(event.price || (event.travelGears && event.travelGears.length > 0)) && (
+            {(event.price || (event.travelGears && event.travelGears.length > 0)) && pricingEnabled && pricingMode === 'individual' && (
                 <div className="pt-2 mt-2 border-t border-gray-200">
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">

@@ -130,7 +130,7 @@ export function CruiseEvent({
             </div>
 
             {/* Price - Always show if price exists */}
-            {event.price && (
+            {event.price && pricingEnabled && pricingMode === 'individual' && (
                 <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
                     <span className="text-xs text-gray-500">Price</span>
                     <div className="text-right">

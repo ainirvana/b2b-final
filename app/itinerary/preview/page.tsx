@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select"
 
 import { MinimalistTemplate } from "@/components/itinerary-builder/previews/minimalist-template"
+import { ClassicTemplate } from "@/components/itinerary-builder/previews/classic-template"
 
 
 
@@ -852,19 +853,14 @@ export default function ItineraryPreviewPage() {
             exchangeRates={exchangeRates}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
-            <div className="bg-blue-50 p-4 rounded-full mb-6">
-              <Layout className="h-12 w-12 text-blue-500" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
-              Classic Template
-            </h2>
-            <p className="text-xl text-gray-500 max-w-md">
-              This template is currently under construction.
-              <br />
-              <span className="font-semibold text-blue-600">Coming Soon</span>
-            </p>
-          </div>
+          <ClassicTemplate
+            itinerary={itinerary}
+            showPrices={showPrices}
+            showItemizedPrices={showItemizedPrices}
+            isDetailed={isDetailedView}
+            currency={pricingCurrency}
+            exchangeRates={exchangeRates}
+          />
         )}
 
       </div>

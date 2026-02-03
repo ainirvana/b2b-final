@@ -135,7 +135,16 @@ export function EventCard({
         )
       case 'others':
       case 'other':
-        return <OthersEvent event={event} pricingEnabled={pricingEnabled} />
+        return (
+          <OthersEvent
+            event={event}
+            pricingEnabled={pricingEnabled}
+            pricingAdults={pricingAdults}
+            pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
+          />
+        )
       case 'list':
       case 'additionalInformation':
         return (

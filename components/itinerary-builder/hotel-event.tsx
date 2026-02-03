@@ -241,7 +241,7 @@ export function HotelEvent({
       </div>
 
       {/* Price - Always show if price exists (only on check-in day) */}
-      {event.price && isCheckInDay && (
+      {event.price && isCheckInDay && pricingEnabled && pricingMode === 'individual' && (
         <div className="pt-1.5 border-t border-slate-200">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500">

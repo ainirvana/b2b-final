@@ -442,7 +442,7 @@ export function TransferEvent({
       )}
 
       {/* Price - Always show if price exists */}
-      {event.price && (
+      {event.price && pricingEnabled && pricingMode === 'individual' && (
         <div className="pt-3 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 font-medium">

@@ -90,12 +90,12 @@ export function AncillariesEvent({
                     <span>Entry: <span className="font-medium">{event.entryMethod}</span></span>
                 </div>
             )}
-            {(event.departureDate || event.returnDate) && (
+            {((event as any).departureDate || (event as any).returnDate) && (
                 <div className="col-span-2 flex items-center gap-1.5 mt-1 border-t border-orange-100 pt-1">
                     <Calendar className="h-3 w-3 text-slate-400" />
                     <span>
-                        Travel: {event.departureDate}
-                        {event.returnDate && ` to ${event.returnDate}`}
+                        Travel: {(event as any).departureDate}
+                        {(event as any).returnDate && ` to ${(event as any).returnDate}`}
                     </span>
                 </div>
             )}
@@ -193,7 +193,7 @@ export function AncillariesEvent({
             </div>
 
             {/* Pricing - Always show if price exists */}
-            {event.price && (
+            {event.price && pricingEnabled && pricingMode === 'individual' && (
                 <div className="pt-2 border-t border-slate-200 mt-2">
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-slate-500">
