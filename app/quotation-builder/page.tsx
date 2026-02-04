@@ -241,8 +241,10 @@ export default function QuotationBuilderPage() {
                           <TableHead>Quotation Title</TableHead>
                           <TableHead>Client</TableHead>
                           <TableHead>Destination</TableHead>
-                          <TableHead>Total</TableHead>
+                          <TableHead>Version</TableHead>
                           <TableHead>Created</TableHead>
+                          <TableHead>Last Modified</TableHead>
+                          <TableHead>Total</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="w-[80px]"></TableHead>
                         </TableRow>
@@ -251,17 +253,29 @@ export default function QuotationBuilderPage() {
                         {filteredQuotations.map((quotation) => (
                           <TableRow key={quotation._id}>
                             <TableCell className="font-medium">
-                              <div className="max-w-[200px] truncate">{quotation.title}</div>
+                              <div className="max-w-[180px] truncate" title={quotation.title}>
+                                {quotation.title}
+                              </div>
                             </TableCell>
                             <TableCell>{quotation.client?.name}</TableCell>
                             <TableCell>{quotation.destination}</TableCell>
                             <TableCell>
+                              <Badge variant="outline" className="font-mono text-xs">
+                                V{quotation.currentVersion || 1}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {quotation.createdAt ? formatDate(quotation.createdAt) : '-'}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {quotation.updatedAt ? formatDate(quotation.updatedAt) : '-'}
+                            </TableCell>
+                            <TableCell className="font-semibold text-brand-700">
                               {formatCurrency(
                                 quotation.pricingOptions?.finalTotalPrice || quotation.totalPrice,
                                 quotation.currency
                               )}
                             </TableCell>
-                            <TableCell>{quotation.generatedDate ? formatDate(quotation.generatedDate) : '-'}</TableCell>
                             <TableCell>
                               <StatusBadge status={quotation.status} />
                             </TableCell>
@@ -277,13 +291,13 @@ export default function QuotationBuilderPage() {
                                     onClick={() => router.push(`/quotation-builder/${quotation._id}`)}
                                   >
                                     <Eye className="h-4 w-4 mr-2" />
-                                    View
+                                    View & Edit
                                   </DropdownMenuItem>
                                   <DropdownMenuItem>
                                     <Send className="h-4 w-4 mr-2" />
                                     Send to Client
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => window.print()}>
                                     <Printer className="h-4 w-4 mr-2" />
                                     Print
                                   </DropdownMenuItem>
@@ -337,7 +351,10 @@ export default function QuotationBuilderPage() {
           </div>
         )
       case "options":
-        return <QuotationOptions onOptionSelect={handleOptionSelect} />
+        return <QuotationOptions
+          onOptionSelect={handleOptionSelect}
+          onBack={() => setCurrentStep("list")}
+        />
       case "create-blank-itinerary":
         if (!leadData || !itinerarySetupConfig) {
           return (

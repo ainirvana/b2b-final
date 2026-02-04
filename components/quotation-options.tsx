@@ -9,9 +9,10 @@ import { useRouter } from "next/navigation"
 
 interface QuotationOptionsProps {
   onOptionSelect: (option: string) => void
+  onBack?: () => void
 }
 
-export function QuotationOptions({ onOptionSelect }: QuotationOptionsProps) {
+export function QuotationOptions({ onOptionSelect, onBack }: QuotationOptionsProps) {
   const router = useRouter()
 
   const options = [
@@ -41,7 +42,14 @@ export function QuotationOptions({ onOptionSelect }: QuotationOptionsProps) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Choose Your Starting Point</h2>
+      <div className="flex items-center gap-4">
+        {onBack && (
+          <Button variant="ghost" onClick={onBack} size="sm">
+            ← Back
+          </Button>
+        )}
+        <h2 className="text-2xl font-semibold">Choose Your Starting Point</h2>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
         {options.map((option) => {
           const Icon = option.icon

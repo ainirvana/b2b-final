@@ -70,7 +70,7 @@ export async function PUT(
           ...updateData.pricingOptions
         }
       });
-      
+
       // Update all the pricing fields
       updateData.pricingOptions = recalculatedQuotation.pricingOptions;
       updateData.subtotal = recalculatedQuotation.subtotal;
@@ -159,8 +159,23 @@ export async function PUT(
       delete (updateData as any).currentVersion
     }
 
+    // Check if we are updating status to a "locked" state
+    if (updateData.status && ["sent", "accepted", "rejected", "expired"].includes(updateData.status)) {
+      if (quotation.versionHistory[versionIndex]) {
+        quotation.versionHistory[versionIndex].isLocked = true
+        quotation.versionHistory[versionIndex].lockedAt = new Date()
+        quotation.versionHistory[versionIndex].isDraft = false
+      }
+      quotation.isLocked = true
+      quotation.isDraft = false
+    }
+
     // Update quotation fields
-    quotation.isDraft = true
+    // Only set back to draft if we are NOT intentionally locking it
+    if (!quotation.isLocked) {
+      quotation.isDraft = true
+    }
+
     quotation.set(updateData)
 
     quotation.markModified("versionHistory")
