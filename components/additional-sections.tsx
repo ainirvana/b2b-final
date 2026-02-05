@@ -8,7 +8,7 @@ interface AdditionalSectionsProps {
   onUpdate: (sections: Record<string, string>) => void
   className?: string
 }
-
+//niket
 export function AdditionalSections({ sections, onUpdate, className }: AdditionalSectionsProps) {
   return (
     <div className={className}>
