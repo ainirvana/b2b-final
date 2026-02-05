@@ -45,8 +45,10 @@ import {
   Filter,
   Download,
   Calendar,
-  Printer
+  Printer,
+  Copy
 } from "lucide-react"
+import { DashboardStats } from "@/components/dashboard-stats"
 
 interface LeadFormData {
   name: string
@@ -200,6 +202,8 @@ export default function QuotationBuilderPage() {
               </div>
             </div>
 
+            <DashboardStats quotations={quotations} />
+
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle>Manage Quotations</CardTitle>
@@ -302,6 +306,26 @@ export default function QuotationBuilderPage() {
                                     Print
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
+                                    onClick={async (e) => {
+                                      e.stopPropagation()
+                                      try {
+                                        // We reuse the convert-from-itinerary logic or a direct copy endpoint
+                                        // Essentialy create a new quote with same itineraryId and quotation props
+                                        // For now, let's use a simple client-side clone trigger if backend supports it
+                                        // Or better, redirect to a "clone" route? 
+                                        // Actually, most robust is to copy the itinerary and then make a new quote.
+                                        // Let's implement a 'duplicateQuotation' in the hook later.
+                                        // For this MVP step, we will use a simple "Copy" action
+                                        toast({ title: "Coming Soon", description: "One-click duplication is being enabled on the server." })
+                                      } catch (err) {
+                                        console.error(err)
+                                      }
+                                    }}
+                                  >
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Duplicate
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
                                     className="text-red-600"
                                     onClick={() => {
                                       setSelectedQuotation(quotation)
@@ -343,6 +367,7 @@ export default function QuotationBuilderPage() {
             </Dialog>
           </div>
         )
+
       case "lead-form":
         return (
           <div className="space-y-6">
@@ -350,13 +375,17 @@ export default function QuotationBuilderPage() {
             <QuotationLeadForm onSubmit={handleLeadSubmit} />
           </div>
         )
+
       case "options":
-        return <QuotationOptions
-          onOptionSelect={handleOptionSelect}
-          onBack={() => setCurrentStep("list")}
-        />
+        return (
+          <QuotationOptions
+            onOptionSelect={handleOptionSelect}
+            onBack={() => setCurrentStep("list")}
+          />
+        )
+
       case "create-blank-itinerary":
-        if (!leadData || !itinerarySetupConfig) {
+        if (!itinerarySetupConfig) {
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center text-sm text-muted-foreground">
@@ -367,13 +396,15 @@ export default function QuotationBuilderPage() {
         }
         return (
           <QuotationItineraryBuilder
-            leadData={leadData}
+            leadData={leadData ?? { name: "", remarks: "" }}
             setupConfig={itinerarySetupConfig}
             onBack={handleBuilderBack}
           />
         )
+
       case "coming-soon":
         return <ComingSoon />
+
       default:
         return null
     }

@@ -2,6 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+@media print {
+  .no-print, 
+  aside, 
+  header, 
+  button, 
+  .fixed, 
+  .sticky, 
+  [role="dialog"],
+  .sidebar-container {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  
+  .print-container {
+    padding: 20mm !important;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

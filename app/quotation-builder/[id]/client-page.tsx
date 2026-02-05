@@ -27,6 +27,8 @@ import jsPDF from "jspdf"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 import { ItineraryBuilder } from "@/components/itinerary-builder"
+import { QuotationStatusStepper } from "@/components/quotation-status-stepper"
+import { Badge } from "@/components/ui/badge"
 
 // Define interfaces for type safety
 interface DayEvent {
@@ -426,6 +428,28 @@ export function QuotationDetail({ id }: { id: string }) {
     }
   }
 
+  // Handle status change
+  const handleStatusChange = async (newStatus: string) => {
+    if (!quotation) return
+    try {
+      const updatedQuotation = await updateQuotation(quotation._id!, { status: newStatus as any })
+      if (updatedQuotation) {
+        syncQuotationState(updatedQuotation)
+        toast({
+          title: "Status Updated",
+          description: `Quotation marked as ${newStatus}`,
+        })
+      }
+    } catch (error) {
+      console.error("Error updating status:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update status",
+        variant: "destructive",
+      })
+    }
+  }
+
   // Render loading state
   if (isLoading || !quotation) {
     return (
@@ -434,9 +458,6 @@ export function QuotationDetail({ id }: { id: string }) {
         <div className="flex flex-1">
           <main className="flex-1 p-6">
             <div className="mx-auto max-w-5xl">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold">Loading quotation...</h1>
-              </div>
               <Card>
                 <CardContent className="p-8 text-center">
                   <p>Loading quotation details, please wait...</p>
@@ -454,9 +475,29 @@ export function QuotationDetail({ id }: { id: string }) {
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-neutral-50 to-brand-primary-50/30">
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopHeader />
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden flex flex-col">
           {quotation && (
             <>
+              <div className="px-6 pt-4 pb-2 bg-white border-b flex items-center justify-between no-print">
+                <div className="flex items-center gap-4">
+                  <Button variant="ghost" size="sm" onClick={() => router.push('/quotation-builder')}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back
+                  </Button>
+                  <div className="h-6 w-px bg-neutral-200" />
+                  <h1 className="text-xl font-bold flex items-center gap-2">
+                    {quotation.title}
+                    <Badge variant="outline" className="font-mono text-xs">V{quotation.currentVersion || 1}</Badge>
+                  </h1>
+                </div>
+                <div className="flex items-center gap-4">
+                  <QuotationStatusStepper
+                    currentStatus={quotation.status}
+                    onStatusChange={handleStatusChange}
+                    disabled={versionLocked && quotation.status !== 'draft'}
+                  />
+                </div>
+              </div>
               <ItineraryBuilder
                 itineraryId={quotation.itineraryId}
                 quotationId={quotation._id}
