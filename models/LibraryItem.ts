@@ -15,8 +15,8 @@ const libraryCollectionField = {
         : null
     }
 
-    if (value instanceof mongoose.Types.ObjectId) {
-      return value
+    if (value && (value instanceof mongoose.Types.ObjectId || (typeof value === 'object' && value.toString && mongoose.Types.ObjectId.isValid(value.toString())))) {
+      return new mongoose.Types.ObjectId(value.toString())
     }
 
     return null

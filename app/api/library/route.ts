@@ -8,23 +8,14 @@ export async function GET() {
   try {
     await dbConnect()
 
-    const itemsNeedingFix = await LibraryItem.find({ libraryCollection: { $exists: true } })
+    const itemsNeedingFix = await LibraryItem.find({ libraryCollection: { $type: 'string' } })
     const fixes = []
     for (const item of itemsNeedingFix) {
       const ref = item.libraryCollection as any
-      if (!ref) {
-        continue
-      }
-
-      if (typeof ref === 'string') {
-        item.libraryCollection = mongoose.Types.ObjectId.isValid(ref)
-          ? new mongoose.Types.ObjectId(ref)
-          : null
+      if (typeof ref === 'string' && mongoose.Types.ObjectId.isValid(ref)) {
+        item.libraryCollection = new mongoose.Types.ObjectId(ref)
         fixes.push(item.save())
-        continue
-      }
-
-      if (!(ref instanceof mongoose.Types.ObjectId)) {
+      } else if (typeof ref === 'string') {
         item.libraryCollection = null
         fixes.push(item.save())
       }
@@ -68,7 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Selected library does not exist' }, { status: 404 })
     }
 
-    cleanData.libraryCollection = new mongoose.Types.ObjectId(collectionId)
+    cleanData.libraryCollection = collectionId // Allow the setter to cast it
 
     const item = await LibraryItem.create(cleanData)
     const populatedItem = await item.populate('libraryCollection')
