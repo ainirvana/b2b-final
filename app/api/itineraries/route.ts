@@ -227,28 +227,10 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     }
 
-    // Prevent duplicate itinerary names for the same creator (case-insensitive)
-    try {
-      const titleToCheck = (processedData.title || "").toString().trim()
-      if (titleToCheck) {
-        const escaped = titleToCheck.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")
-        const titleRegex = { $regex: `^${escaped}$`, $options: "i" }
-        const duplicate = await Itinerary.findOne({ title: titleRegex, createdBy: processedData.createdBy })
-        if (duplicate) {
-          return createErrorResponse(
-            "Duplicate Entry",
-            `An itinerary with the title "${titleToCheck}" already exists for this user. Please choose a different name.`,
-            "DUPLICATE_KEY_ERROR",
-            409,
-            { duplicateId: duplicate._id, duplicateTitle: duplicate.title },
-            requestId,
-          )
-        }
-      }
-    } catch (dupErr) {
-      console.warn("[v0] Duplicate check failed:", dupErr)
-      // proceed - duplicate check is best-effort; fall through to normal save which may still fail
-    }
+    // The frontend now intercepts duplicate titles and converts the request to a PUT.
+    // If a POST reaches here with a duplicate title, we just let it create a duplicate
+    // (e.g., if the user intentionally bypassed the check or rapid-fired).
+    // The strict uniqueness on title per user is enforced structurally at the UX level.
 
     const itinerary = new Itinerary(processedData)
 

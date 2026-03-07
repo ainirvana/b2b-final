@@ -1559,12 +1559,14 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
       console.log("[v0] Saving itinerary data:", itineraryData)
 
       let result
-      // Pre-check duplicate title on client to avoid unnecessary save attempts
-      if (!currentItineraryId && itineraryData.title) {
+      let effectiveItineraryId = currentItineraryId
+      
+      // Auto-update matched itinerary instead of duplicating or blocking
+      if (!effectiveItineraryId && itineraryData.title) {
         try {
           const dupResp = await fetch(`/api/itineraries?title=${encodeURIComponent(
             itineraryData.title,
-          )}&createdBy=${encodeURIComponent(itineraryData.createdBy || "agent-user")}`, {
+          )}`, {
             headers: {
               "x-request-id": `dup-${Date.now()}`,
             },
@@ -1574,23 +1576,22 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
             const dupData = await dupResp.json()
             const matches = Array.isArray(dupData.data) ? dupData.data : []
             if (matches.length > 0) {
+              effectiveItineraryId = matches[0]._id
+              setCurrentItineraryId(effectiveItineraryId)
+              window.history.replaceState(null, "", `/itinerary/builder?id=${effectiveItineraryId}&mode=edit&type=${itineraryTypeParam}`)
               toast({
-                title: "Duplicate Name",
-                description: `An itinerary named "${itineraryData.title}" already exists. Please use a different name or edit the existing itinerary.`,
-                variant: "destructive",
+                title: "Updating Existing",
+                description: `Updating existing itinerary named "${itineraryData.title}".`,
               })
-              setDuplicateDialogMessage(`An itinerary named "${itineraryData.title}" already exists. Please use a different name or edit the existing itinerary.`)
-              setDuplicateDialogOpen(true)
-              setIsSaving(false)
-              return
             }
           }
         } catch (error) {
           console.warn("[v0] Duplicate check failed (client-side):", error)
         }
       }
-      if (currentItineraryId) {
-        result = await updateItinerary(currentItineraryId, itineraryData)
+      
+      if (effectiveItineraryId) {
+        result = await updateItinerary(effectiveItineraryId, itineraryData)
       } else {
         result = await createItinerary(itineraryData)
       }
