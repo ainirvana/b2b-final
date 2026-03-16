@@ -64,9 +64,29 @@ export function EventCard({
       case 'hotel':
         return <HotelEvent event={event} nightIndex={nightIndex} totalNights={totalNights} dayNumber={dayNumber} pricingEnabled={pricingEnabled} pricingAdults={pricingAdults} pricingChildren={pricingChildren} pricingRooms={pricingRooms} pricingCurrency={pricingCurrency} pricingMode={pricingMode} />
       case 'transfer':
-        return <TransferEvent event={event} />
+        return (
+          <TransferEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            pricingEnabled={pricingEnabled}
+            pricingAdults={pricingAdults}
+            pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
+          />
+        )
       case 'activity':
-        return <ActivityEvent event={event} />
+        return (
+          <ActivityEvent
+            event={event}
+            isDetailedView={isDetailedView}
+            pricingEnabled={pricingEnabled}
+            pricingAdults={pricingAdults}
+            pricingChildren={pricingChildren}
+            pricingCurrency={pricingCurrency}
+            pricingMode={pricingMode}
+          />
+        )
       case 'flight':
         return (
           <FlightEvent

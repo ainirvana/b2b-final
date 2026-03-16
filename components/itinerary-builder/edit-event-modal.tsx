@@ -23,6 +23,7 @@ import { ImageForms } from "./image-forms"
 import { TransferForms } from "./transfer-forms"
 import { AncillariesForms } from "./ancillaries-forms"
 import { OthersForms } from "./others-forms"
+import { CruiseForms } from "./cruise-forms"
 import { transferSubCategories, ancillariesSubCategories } from "./constants"
 
 interface EditEventModalProps {
@@ -523,6 +524,33 @@ export function EditEventModal({ isOpen, onClose, event, onSave }: EditEventModa
               const updated = [...(editedEvent.listItems || [])]
               updated[idx] = val
               handleFieldChange("listItems", updated)
+            }}
+            errors={validationErrors}
+          />
+        )
+
+      case "cruise":
+        return (
+          <CruiseForms
+            manualTitle={editedEvent.title || ""}
+            setManualTitle={(v) => handleFieldChange("title", v)}
+            manualDescription={editedEvent.description || ""}
+            setManualDescription={(v) => handleFieldChange("description", v)}
+            manualLocation={editedEvent.location || ""}
+            setManualLocation={(v) => handleFieldChange("location", v)}
+            manualTime={editedEvent.time || ""}
+            setManualTime={(v) => handleFieldChange("time", v)}
+            manualPrice={editedEvent.price || ""}
+            setManualPrice={(v) => handleFieldChange("price", v)}
+            manualCurrency={editedEvent.currency || "INR"}
+            setManualCurrency={(v) => handleFieldChange("currency", v)}
+            manualHighlights={(editedEvent as any).highlights || []}
+            handleAddHighlight={() => handleFieldChange("highlights" as keyof IItineraryEvent, [...((editedEvent as any).highlights || []), ""])}
+            handleRemoveHighlight={(idx) => handleFieldChange("highlights" as keyof IItineraryEvent, ((editedEvent as any).highlights || []).filter((_: any, i: number) => i !== idx))}
+            handleHighlightChange={(idx, val) => {
+              const updated = [...((editedEvent as any).highlights || [])]
+              updated[idx] = val
+              handleFieldChange("highlights" as keyof IItineraryEvent, updated)
             }}
             errors={validationErrors}
           />
