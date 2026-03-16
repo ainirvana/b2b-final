@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import ShareManagement from "@/components/share-management"
 import { IItinerary } from "@/models/Itinerary"
+import { getAuthHeaders } from "@/lib/client-auth"
 
 export default function WeblinksPage() {
     const [itineraries, setItineraries] = useState<IItinerary[]>([])
@@ -15,7 +16,10 @@ export default function WeblinksPage() {
     const fetchItineraries = async () => {
         try {
             setLoading(true)
-            const response = await fetch("/api/itineraries")
+            const authHeaders = await getAuthHeaders()
+            const response = await fetch("/api/itineraries", {
+                headers: authHeaders,
+            })
 
             if (!response.ok) {
                 throw new Error("Failed to fetch itineraries")

@@ -21,10 +21,17 @@ import {
   Eye,
   Code,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Loader2,
+  Undo,
+  Redo,
+  FileText,
+  Smartphone,
+  Monitor
 } from "lucide-react"
 import { IHtmlBlock } from "@/models/Itinerary"
 import { useToast } from "@/hooks/use-toast"
+import { getAuthHeaders } from "@/lib/client-auth"
 import { GalleryUpload } from "./itinerary-builder/gallery-upload"
 import type { IGalleryItem } from "@/models/Itinerary"
 
@@ -76,7 +83,10 @@ export function HtmlEditorBuilder({ itineraryId, onBack }: HtmlEditorBuilderProp
 
   const loadHtmlData = async () => {
     try {
-      const response = await fetch(`/api/itineraries/${itineraryId}`)
+      const authHeaders = await getAuthHeaders()
+      const response = await fetch(`/api/itineraries/${itineraryId}`, {
+        headers: authHeaders,
+      })
       if (response.ok) {
         const data = await response.json()
         setTitle(data.title || "HTML Itinerary")
@@ -254,9 +264,13 @@ export function HtmlEditorBuilder({ itineraryId, onBack }: HtmlEditorBuilderProp
       const url = itineraryId ? `/api/itineraries/${itineraryId}` : "/api/itineraries"
       const method = itineraryId ? "PUT" : "POST"
 
+      const authHeaders = await getAuthHeaders()
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...authHeaders
+        },
         body: JSON.stringify(itineraryData),
       })
 

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useQuotations } from "@/hooks/use-quotations"
+import { getAuthHeaders } from "@/lib/client-auth"
 
 interface ItineraryListProps {
   onCreateNew: () => void
@@ -64,29 +65,33 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
 
   // Load itineraries
   useEffect(() => {
-    fetch("/api/itineraries")
-      .then(res => {
+    const loadItineraries = async () => {
+      try {
+        const authHeaders = await getAuthHeaders()
+        const res = await fetch("/api/itineraries", {
+          headers: authHeaders,
+        })
         if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+          throw new Error(`HTTP error! status: ${res.status}`)
         }
-        return res.json();
-      })
-      .then(data => {
+        const data = await res.json()
         if (Array.isArray(data?.data)) {
-          setItineraries(data.data);
+          setItineraries(data.data)
         } else if (Array.isArray(data)) {
-          setItineraries(data);
+          setItineraries(data)
         } else {
-          console.error("Unexpected data format:", data);
-          setItineraries([]);
+          console.error("Unexpected data format:", data)
+          setItineraries([])
         }
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Failed to fetch itineraries:", err);
-        setItineraries([]);
-        setLoading(false);
-      });
+      } catch (err) {
+        console.error("Failed to fetch itineraries:", err)
+        setItineraries([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadItineraries()
   }, [])
 
   const createQuickShare = async (itinerary: IItinerary) => {
@@ -333,8 +338,12 @@ export function ItineraryList({ onCreateNew, onViewItinerary, onEditItinerary, o
                       </div>
                       {itinerary.totalPrice > 0 && (
                         <div className="flex items-center text-brand-700 font-semibold bg-brand-50 px-2 py-1 rounded-md">
-                          <DollarSign className="mr-1 h-3.5 w-3.5" />
-                          {itinerary.totalPrice.toLocaleString()}
+                          {new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: itinerary.currency || 'USD',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format(itinerary.totalPrice)}
                         </div>
                       )}
                     </div>

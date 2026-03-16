@@ -237,6 +237,10 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
   // pricingEndDate is now derived from pricingStartDate + days.length
   const [pricingEndDate, setPricingEndDate] = useState<string>("")
 
+  // Manual total pricing
+  const [useManualTotal, setUseManualTotal] = useState<boolean>(false)
+  const [manualTotalPrice, setManualTotalPrice] = useState<string>("")
+
   // Quotation specific state
   const [quotationPricingOptions, setQuotationPricingOptions] = useState<QuotationPricingOptions>({
     markupType: "percentage",
@@ -1496,10 +1500,12 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
     setCountryError("")
 
     try {
-      const totalPrice = days.reduce(
-        (sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0),
-        0,
-      )
+      const totalPrice = useManualTotal && manualTotalPrice
+        ? Number(manualTotalPrice)
+        : days.reduce(
+          (sum, day) => sum + day.events.reduce((daySum, event) => daySum + (event.price || 0), 0),
+          0,
+        )
 
       const itineraryData = {
         productId: productId.trim() || ("ITN-" + Date.now().toString(36).toUpperCase()),
@@ -1509,7 +1515,7 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
         destination: countries[0] && countries[0].trim() ? countries[0].trim() : (extractDestination() || "Multiple Destinations"),
         duration: days.length + (days.length === 1 ? " day" : " days"),
         totalPrice,
-        currency: "USD",
+        currency: pricingCurrency,
         createdBy: "agent-user",
         countries,
         days: days.map((day, dayIdx) => {
@@ -2562,31 +2568,64 @@ export function ItineraryBuilder({ itineraryId, quotationId, mode = "itinerary",
 
         {/* Pricing Display Section */}
         {pricingEnabled && (
-          <div className="mt-6 mb-2 p-4 rounded-lg border bg-yellow-50 border-yellow-200 text-center">
-            {(() => {
-              const pricingConfig: PricingConfig = {
-                adults: pricingAdults,
-                children: pricingChildren,
-                targetCurrency: pricingCurrency,
-                rooms: pricingRooms,
-              }
+          <div className="mt-6 mb-2 p-4 rounded-lg border bg-yellow-50 border-yellow-200">
+            {/* Toggle: Auto Calculate vs Manual */}
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <span className={`text-sm font-medium ${!useManualTotal ? 'text-green-700' : 'text-gray-400'}`}>Auto Calculate</span>
+              <Switch
+                checked={useManualTotal}
+                onCheckedChange={(v) => {
+                  setUseManualTotal(Boolean(v))
+                  if (!v) setManualTotalPrice("")
+                }}
+              />
+              <span className={`text-sm font-medium ${useManualTotal ? 'text-green-700' : 'text-gray-400'}`}>Manual Entry</span>
+            </div>
 
-              // Flatten all events from all days
-              const allEvents = days.flatMap(day => day.events)
-
-              // Use centralized calculator which handles multi-night logic
-              const { total, displayTotal, breakdown } = calculateTotalPrice(allEvents, pricingConfig)
-              const currencySymbol = pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''
-
-              return (
-                <div>
-                  <div className="text-lg font-bold text-gray-800">Total Price</div>
-                  <div className="text-2xl font-extrabold text-green-700 mt-1">
-                    {displayTotal}
-                  </div>
+            {useManualTotal ? (
+              /* Manual Price Entry */
+              <div className="text-center">
+                <div className="text-lg font-bold text-gray-800 mb-2">Total Price (Manual)</div>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-xl font-bold text-gray-600">
+                    {pricingCurrency === 'INR' ? '₹' : pricingCurrency === 'USD' ? '$' : pricingCurrency === 'EUR' ? '€' : pricingCurrency === 'GBP' ? '£' : pricingCurrency === 'AED' ? 'د.إ' : ''}
+                  </span>
+                  <input
+                    type="number"
+                    value={manualTotalPrice}
+                    onChange={(e) => setManualTotalPrice(e.target.value)}
+                    placeholder="Enter total price"
+                    className="w-48 text-center text-2xl font-extrabold text-green-700 border-b-2 border-green-300 bg-transparent outline-none focus:border-green-600 placeholder:text-gray-300 placeholder:text-lg placeholder:font-normal [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
                 </div>
-              )
-            })()}
+                {manualTotalPrice && (
+                  <div className="text-2xl font-extrabold text-green-700 mt-2">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: pricingCurrency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(manualTotalPrice))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Auto Calculated Price */
+              (() => {
+                const pricingConfig: PricingConfig = {
+                  adults: pricingAdults,
+                  children: pricingChildren,
+                  targetCurrency: pricingCurrency,
+                  rooms: pricingRooms,
+                }
+                const allEvents = days.flatMap(day => day.events)
+                const { total, displayTotal, breakdown } = calculateTotalPrice(allEvents, pricingConfig)
+
+                return (
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-gray-800">Total Price</div>
+                    <div className="text-2xl font-extrabold text-green-700 mt-1">
+                      {displayTotal}
+                    </div>
+                  </div>
+                )
+              })()
+            )}
           </div>
         )}
 

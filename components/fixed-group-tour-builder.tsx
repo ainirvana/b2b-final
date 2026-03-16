@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast"
 import { ItineraryBuilder } from "./itinerary-builder"
 import { GalleryUpload } from "./itinerary-builder/gallery-upload"
 import type { IGalleryItem } from "@/models/Itinerary"
+import { getAuthHeaders } from "@/lib/client-auth"
 
 interface FixedGroupTourBuilderProps {
   itineraryId?: string
@@ -62,7 +63,10 @@ export function FixedGroupTourBuilder({ itineraryId, onBack }: FixedGroupTourBui
 
   const loadTourData = async () => {
     try {
-      const response = await fetch(`/api/itineraries/${itineraryId}`)
+      const authHeaders = await getAuthHeaders()
+      const response = await fetch(`/api/itineraries/${itineraryId}`, {
+        headers: authHeaders,
+      })
       if (response.ok) {
         const data = await response.json()
         setTitle(data.title || "Fixed Group Tour")
@@ -199,9 +203,13 @@ export function FixedGroupTourBuilder({ itineraryId, onBack }: FixedGroupTourBui
       const url = itineraryId ? `/api/itineraries/${itineraryId}` : "/api/itineraries"
       const method = itineraryId ? "PUT" : "POST"
 
+      const authHeaders = await getAuthHeaders()
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...authHeaders
+        },
         body: JSON.stringify(itineraryData),
       })
 

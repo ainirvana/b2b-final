@@ -29,12 +29,14 @@ import {
   X,
   Image as ImageIcon,
   FileText,
+  Ship,
 } from "lucide-react"
 import { ICartItem } from "@/models/Itinerary"
 import { useToast } from "@/hooks/use-toast"
 import { GalleryUpload } from "./itinerary-builder/gallery-upload"
 import type { IGalleryItem } from "@/models/Itinerary"
-import type { IItineraryEvent } from "@/models/Itinerary" // Needed for some shared types if any
+import type { IItineraryEvent } from "@/models/Itinerary"
+import { getAuthHeaders } from "@/lib/client-auth"
 
 // Shared Form Imports
 import { FlightForms } from "./itinerary-builder/flight-forms"
@@ -45,6 +47,7 @@ import { ImageForms } from "./itinerary-builder/image-forms"
 import { TransferForms } from "./itinerary-builder/transfer-forms"
 import { AncillariesForms } from "./itinerary-builder/ancillaries-forms"
 import { OthersForms } from "./itinerary-builder/others-forms"
+import { CruiseForms } from "./itinerary-builder/cruise-forms"
 import {
   transferSubCategories,
   ancillariesSubCategories,
@@ -65,6 +68,7 @@ const CATEGORY_ICONS = {
   other: Package,
   image: ImageIcon,
   ancillaries: FileText,
+  cruise: Ship,
 }
 
 const CATEGORY_COLORS = {
@@ -76,6 +80,7 @@ const CATEGORY_COLORS = {
   other: "bg-gray-50 border-gray-200 text-gray-800",
   image: "bg-pink-50 border-pink-200 text-pink-800",
   ancillaries: "bg-indigo-50 border-indigo-200 text-indigo-800",
+  cruise: "bg-cyan-50 border-cyan-200 text-cyan-800",
 }
 
 const COMPONENT_TEMPLATES = [
@@ -120,6 +125,12 @@ const COMPONENT_TEMPLATES = [
     title: "Image",
     icon: ImageIcon,
     color: "bg-pink-50 border-pink-200",
+  },
+  {
+    category: "cruise",
+    title: "Cruise",
+    icon: Ship,
+    color: "bg-cyan-50 border-cyan-200",
   },
   {
     category: "other",
@@ -258,7 +269,10 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
 
   const loadCartData = async () => {
     try {
-      const response = await fetch(`/api/itineraries/${itineraryId}`)
+      const authHeaders = await getAuthHeaders()
+      const response = await fetch(`/api/itineraries/${itineraryId}`, {
+        headers: authHeaders,
+      })
       if (response.ok) {
         const data = await response.json()
         setTitle(data.title || "Cart/Combo")
@@ -444,9 +458,13 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
       const url = itineraryId ? `/api/itineraries/${itineraryId}` : "/api/itineraries"
       const method = itineraryId ? "PUT" : "POST"
 
+      const authHeaders = await getAuthHeaders()
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...authHeaders
+        },
         body: JSON.stringify(itineraryData),
       })
 
@@ -534,6 +552,12 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
           <div className="text-sm text-gray-700 mt-2">
             {item.subCategory && <p className="capitalize font-medium">{item.subCategory}</p>}
             {item.visaType && <p>Type: {item.visaType}</p>}
+          </div>
+        )
+      case "cruise":
+        return (
+          <div className="text-sm text-gray-700 mt-2">
+            {item.location && <p className="font-medium">{item.location}</p>}
           </div>
         )
       case "image":
@@ -1130,6 +1154,27 @@ export function CartComboBuilder({ itineraryId, onBack }: CartComboBuilderProps)
                   setManualImageUrl={(v: string) => setItemForm(p => ({ ...p, imageUrl: v }))}
                   manualImageCaption={itemForm.imageCaption || ""}
                   setManualImageCaption={(v: string) => setItemForm(p => ({ ...p, imageCaption: v }))}
+                />
+              )}
+
+              {itemForm.category === "cruise" && (
+                <CruiseForms
+                  manualTitle={itemForm.name || ""}
+                  setManualTitle={(v: string) => setItemForm(p => ({ ...p, name: v }))}
+                  manualDescription={itemForm.description || ""}
+                  setManualDescription={(v: string) => setItemForm(p => ({ ...p, description: v }))}
+                  manualLocation={itemForm.location || ""}
+                  setManualLocation={(v: string) => setItemForm(p => ({ ...p, location: v }))}
+                  manualTime={itemForm.startTime || ""}
+                  setManualTime={(v: string) => setItemForm(p => ({ ...p, startTime: v }))}
+                  manualPrice={itemForm.price || 0}
+                  setManualPrice={(v: number | string) => setItemForm(p => ({ ...p, price: Number(v) }))}
+                  manualCurrency={itemForm.currency || "USD"}
+                  setManualCurrency={(v: string) => setItemForm(p => ({ ...p, currency: v }))}
+                  manualHighlights={itemForm.highlights || []}
+                  handleAddHighlight={() => handleArrayAdd("highlights", "")}
+                  handleRemoveHighlight={(idx) => handleArrayRemove("highlights", idx)}
+                  handleHighlightChange={(idx, v) => handleArrayChange("highlights", idx, v)}
                 />
               )}
 

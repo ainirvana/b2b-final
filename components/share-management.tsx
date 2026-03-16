@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -64,7 +64,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
         companyName: "",
         contactEmail: "",
         contactPhone: "",
-        primaryColor: "",
+        primaryColor: "#000000",
         logo: "",
         heroImage: "",
         instagram: "",
@@ -192,7 +192,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
             companyName: initialShare.settings?.customBranding?.companyName || "",
             contactEmail: initialShare.settings?.customBranding?.contactEmail || "",
             contactPhone: initialShare.settings?.customBranding?.contactPhone || "",
-            primaryColor: initialShare.settings?.customBranding?.primaryColor || "",
+            primaryColor: initialShare.settings?.customBranding?.primaryColor || "#000000",
             logo: initialShare.settings?.customBranding?.logo || "",
             heroImage: initialShare.settings?.customBranding?.heroImage || "",
             instagram: initialShare.settings?.customBranding?.instagram || "",
@@ -425,6 +425,9 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initialShare ? 'Edit Weblink' : 'Create Weblink'}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Configure options for sharing itineraries
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
