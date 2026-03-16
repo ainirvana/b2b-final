@@ -262,15 +262,6 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
       return
     }
 
-    if (!formData.settings.customBranding.heroImage) {
-      toast({
-        title: "Hero Image Required",
-        description: "Please upload a hero image for weblink background",
-        variant: "destructive"
-      })
-      return
-    }
-
     try {
       setCreating(true)
 
@@ -440,7 +431,6 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Enter share title"
-                required
               />
             </div>
 
@@ -904,7 +894,7 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
 
               {/* Hero Image Upload */}
               <div className="space-y-2">
-                <Label>Hero Image *</Label>
+                <Label>Hero Image (Optional)</Label>
                 <div className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 text-center">
                   <input
                     ref={heroImageInputRef}

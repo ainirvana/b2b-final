@@ -4,6 +4,7 @@ import { GeistMono } from 'geist/font/mono'
 import { MainLayout } from '@/components/main-layout'
 import { AuthProvider } from '@/lib/firebase/auth-context'
 import { AuthGuard } from '@/components/auth-guard'
+import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ html {
             <MainLayout>{children}</MainLayout>
           </AuthGuard>
         </AuthProvider>
+        <Toaster />
       </body>
     </html>
   )
