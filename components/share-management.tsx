@@ -178,8 +178,8 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
         title: initialShare.title,
         description: initialShare.description || "",
         shareType: initialShare.shareType,
-        itineraryId: initialShare.shareType === "individual" ? ((initialShare.itineraryId as any)?._id || initialShare.itineraryId || "") : "",
-        itineraryIds: initialShare.shareType === "collection" ? ((initialShare.itineraryIds as any[])?.map((i: any) => i._id || i) || []) : [],
+        itineraryId: initialShare.shareType === "individual" ? ((initialShare.itineraryId as any)?._id || initialShare.itineraryId || (initialShare.itinerary as any)?._id || "") : "",
+        itineraryIds: initialShare.shareType === "collection" ? ((initialShare.itineraryIds as any[])?.map((i: any) => i._id || i) || (initialShare.itineraries as any[])?.map((i: any) => i._id || i) || []) : [],
         expiresAt: initialShare.expiresAt ? new Date(initialShare.expiresAt).toISOString().slice(0, 16) : "",
         expiryMessage: initialShare.expiryMessage || "",
         passwordProtected: initialShare.passwordProtected || false,
@@ -219,14 +219,14 @@ function CreateShareModal({ isOpen, onClose, onShareCreated, onShareUpdated, ava
         })) || [],
         globalEnquireLink: initialShare.globalEnquireLink || "",
         perItinerarySettings: initialShare.shareType === "collection"
-          ? ((initialShare.itineraryIds as any[])?.map((i: any) => {
+          ? ((initialShare.itineraryIds || initialShare.itineraries) as any[])?.map((i: any) => {
             const id = i._id || i
             const existing = initialShare.perItinerarySettings?.find(s => (s.itineraryId as any)?._id === id || s.itineraryId === id)
             return {
               itineraryId: id,
               enquireLink: existing?.enquireLink || ""
             }
-          }) || [])
+          }) || []
           : []
       })
     }

@@ -14,8 +14,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
     const pathname = usePathname();
 
     useEffect(() => {
-        // Skip redirect if on login page or SSO endpoint
-        if (pathname === '/login' || pathname === '/auth/sso') {
+        // Skip redirect if on login page, SSO endpoint, or public weblink page
+        // Management page is /weblinks, public page is /weblinks/[slug]
+        const isPublicWeblink = pathname.startsWith('/weblinks/') && pathname.split('/').length === 3;
+        if (pathname === '/login' || pathname === '/auth/sso' || isPublicWeblink) {
             return;
         }
 
@@ -37,8 +39,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
         );
     }
 
-    // Don't render children if not authenticated (except on login/sso pages)
-    if (!currentUser && pathname !== '/login' && pathname !== '/auth/sso') {
+    // Don't render children if not authenticated (except on login/sso pages and public weblinks)
+    const isPublicWeblink = pathname.startsWith('/weblinks/') && pathname.split('/').length === 3;
+    if (!currentUser && pathname !== '/login' && pathname !== '/auth/sso' && !isPublicWeblink) {
         return null;
     }
 

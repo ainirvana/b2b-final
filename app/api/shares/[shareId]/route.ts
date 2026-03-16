@@ -146,9 +146,16 @@ export async function PUT(
       }
     ])
 
+    // Transform the response to match frontend expectations
+    const transformedShare = {
+      ...updatedShare.toObject(),
+      itinerary: updatedShare.shareType === "individual" ? updatedShare.itineraryId : undefined,
+      itineraries: updatedShare.shareType === "collection" ? updatedShare.itineraryIds : undefined
+    }
+
     return NextResponse.json({
       message: "Share updated successfully",
-      share: updatedShare
+      share: transformedShare
     })
 
   } catch (error) {

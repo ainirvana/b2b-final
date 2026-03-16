@@ -97,8 +97,18 @@ export async function GET(request: NextRequest) {
       PublicShare.countDocuments(query)
     ])
 
+    // Transform the data to match frontend expectations
+    const transformedShares = shares.map(share => {
+      const shareObj = share.toObject()
+      return {
+        ...shareObj,
+        itinerary: share.shareType === "individual" ? share.itineraryId : undefined,
+        itineraries: share.shareType === "collection" ? share.itineraryIds : undefined
+      }
+    })
+
     return NextResponse.json({
-      shares,
+      shares: transformedShares,
       pagination: {
         page,
         limit,
@@ -254,9 +264,16 @@ export async function POST(request: NextRequest) {
       }
     ])
 
+    // Transform the response to match frontend expectations
+    const transformedShare = {
+      ...newShare.toObject(),
+      itinerary: newShare.shareType === "individual" ? newShare.itineraryId : undefined,
+      itineraries: newShare.shareType === "collection" ? newShare.itineraryIds : undefined
+    }
+
     return NextResponse.json({
       message: "Share created successfully",
-      share: newShare,
+      share: transformedShare,
       publicUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/weblinks/${slug}`
     }, { status: 201 })
 
